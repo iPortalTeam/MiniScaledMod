@@ -11,13 +11,12 @@ version = project.mod_version
 group = project.maven_group
 
 repositories {
-	// Add repositories to retrieve artifacts from in here.
-	// You should only use this when depending on other mods because
-	// Loom adds the essential maven repositories to download Minecraft and libraries from automatically.
-	// See https://docs.gradle.org/current/userguide/declaring_repositories.html
-	// for more information about repositories.
-
 	maven { url 'https://jitpack.io' }
+
+	maven {
+		name = 'Ladysnake Mods'
+		url = 'https://ladysnake.jfrog.io/artifactory/mods'
+	}
 }
 
 dependencies {
@@ -31,7 +30,13 @@ dependencies {
 
 	modImplementation ('com.github.qouteall.ImmersivePortalsMod:imm_ptl_core:1.16-SNAPSHOT'){
 		exclude(group: "net.fabricmc.fabric-api")
+		transitive(false)
 	}
+
+	// Replace modImplementation with modApi if you expose components in your own API
+	modImplementation "io.github.onyxstudios:Cardinal-Components-API:${project.cardinal_components_version}"
+	// Includes Cardinal Components API as a Jar-in-Jar dependency (optional)
+	include "io.github.onyxstudios.Cardinal-Components-API:${project.cardinal_components_version}"
 }
 
 processResources {

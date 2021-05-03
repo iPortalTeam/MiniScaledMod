@@ -29,7 +29,8 @@
   "depends": {
     "fabricloader": ">=0.7.4",
     "fabric": "*",
-    "minecraft": "1.16.x"
+    "minecraft": "1.16.x",
+    "imm_ptl_core": "*"
   },
   "suggests": {
     "another-mod": "*"
