@@ -1,29 +1,29 @@
 {
   "schemaVersion": 1,
-  "id": "modid",
+  "id": "mini_scaled",
   "version": "${version}",
 
-  "name": "Example Mod",
-  "description": "This is an example description! Tell everyone what your mod is about!",
+  "name": "MiniScaled",
+  "description": "Create scale boxes easily using Immersive Portals functionality.",
   "authors": [
-    "Me!"
+    "qouteall"
   ],
   "contact": {
-    "homepage": "https://fabricmc.net/",
-    "sources": "https://github.com/FabricMC/fabric-example-mod"
+    "homepage": "?",
+    "sources": "?"
   },
 
-  "license": "CC0-1.0",
+  "license": "?",
   "icon": "assets/modid/icon.png",
 
   "environment": "*",
   "entrypoints": {
     "main": [
-      "net.fabricmc.example.ExampleMod"
+      "qouteall.mini_scaled.MiniScaledModInitializer"
     ]
   },
   "mixins": [
-    "modid.mixins.json"
+    "mini_scaled.mixins.json"
   ],
 
   "depends": {
