@@ -20,6 +20,9 @@
   "entrypoints": {
     "main": [
       "qouteall.mini_scaled.MiniScaledModInitializer"
+    ],
+    "client": [
+      "qouteall.mini_scaled.MiniScaledModInitializerClient"
     ]
   },
   "mixins": [
