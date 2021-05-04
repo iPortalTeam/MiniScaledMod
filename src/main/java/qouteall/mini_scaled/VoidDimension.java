@@ -5,9 +5,13 @@ import com.google.common.collect.Maps;
 import com.qouteall.immersive_portals.Helper;
 import com.qouteall.immersive_portals.McHelper;
 import com.qouteall.immersive_portals.api.IPDimensionAPI;
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
 import net.minecraft.block.Blocks;
+import net.minecraft.client.render.SkyProperties;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.Identifier;
+import net.minecraft.util.math.Vec3d;
 import net.minecraft.util.registry.DynamicRegistryManager;
 import net.minecraft.util.registry.MutableRegistry;
 import net.minecraft.util.registry.Registry;
@@ -77,4 +81,18 @@ public class VoidDimension {
         return McHelper.getServerWorld(dimensionId);
     }
     
+    @Environment(EnvType.CLIENT)
+    public static class VoidSkyProperties extends SkyProperties {
+        public VoidSkyProperties() {
+            super(Float.NaN, true, SkyProperties.SkyType.NORMAL, false, false);
+        }
+        
+        public Vec3d adjustFogColor(Vec3d color, float sunHeight) {
+            return color.multiply((double)(sunHeight * 0.94F + 0.06F), (double)(sunHeight * 0.94F + 0.06F), (double)(sunHeight * 0.91F + 0.09F));
+        }
+        
+        public boolean useThickFog(int camX, int camY) {
+            return false;
+        }
+    }
 }

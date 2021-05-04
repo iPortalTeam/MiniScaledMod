@@ -97,7 +97,7 @@ public class ScaleBoxGeneration {
             portal.teleportChangesScale = false;
             portal.fuseView = true;
             portal.renderingMergable = true;
-            portal.hasCrossPortalCollision = false;
+            portal.hasCrossPortalCollision = true;
             portal.portalTag = "mini_scaled:scaled_box";
             PortalExtension.get(portal).adjustPositionAfterTeleport = false;
             portal.setInteractable(false);
@@ -113,7 +113,7 @@ public class ScaleBoxGeneration {
             reversePortal.renderingMergable = true;
             reversePortal.hasCrossPortalCollision = true;
             PortalExtension.get(reversePortal).adjustPositionAfterTeleport = true;
-            PortalExtension.get(reversePortal).motionAffinity = -0.2;
+            PortalExtension.get(reversePortal).motionAffinity = -0.9;
             reversePortal.setInteractable(false);
             reversePortal.boxId = boxId;
             reversePortal.generation = generation;
