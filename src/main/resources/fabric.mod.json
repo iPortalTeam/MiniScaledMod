@@ -34,5 +34,9 @@
   },
   "suggests": {
     "another-mod": "*"
+  },
+
+  "custom": {
+
   }
 }

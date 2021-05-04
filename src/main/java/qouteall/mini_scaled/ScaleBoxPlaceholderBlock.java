@@ -7,13 +7,16 @@ import net.minecraft.block.AbstractBlock;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockRenderType;
 import net.minecraft.block.BlockState;
+import net.minecraft.block.BlockWithEntity;
 import net.minecraft.block.Material;
+import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.registry.Registry;
 import net.minecraft.world.BlockView;
+import org.jetbrains.annotations.Nullable;
 
-public class ScaleBoxPlaceholderBlock extends Block {
+public class ScaleBoxPlaceholderBlock extends BlockWithEntity {
     public static final ScaleBoxPlaceholderBlock instance = new ScaleBoxPlaceholderBlock(
         AbstractBlock.Settings.of(Material.BARRIER)
             .strength(0.3F)
@@ -46,4 +49,9 @@ public class ScaleBoxPlaceholderBlock extends Block {
         return 1.0F;
     }
     
+    @Nullable
+    @Override
+    public BlockEntity createBlockEntity(BlockView world) {
+        return new ScaleBoxPlaceholderBlockEntity();
+    }
 }
