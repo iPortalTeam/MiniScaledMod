@@ -1,18 +1,18 @@
 package qouteall.mini_scaled;
 
-import com.qouteall.immersive_portals.Helper;
+import com.qouteall.immersive_portals.McHelper;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.block.entity.BlockEntityType;
-import net.minecraft.entity.Entity;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.Tickable;
+import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.registry.Registry;
+import net.minecraft.util.registry.RegistryKey;
+import net.minecraft.world.World;
 import org.apache.commons.lang3.Validate;
-
-import java.util.UUID;
 
 public class ScaleBoxPlaceholderBlockEntity extends BlockEntity implements Tickable {
     public static BlockEntityType<ScaleBoxPlaceholderBlockEntity> blockEntityType;
@@ -58,6 +58,10 @@ public class ScaleBoxPlaceholderBlockEntity extends BlockEntity implements Ticka
             return;
         }
         
+        checkValidity();
+    }
+    
+    public void checkValidity() {
         ScaleBoxRecord.Entry entry = ScaleBoxRecord.getEntryById(boxId);
         
         if (entry == null) {
@@ -79,14 +83,55 @@ public class ScaleBoxPlaceholderBlockEntity extends BlockEntity implements Ticka
             destroy();
             return;
         }
-        
-        
     }
     
-    void destroy() {
+    private void destroy() {
         Validate.isTrue(!world.isClient());
         System.out.println("destroy scale box " + boxId);
         world.setBlockState(getPos(), Blocks.AIR.getDefaultState());
         markRemoved();
+    }
+    
+    private static void notifyPortalBreak(int boxId) {
+        ScaleBoxRecord.Entry entry = ScaleBoxRecord.getEntryById(boxId);
+        if (entry != null) {
+            entry.generation++;
+            ScaleBoxRecord.get().setDirty(true);
+        }
+    }
+    
+    public static void checkBlockIntegrity(
+        int boxId
+    ) {
+        ScaleBoxRecord.Entry entry = ScaleBoxRecord.getEntryById(boxId);
+        
+        if (entry == null) {
+            return;
+        }
+        
+        RegistryKey<World> currentEntranceDim = entry.currentEntranceDim;
+        if (currentEntranceDim == null) {
+            System.err.println("null entrance dim " + boxId);
+            return;
+        }
+        BlockPos currentEntrancePos = entry.currentEntrancePos;
+        
+        ServerWorld entranceWorld = McHelper.getServer().getWorld(currentEntranceDim);
+        if (entranceWorld == null) {
+            System.err.println("invalid entrance dim " + currentEntranceDim);
+            return;
+        }
+        
+        boolean chunkLoaded = entranceWorld.isChunkLoaded(currentEntrancePos);
+        if (!chunkLoaded) {
+            return;
+        }
+        
+        boolean blockValid =
+            entranceWorld.getBlockState(currentEntrancePos).getBlock() == ScaleBoxPlaceholderBlock.instance;
+        
+        if (!blockValid) {
+            notifyPortalBreak(boxId);
+        }
     }
 }

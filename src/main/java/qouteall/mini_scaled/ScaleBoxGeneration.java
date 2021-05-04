@@ -2,19 +2,29 @@ package qouteall.mini_scaled;
 
 import com.qouteall.immersive_portals.Helper;
 import com.qouteall.immersive_portals.McHelper;
+import com.qouteall.immersive_portals.ModMain;
+import com.qouteall.immersive_portals.chunk_loading.ChunkLoader;
+import com.qouteall.immersive_portals.chunk_loading.DimensionalChunkPos;
+import com.qouteall.immersive_portals.chunk_loading.NewChunkTrackingGraph;
 import com.qouteall.immersive_portals.my_util.IntBox;
+import com.qouteall.immersive_portals.my_util.MyTaskList;
 import com.qouteall.immersive_portals.portal.PortalExtension;
 import com.qouteall.immersive_portals.portal.PortalManipulation;
+import net.minecraft.block.Block;
+import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.DyeColor;
+import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Box;
+import net.minecraft.util.math.ChunkPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
+import net.minecraft.util.registry.Registry;
 import org.apache.commons.lang3.Validate;
 
 public class ScaleBoxGeneration {
@@ -88,8 +98,9 @@ public class ScaleBoxGeneration {
             portal.fuseView = true;
             portal.renderingMergable = true;
             portal.hasCrossPortalCollision = false;
-            portal.portalTag = "imm_ptl:scale_box";
+            portal.portalTag = "mini_scaled:scaled_box";
             PortalExtension.get(portal).adjustPositionAfterTeleport = false;
+            portal.setInteractable(false);
             portal.boxId = boxId;
             portal.generation = generation;
             
@@ -102,6 +113,8 @@ public class ScaleBoxGeneration {
             reversePortal.renderingMergable = true;
             reversePortal.hasCrossPortalCollision = true;
             PortalExtension.get(reversePortal).adjustPositionAfterTeleport = true;
+            PortalExtension.get(reversePortal).motionAffinity = -0.2;
+            reversePortal.setInteractable(false);
             reversePortal.boxId = boxId;
             reversePortal.generation = generation;
             
@@ -148,17 +161,122 @@ public class ScaleBoxGeneration {
         return new BlockPos(xIndex * 16 * 32, 64, zIndex * 16 * 32);
     }
     
+    private static BlockPos selectCoordinateFromBox(IntBox box, boolean high) {
+        return high ? box.h : box.l;
+    }
+    
+    private static BlockPos selectCoordinateFromBox(IntBox box, boolean xUp, boolean yUp, boolean zUp) {
+        return new BlockPos(
+            selectCoordinateFromBox(box, xUp).getX(),
+            selectCoordinateFromBox(box, yUp).getY(),
+            selectCoordinateFromBox(box, zUp).getZ()
+        );
+    }
+    
+    private static IntBox[] get12Edges(IntBox box) {
+        return new IntBox[]{
+            new IntBox(
+                selectCoordinateFromBox(box, false, false, false),
+                selectCoordinateFromBox(box, false, false, true)
+            ),
+            new IntBox(
+                selectCoordinateFromBox(box, false, true, false),
+                selectCoordinateFromBox(box, false, true, true)
+            ),
+            new IntBox(
+                selectCoordinateFromBox(box, true, false, false),
+                selectCoordinateFromBox(box, true, false, true)
+            ),
+            new IntBox(
+                selectCoordinateFromBox(box, true, true, false),
+                selectCoordinateFromBox(box, true, true, true)
+            ),
+            
+            new IntBox(
+                selectCoordinateFromBox(box, false, false, false),
+                selectCoordinateFromBox(box, false, true, false)
+            ),
+            new IntBox(
+                selectCoordinateFromBox(box, false, false, true),
+                selectCoordinateFromBox(box, false, true, true)
+            ),
+            new IntBox(
+                selectCoordinateFromBox(box, true, false, false),
+                selectCoordinateFromBox(box, true, true, false)
+            ),
+            new IntBox(
+                selectCoordinateFromBox(box, true, false, true),
+                selectCoordinateFromBox(box, true, true, true)
+            ),
+            
+            new IntBox(
+                selectCoordinateFromBox(box, false, false, false),
+                selectCoordinateFromBox(box, true, false, false)
+            ),
+            new IntBox(
+                selectCoordinateFromBox(box, false, false, true),
+                selectCoordinateFromBox(box, true, false, true)
+            ),
+            new IntBox(
+                selectCoordinateFromBox(box, false, true, false),
+                selectCoordinateFromBox(box, true, true, false)
+            ),
+            new IntBox(
+                selectCoordinateFromBox(box, false, true, true),
+                selectCoordinateFromBox(box, true, true, true)
+            )
+        };
+    }
+    
+    //todo change to the one in IP
+    private static void loadChunksAndDo1(ChunkLoader chunkLoader, Runnable runnable) {
+        NewChunkTrackingGraph.addGlobalAdditionalChunkLoader(chunkLoader);
+        
+        ModMain.serverTaskList.addTask(MyTaskList.withDelayCondition(
+            () -> chunkLoader.getLoadedChunkNum() < chunkLoader.getChunkNum(),
+            MyTaskList.oneShotTask(() -> {
+                NewChunkTrackingGraph.removeGlobalAdditionalChunkLoader(chunkLoader);
+                runnable.run();
+            })
+        ));
+    }
+    
     private static void initializeInnerBoxBlocks(ScaleBoxRecord.Entry entry) {
         ServerWorld voidWorld = VoidDimension.getVoidWorld();
         
         IntBox box = entry.getAreaBox();
-        IntBox expanded = box.getAdjusted(-1, -1, -1, 1, 1, 1);
         
-        for (Direction direction : Direction.values()) {
-            expanded.getSurfaceLayer(direction).fastStream().forEach(blockPos -> {
-                voidWorld.setBlockState(blockPos, Blocks.BARRIER.getDefaultState());
-            });
-        }
+        ChunkLoader chunkLoader = new ChunkLoader(
+            new DimensionalChunkPos(
+                voidWorld.getRegistryKey(),
+                new ChunkPos(box.l)
+            ),
+            0
+        );
+        
+        // set block after fulling loading the chunk
+        // to avoid lighting problems
+        loadChunksAndDo1(chunkLoader, () -> {
+            IntBox expanded = box.getAdjusted(-1, -1, -1, 1, 1, 1);
+            
+            for (Direction direction : Direction.values()) {
+                expanded.getSurfaceLayer(direction).fastStream().forEach(blockPos -> {
+                    voidWorld.setBlockState(blockPos, Blocks.BARRIER.getDefaultState());
+                });
+            }
+            
+            Block woolBlock = Registry.BLOCK.get(new Identifier("minecraft:" + entry.color.getName() + "_wool"));
+            BlockState frameBlock = woolBlock.getDefaultState();
+            
+            for (IntBox edge : get12Edges(box)) {
+                edge.fastStream().forEach(blockPos -> {
+                    voidWorld.setBlockState(blockPos, frameBlock);
+                });
+            }
+            
+            voidWorld.setBlockState(box.l, Blocks.BEDROCK.getDefaultState());
+        });
+        
     }
     
 }

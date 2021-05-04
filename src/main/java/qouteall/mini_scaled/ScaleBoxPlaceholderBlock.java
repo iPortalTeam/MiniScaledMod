@@ -1,5 +1,7 @@
 package qouteall.mini_scaled;
 
+import com.qouteall.immersive_portals.ModMain;
+import com.qouteall.immersive_portals.my_util.MyTaskList;
 import com.qouteall.immersive_portals.portal.PortalPlaceholderBlock;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
@@ -14,6 +16,7 @@ import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.registry.Registry;
 import net.minecraft.world.BlockView;
+import net.minecraft.world.World;
 import org.jetbrains.annotations.Nullable;
 
 public class ScaleBoxPlaceholderBlock extends BlockWithEntity {
@@ -53,5 +56,21 @@ public class ScaleBoxPlaceholderBlock extends BlockWithEntity {
     @Override
     public BlockEntity createBlockEntity(BlockView world) {
         return new ScaleBoxPlaceholderBlockEntity();
+    }
+    
+    @Override
+    public void onStateReplaced(BlockState state, World world, BlockPos pos, BlockState newState, boolean moved) {
+        if (newState.getBlock() != this) {
+            BlockEntity blockEntity = world.getBlockEntity(pos);
+            if (blockEntity != null) {
+                ScaleBoxPlaceholderBlockEntity be = (ScaleBoxPlaceholderBlockEntity) blockEntity;
+                int boxId = be.boxId;
+                ModMain.serverTaskList.addTask(MyTaskList.oneShotTask(() -> {
+                    ScaleBoxPlaceholderBlockEntity.checkBlockIntegrity(boxId);
+                }));
+            }
+        }
+        
+        super.onStateReplaced(state, world, pos, newState, moved);
     }
 }

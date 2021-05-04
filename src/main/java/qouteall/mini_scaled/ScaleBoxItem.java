@@ -23,12 +23,12 @@ import java.util.List;
 
 public class ScaleBoxItem extends Item {
     
-    public static final Item instance = new Item(new Item.Settings().group(ItemGroup.MISC));
+    public static final ScaleBoxItem instance = new ScaleBoxItem(new Item.Settings().group(ItemGroup.MISC));
     
     public static void init() {
         Registry.register(
             Registry.ITEM,
-            new Identifier("mini_scaled:scale_box"),
+            new Identifier("mini_scaled:scale_box_item"),
             instance
         );
     }
@@ -109,7 +109,7 @@ public class ScaleBoxItem extends Item {
     public void appendStacks(ItemGroup group, DefaultedList<ItemStack> stacks) {
         if (this.isIn(group)) {
             for (DyeColor dyeColor : DyeColor.values()) {
-                ItemStack itemStack = new ItemStack(this);
+                ItemStack itemStack = new ItemStack(instance);
                 
                 ItemInfo itemInfo = new ItemInfo(16, dyeColor);
                 itemInfo.writeToTag(itemStack.getOrCreateTag());

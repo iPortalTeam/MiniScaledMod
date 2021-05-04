@@ -29,7 +29,7 @@ public class MiniScaledPortal extends Portal {
         super.tick();
         
         if (!world.isClient()) {
-            if (world.getTime() % 20 == getEntityId() % 20) {
+            if (world.getTime() % 3 == 0) {
                 checkValidity();
             }
         }
@@ -95,4 +95,8 @@ public class MiniScaledPortal extends Portal {
         }
     }
     
+    @Override
+    public double getDestAreaRadiusEstimation() {
+        return 12 * 16;
+    }
 }

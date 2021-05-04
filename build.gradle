@@ -28,7 +28,7 @@ dependencies {
 	// Fabric API. This is technically optional, but you probably want it anyway.
 	modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
 
-	modImplementation ('com.github.qouteall.ImmersivePortalsMod:imm_ptl_core:1.16-SNAPSHOT'){
+	modImplementation ('com.github.qouteall.ImmersivePortalsMod:imm_ptl_core:v0.96-1.16'){
 		exclude(group: "net.fabricmc.fabric-api")
 		transitive(false)
 	}
