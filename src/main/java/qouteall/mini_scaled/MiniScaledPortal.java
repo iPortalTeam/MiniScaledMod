@@ -1,13 +1,20 @@
 package qouteall.mini_scaled;
 
+import com.qouteall.immersive_portals.McHelper;
 import com.qouteall.immersive_portals.portal.Portal;
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.object.builder.v1.entity.FabricEntityTypeBuilder;
+import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityDimensions;
+import net.minecraft.entity.EntityPose;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.SpawnGroup;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.util.Identifier;
+import net.minecraft.util.math.Vec3d;
 import net.minecraft.util.registry.Registry;
 import net.minecraft.world.World;
 
@@ -95,8 +102,66 @@ public class MiniScaledPortal extends Portal {
         }
     }
     
+    public boolean isOuterPortal() {
+        return getScale() > 1;
+    }
+    
     @Override
     public double getDestAreaRadiusEstimation() {
         return 12 * 16;
+    }
+    
+    @Override
+    public boolean allowOverlappedTeleport() {
+        return true;
+    }
+    
+    @Override
+    public void onCollidingWithEntity(Entity entity) {
+        if (world.isClient()) {
+            onCollidingWithEntityClientOnly(entity);
+        }
+        
+    }
+    
+    @Environment(EnvType.CLIENT)
+    private void onCollidingWithEntityClientOnly(Entity entity) {
+        if (isOuterPortal() && !(getNormal().y < 0.9)) {
+            if (entity instanceof ClientPlayerEntity) {
+                ClientPlayerEntity player = (ClientPlayerEntity) entity;
+                if (player.getPose() == EntityPose.CROUCHING) {
+                    player.setPos(player.getX(), player.getY() - 0.01, player.getZ());
+                    McHelper.updateBoundingBox(player);
+                }
+                
+                Vec3d velocity = entity.getVelocity();
+                if (velocity.y < 0) {
+                    entity.setVelocity(new Vec3d(velocity.x, velocity.y * 0.4, velocity.z));
+                }
+//                else {
+//                    entity.setVelocity(new Vec3d(velocity.x, velocity.y + 0.1, velocity.z));
+//                }
+            }
+        }
+        
+//        if (!isOuterPortal() && getNormal().y < -0.9) {
+//            Vec3d velocity = entity.getVelocity();
+//            if (velocity.y > 0) {
+//                entity.setVelocity(velocity.x, velocity.y +0.5, velocity.z);
+//            }
+//        }
+    }
+    
+    @Override
+    public void transformVelocity(Entity entity) {
+        super.transformVelocity(entity);
+        
+//        if (isOuterPortal() && getNormal().y > 0.9) {
+//            entity.setVelocity(entity.getVelocity().multiply(0.5));
+//        }
+
+//        if (!isOuterPortal() && getNormal().y < -0.9) {
+//            entity.setVelocity(entity.getVelocity().add(0, 0.2, 0));
+//        }
     }
 }

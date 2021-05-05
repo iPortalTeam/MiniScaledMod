@@ -19,6 +19,7 @@ import net.minecraft.util.registry.Registry;
 import net.minecraft.world.World;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class ScaleBoxItem extends Item {
@@ -80,8 +81,9 @@ public class ScaleBoxItem extends Item {
         ItemInfo itemInfo = new ItemInfo(stack.getOrCreateTag());
         
         ServerPlayerEntity player = (ServerPlayerEntity) context.getPlayer();
-        
-        if (itemInfo.size != 16) {
+    
+        int size = itemInfo.size;
+        if (!ScaleBoxGeneration.isValidSize(size)) {
             player.sendMessage(new LiteralText("bad item data"), false);
             return ActionResult.FAIL;
         }
@@ -89,7 +91,7 @@ public class ScaleBoxItem extends Item {
         ScaleBoxGeneration.putScaleBox(
             ((ServerWorld) world),
             player,
-            itemInfo.size,
+            size,
             pos,
             itemInfo.color
         );
@@ -105,18 +107,21 @@ public class ScaleBoxItem extends Item {
         tooltip.add(new LiteralText(Integer.toString(itemInfo.size)));
     }
     
+    private static final int[] supportedSizes = {8, 16, 32};
+    
     @Override
     public void appendStacks(ItemGroup group, DefaultedList<ItemStack> stacks) {
         if (this.isIn(group)) {
-            for (DyeColor dyeColor : DyeColor.values()) {
-                ItemStack itemStack = new ItemStack(instance);
-                
-                ItemInfo itemInfo = new ItemInfo(16, dyeColor);
-                itemInfo.writeToTag(itemStack.getOrCreateTag());
-                
-                stacks.add(itemStack);
+            for (int size : supportedSizes) {
+                for (DyeColor dyeColor : DyeColor.values()) {
+                    ItemStack itemStack = new ItemStack(instance);
+        
+                    ItemInfo itemInfo = new ItemInfo(size, dyeColor);
+                    itemInfo.writeToTag(itemStack.getOrCreateTag());
+        
+                    stacks.add(itemStack);
+                }
             }
-            
         }
     }
 }

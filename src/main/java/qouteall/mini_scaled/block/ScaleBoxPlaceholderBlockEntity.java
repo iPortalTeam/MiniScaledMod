@@ -1,4 +1,4 @@
-package qouteall.mini_scaled;
+package qouteall.mini_scaled.block;
 
 import com.qouteall.immersive_portals.McHelper;
 import net.minecraft.block.BlockState;
@@ -13,6 +13,7 @@ import net.minecraft.util.registry.Registry;
 import net.minecraft.util.registry.RegistryKey;
 import net.minecraft.world.World;
 import org.apache.commons.lang3.Validate;
+import qouteall.mini_scaled.ScaleBoxRecord;
 
 public class ScaleBoxPlaceholderBlockEntity extends BlockEntity implements Tickable {
     public static BlockEntityType<ScaleBoxPlaceholderBlockEntity> blockEntityType;

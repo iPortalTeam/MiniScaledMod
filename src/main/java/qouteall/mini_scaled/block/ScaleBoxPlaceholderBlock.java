@@ -1,12 +1,10 @@
-package qouteall.mini_scaled;
+package qouteall.mini_scaled.block;
 
 import com.qouteall.immersive_portals.ModMain;
 import com.qouteall.immersive_portals.my_util.MyTaskList;
-import com.qouteall.immersive_portals.portal.PortalPlaceholderBlock;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.block.AbstractBlock;
-import net.minecraft.block.Block;
 import net.minecraft.block.BlockRenderType;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.BlockWithEntity;

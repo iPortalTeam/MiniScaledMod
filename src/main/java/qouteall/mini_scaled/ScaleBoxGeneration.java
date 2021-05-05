@@ -26,6 +26,9 @@ import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.util.registry.Registry;
 import org.apache.commons.lang3.Validate;
+import qouteall.mini_scaled.block.BoxBarrierBlock;
+import qouteall.mini_scaled.block.ScaleBoxPlaceholderBlock;
+import qouteall.mini_scaled.block.ScaleBoxPlaceholderBlockEntity;
 
 public class ScaleBoxGeneration {
     public static void putScaleBox(
@@ -35,9 +38,6 @@ public class ScaleBoxGeneration {
         BlockPos outerBoxPos,
         DyeColor color
     ) {
-        Validate.isTrue(world.getRegistryKey() != VoidDimension.dimensionId);
-        Validate.isTrue(size == 16);//temporary
-        
         ScaleBoxRecord record = ScaleBoxRecord.get();
         
         ScaleBoxRecord.Entry entry = getOrCreateEntry(player, size, color, record);
@@ -112,8 +112,9 @@ public class ScaleBoxGeneration {
             reversePortal.fuseView = false;
             reversePortal.renderingMergable = true;
             reversePortal.hasCrossPortalCollision = true;
-            PortalExtension.get(reversePortal).adjustPositionAfterTeleport = true;
-            PortalExtension.get(reversePortal).motionAffinity = -0.9;
+            if (direction != Direction.DOWN && direction != Direction.UP) {
+                PortalExtension.get(reversePortal).adjustPositionAfterTeleport = true;
+            }
             reversePortal.setInteractable(false);
             reversePortal.boxId = boxId;
             reversePortal.generation = generation;
@@ -261,7 +262,7 @@ public class ScaleBoxGeneration {
             
             for (Direction direction : Direction.values()) {
                 expanded.getSurfaceLayer(direction).fastStream().forEach(blockPos -> {
-                    voidWorld.setBlockState(blockPos, Blocks.BARRIER.getDefaultState());
+                    voidWorld.setBlockState(blockPos, BoxBarrierBlock.instance.getDefaultState());
                 });
             }
             
@@ -277,6 +278,10 @@ public class ScaleBoxGeneration {
             voidWorld.setBlockState(box.l, Blocks.BEDROCK.getDefaultState());
         });
         
+    }
+    
+    public static boolean isValidSize(int size) {
+        return size == 16 || size == 8 || size == 32;
     }
     
 }
