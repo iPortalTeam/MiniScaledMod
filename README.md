@@ -2,7 +2,7 @@
 
 A Fabric mod that provides easy-usable scale boxes using [Immersive Portals](https://github.com/qouteall/ImmersivePortalsMod) functionality.
 
-
+**This mod is still in the early stage and not mature yet.**
 
 ### How to use
 

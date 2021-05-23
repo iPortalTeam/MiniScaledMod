@@ -2,7 +2,6 @@ package qouteall.mini_scaled;
 
 import com.qouteall.immersive_portals.Helper;
 import com.qouteall.immersive_portals.McHelper;
-import com.sun.istack.internal.Nullable;
 import net.minecraft.client.item.TooltipContext;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemGroup;
@@ -124,7 +123,7 @@ public class ScaleBoxItem extends Item {
     }
     
     @Override
-    public void appendTooltip(ItemStack stack, @Nullable World world, List<Text> tooltip, TooltipContext context) {
+    public void appendTooltip(ItemStack stack, World world, List<Text> tooltip, TooltipContext context) {
         super.appendTooltip(stack, world, tooltip, context);
         ItemInfo itemInfo = new ItemInfo(stack.getOrCreateTag());
         tooltip.add(new TranslatableText("mini_scaled.color")

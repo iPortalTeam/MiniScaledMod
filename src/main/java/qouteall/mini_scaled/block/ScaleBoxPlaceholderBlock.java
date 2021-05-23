@@ -17,7 +17,6 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.registry.Registry;
 import net.minecraft.world.BlockView;
 import net.minecraft.world.World;
-import org.jetbrains.annotations.Nullable;
 import qouteall.mini_scaled.ScaleBoxItem;
 
 public class ScaleBoxPlaceholderBlock extends BlockWithEntity {
@@ -53,7 +52,7 @@ public class ScaleBoxPlaceholderBlock extends BlockWithEntity {
         return 1.0F;
     }
     
-    @Nullable
+    // nullable
     @Override
     public BlockEntity createBlockEntity(BlockView world) {
         return new ScaleBoxPlaceholderBlockEntity();
