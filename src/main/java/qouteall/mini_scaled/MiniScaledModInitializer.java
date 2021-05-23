@@ -23,6 +23,8 @@ public class MiniScaledModInitializer implements ModInitializer {
         
         ScaleBoxItem.init();
         
+        ScaleBoxCraftingRecipe.init();
+        
         System.out.println("MiniScaled Mod Initializing");
     }
 }
