@@ -10,12 +10,15 @@ import net.minecraft.block.BlockState;
 import net.minecraft.block.BlockWithEntity;
 import net.minecraft.block.Material;
 import net.minecraft.block.entity.BlockEntity;
+import net.minecraft.item.ItemStack;
 import net.minecraft.util.Identifier;
+import net.minecraft.util.ItemScatterer;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.registry.Registry;
 import net.minecraft.world.BlockView;
 import net.minecraft.world.World;
 import org.jetbrains.annotations.Nullable;
+import qouteall.mini_scaled.ScaleBoxItem;
 
 public class ScaleBoxPlaceholderBlock extends BlockWithEntity {
     public static final ScaleBoxPlaceholderBlock instance = new ScaleBoxPlaceholderBlock(
@@ -66,6 +69,12 @@ public class ScaleBoxPlaceholderBlock extends BlockWithEntity {
                 ModMain.serverTaskList.addTask(MyTaskList.oneShotTask(() -> {
                     ScaleBoxPlaceholderBlockEntity.checkBlockIntegrity(boxId);
                 }));
+                ItemStack itemToDrop = ScaleBoxItem.boxIdToItem(boxId);
+                if (itemToDrop != null) {
+                    ItemScatterer.spawn(
+                        world, pos.getX(), pos.getY(), pos.getZ(), itemToDrop
+                    );
+                }
             }
         }
         

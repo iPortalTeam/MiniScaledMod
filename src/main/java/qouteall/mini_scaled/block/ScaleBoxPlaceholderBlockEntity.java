@@ -135,4 +135,6 @@ public class ScaleBoxPlaceholderBlockEntity extends BlockEntity implements Ticka
             notifyPortalBreak(boxId);
         }
     }
+    
+    
 }

@@ -30,7 +30,11 @@ import qouteall.mini_scaled.block.BoxBarrierBlock;
 import qouteall.mini_scaled.block.ScaleBoxPlaceholderBlock;
 import qouteall.mini_scaled.block.ScaleBoxPlaceholderBlockEntity;
 
+import java.util.Arrays;
+
 public class ScaleBoxGeneration {
+    static final int[] supportedSizes = {8, 16, 32};
+    
     public static void putScaleBox(
         ServerWorld world,
         ServerPlayerEntity player,
@@ -138,6 +142,7 @@ public class ScaleBoxGeneration {
             newEntry.id = newId;
             newEntry.color = color;
             newEntry.ownerId = player.getUuid();
+            newEntry.ownerNameCache = player.getName().asString();
             newEntry.size = size;
             newEntry.generation = 0;
             newEntry.innerBoxPos = allocateInnerBoxPos(newId);
@@ -281,7 +286,7 @@ public class ScaleBoxGeneration {
     }
     
     public static boolean isValidSize(int size) {
-        return size == 16 || size == 8 || size == 32;
+        return Arrays.stream(supportedSizes).anyMatch(s -> s == size);
     }
     
 }

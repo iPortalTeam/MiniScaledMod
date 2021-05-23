@@ -79,6 +79,7 @@ public class ScaleBoxRecord extends PersistentState {
         public int size;//16 or 32
         public DyeColor color;
         public UUID ownerId;
+        public String ownerNameCache;
         public RegistryKey<World> currentEntranceDim;
         public BlockPos currentEntrancePos;
         public int generation;
@@ -100,6 +101,7 @@ public class ScaleBoxRecord extends PersistentState {
             size = tag.getInt("size");
             color = DyeColor.byName(tag.getString("color"), DyeColor.BLACK);
             ownerId = tag.getUuid("ownerId");
+            ownerNameCache = tag.getString("ownerNameCache");
             currentEntranceDim = RegistryKey.of(
                 Registry.DIMENSION,
                 new Identifier(tag.getString("currentEntranceDim"))
@@ -115,6 +117,7 @@ public class ScaleBoxRecord extends PersistentState {
             tag.putInt("size", size);
             tag.putString("color", color.getName());
             tag.putUuid("ownerId", ownerId);
+            tag.putString("ownerNameCache", ownerNameCache);
             tag.putString("currentEntranceDim", currentEntranceDim.getValue().getPath());
             Helper.putVec3i(tag, "currentEntrancePos", currentEntrancePos);
             tag.putInt("generation", generation);

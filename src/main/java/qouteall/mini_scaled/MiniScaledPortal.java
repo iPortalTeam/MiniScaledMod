@@ -43,8 +43,10 @@ public class MiniScaledPortal extends Portal {
             tickClient();
         }
         else {
-            if (world.getTime() % 3 == 0) {
+            if (world.getTime() % 2 == 0) {
+                world.getProfiler().push("validate");
                 checkValidity();
+                world.getProfiler().pop();
             }
         }
     }
@@ -135,16 +137,13 @@ public class MiniScaledPortal extends Portal {
     private void onCollidingWithEntityClientOnly(Entity entity) {
         if (isOuterPortal() && (getNormal().y > 0.9)) {
             if (entity instanceof ClientPlayerEntity) {
-                
+
                 ClientPlayerEntity player = (ClientPlayerEntity) entity;
                 if (player.getPose() == EntityPose.CROUCHING) {
                     player.setPos(player.getX(), player.getY() - 0.01, player.getZ());
                     McHelper.updateBoundingBox(player);
                 }
-                else {
-                    levitatePlayer(player);
-                }
-                
+
                 Vec3d velocity = entity.getVelocity();
                 if (velocity.y < 0) {
                     entity.setVelocity(new Vec3d(velocity.x, velocity.y * 0.4, velocity.z));
@@ -172,41 +171,4 @@ public class MiniScaledPortal extends Portal {
     
     }
     
-    private void levitatePlayer(ClientPlayerEntity player) {
-        Box playerBox = player.getBoundingBox();
-        Box bottomHalfBox = playerBox.shrink(0, playerBox.getYLength() / 2, 0);
-        Box transformedBox = Helper.transformBox(bottomHalfBox, this::transformPoint);
-        World destWorld = getDestinationWorld();
-        Stream<VoxelShape> collisions = destWorld.getBlockCollisions(null, transformedBox);
-        double maxCollisionY = collisions.mapToDouble(s -> s.getBoundingBox().maxY)
-            .max().orElse(player.getY());
-        
-        Vec3d transformedPlayerPos = transformPoint(player.getPos());
-        
-        if (transformedPlayerPos.y < maxCollisionY) {
-            Vec3d newPosOtherSide =
-                new Vec3d(transformedPlayerPos.getX(), maxCollisionY, transformedPlayerPos.getZ());
-            Vec3d newPosThisSide = inverseTransformPoint(newPosOtherSide);
-            
-            player.updatePosition(player.getX(), newPosThisSide.y, player.getZ());
-        }
-
-//        World oldWorld = player.world;
-//        Vec3d oldPos = player.getPos();
-//        Box oldBB = player.getBoundingBox();
-//
-//        player.world = getDestinationWorld();
-//        Vec3d newPos = transformPoint(oldPos);
-//        player.setPos(newPos.x, newPos.y, newPos.z);
-//        player.setBoundingBox(Helper.transformBox(oldBB, this::transformPoint));
-//
-//        try {
-//
-//        }
-//        finally {
-//            player.world = oldWorld;
-//            player.setPos(oldPos.x, oldPos.y, oldPos.z);
-//            player.setBoundingBox(oldBB);
-//        }
-    }
 }
