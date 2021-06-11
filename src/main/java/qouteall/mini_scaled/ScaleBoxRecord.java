@@ -1,10 +1,7 @@
 package qouteall.mini_scaled;
 
-import com.qouteall.immersive_portals.Helper;
-import com.qouteall.immersive_portals.McHelper;
-import com.qouteall.immersive_portals.my_util.IntBox;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.NbtCompound;
+import net.minecraft.nbt.NbtList;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.DyeColor;
 import net.minecraft.util.Identifier;
@@ -13,6 +10,11 @@ import net.minecraft.util.registry.Registry;
 import net.minecraft.util.registry.RegistryKey;
 import net.minecraft.world.PersistentState;
 import net.minecraft.world.World;
+import qouteall.imm_ptl.core.McHelper;
+import qouteall.imm_ptl.core.portal.global_portals.GlobalPortalStorage;
+import qouteall.q_misc_util.Helper;
+import qouteall.q_misc_util.MiscHelper;
+import qouteall.q_misc_util.my_util.IntBox;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -23,14 +25,23 @@ public class ScaleBoxRecord extends PersistentState {
     public List<Entry> entries = new ArrayList<>();
     
     public ScaleBoxRecord() {
-        super("scale_box_record");
+        super();
     }
     
     public static ScaleBoxRecord get() {
-        ServerWorld overworld = McHelper.getServer().getOverworld();
-        
+        ServerWorld overworld = MiscHelper.getServer().getOverworld();
+    
         return overworld.getPersistentStateManager().getOrCreate(
-            ScaleBoxRecord::new, "scale_box_record"
+            (nbt) -> {
+                ScaleBoxRecord record = new ScaleBoxRecord();
+                record.readFromNbt(nbt);
+                return record;
+            },
+            () -> {
+                Helper.log("Scale box record initialized ");
+                return new ScaleBoxRecord();
+            },
+            "scale_box_record"
         );
     }
     
@@ -43,32 +54,31 @@ public class ScaleBoxRecord extends PersistentState {
         return entry;
     }
     
-    public void readFromNbt(CompoundTag compoundTag) {
-        ListTag list = compoundTag.getList("entries", compoundTag.getType());
+    private void readFromNbt(NbtCompound compoundTag) {
+        NbtList list = compoundTag.getList("entries", compoundTag.getType());
         entries = list.stream().map(tag -> {
             Entry entry = new Entry();
-            entry.readFromNbt(((CompoundTag) tag));
+            entry.readFromNbt(((NbtCompound) tag));
             return entry;
         }).collect(Collectors.toList());
     }
     
-    public void writeToNbt(CompoundTag compoundTag) {
-        ListTag listTag = new ListTag();
+    private void writeToNbt(NbtCompound compoundTag) {
+        NbtList listTag = new NbtList();
         for (Entry entry : entries) {
-            CompoundTag tag = new CompoundTag();
+            NbtCompound tag = new NbtCompound();
             entry.writeToNbt(tag);
             listTag.add(tag);
         }
         compoundTag.put("entries", listTag);
     }
     
-    @Override
-    public void fromTag(CompoundTag tag) {
+    public void fromTag(NbtCompound tag) {
         readFromNbt(tag);
     }
     
     @Override
-    public CompoundTag toTag(CompoundTag tag) {
+    public NbtCompound writeNbt(NbtCompound tag) {
         writeToNbt(tag);
         return tag;
     }
@@ -95,7 +105,7 @@ public class ScaleBoxRecord extends PersistentState {
             );
         }
     
-        void readFromNbt(CompoundTag tag) {
+        void readFromNbt(NbtCompound tag) {
             id = tag.getInt("id");
             innerBoxPos = Helper.getVec3i(tag, "innerBoxPos");
             size = tag.getInt("size");
@@ -103,7 +113,7 @@ public class ScaleBoxRecord extends PersistentState {
             ownerId = tag.getUuid("ownerId");
             ownerNameCache = tag.getString("ownerNameCache");
             currentEntranceDim = RegistryKey.of(
-                Registry.DIMENSION,
+                Registry.WORLD_KEY,
                 new Identifier(tag.getString("currentEntranceDim"))
             );
             currentEntrancePos = Helper.getVec3i(tag, "currentEntrancePos");
@@ -111,7 +121,7 @@ public class ScaleBoxRecord extends PersistentState {
             
         }
         
-        void writeToNbt(CompoundTag tag) {
+        void writeToNbt(NbtCompound tag) {
             tag.putInt("id", id);
             Helper.putVec3i(tag, "innerBoxPos", innerBoxPos);
             tag.putInt("size", size);

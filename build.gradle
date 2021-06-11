@@ -1,10 +1,10 @@
 plugins {
-	id 'fabric-loom' version '0.5-SNAPSHOT'
+	id 'fabric-loom' version '0.8-SNAPSHOT'
 	id 'maven-publish'
 }
 
-sourceCompatibility = JavaVersion.VERSION_1_8
-targetCompatibility = JavaVersion.VERSION_1_8
+sourceCompatibility = JavaVersion.VERSION_16
+targetCompatibility = JavaVersion.VERSION_16
 
 archivesBaseName = project.archives_base_name
 version = project.mod_version
@@ -28,7 +28,11 @@ dependencies {
 	// Fabric API. This is technically optional, but you probably want it anyway.
 	modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
 
-	modImplementation ('com.github.qouteall.ImmersivePortalsMod:imm_ptl_core:v0.99-1.16'){
+	modImplementation ('com.github.qouteall.ImmersivePortalsMod:imm_ptl_core:1.17-SNAPSHOT'){
+		exclude(group: "net.fabricmc.fabric-api")
+		transitive(false)
+	}
+	modImplementation ('com.github.qouteall.ImmersivePortalsMod:q_misc_util:1.17-SNAPSHOT'){
 		exclude(group: "net.fabricmc.fabric-api")
 		transitive(false)
 	}
@@ -54,13 +58,7 @@ tasks.withType(JavaCompile).configureEach {
 	// If Javadoc is generated, this must be specified in that task too.
 	it.options.encoding = "UTF-8"
 
-	// The Minecraft launcher currently installs Java 8 for users, so your mod probably wants to target Java 8 too
-	// JDK 9 introduced a new way of specifying this that will make sure no newer classes or methods are used.
-	// We'll use that if it's available, but otherwise we'll use the older option.
-	def targetVersion = 8
-	if (JavaVersion.current().isJava9Compatible()) {
-		 it.options.release = targetVersion
-	}
+	it.options.release = 16
 }
 
 java {

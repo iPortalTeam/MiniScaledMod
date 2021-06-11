@@ -1,13 +1,11 @@
 package qouteall.mini_scaled;
 
-import com.qouteall.immersive_portals.Helper;
-import com.qouteall.immersive_portals.McHelper;
 import net.minecraft.client.item.TooltipContext;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemGroup;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.ItemUsageContext;
-import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.NbtCompound;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.LiteralText;
@@ -56,7 +54,7 @@ public class ScaleBoxItem extends Item {
             this.ownerNameCache = ownerNameCache;
         }
         
-        public ItemInfo(CompoundTag tag) {
+        public ItemInfo(NbtCompound tag) {
             size = tag.getInt("size");
             color = DyeColor.byName(tag.getString("color"), DyeColor.BLACK);
             if (tag.contains("ownerId")) {
@@ -65,7 +63,7 @@ public class ScaleBoxItem extends Item {
             }
         }
         
-        public void writeToTag(CompoundTag compoundTag) {
+        public void writeToTag(NbtCompound compoundTag) {
             compoundTag.putInt("size", size);
             compoundTag.putString("color", color.getName());
             if (ownerId != null) {

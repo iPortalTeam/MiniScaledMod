@@ -1,15 +1,12 @@
 package qouteall.mini_scaled;
 
-import com.qouteall.immersive_portals.Helper;
-import com.qouteall.immersive_portals.McHelper;
-import com.qouteall.immersive_portals.ModMain;
-import com.qouteall.immersive_portals.chunk_loading.ChunkLoader;
-import com.qouteall.immersive_portals.chunk_loading.DimensionalChunkPos;
-import com.qouteall.immersive_portals.chunk_loading.NewChunkTrackingGraph;
-import com.qouteall.immersive_portals.my_util.IntBox;
-import com.qouteall.immersive_portals.my_util.MyTaskList;
-import com.qouteall.immersive_portals.portal.PortalExtension;
-import com.qouteall.immersive_portals.portal.PortalManipulation;
+import qouteall.imm_ptl.core.IPGlobal;
+import qouteall.imm_ptl.core.McHelper;
+import qouteall.imm_ptl.core.chunk_loading.ChunkLoader;
+import qouteall.imm_ptl.core.chunk_loading.DimensionalChunkPos;
+import qouteall.imm_ptl.core.chunk_loading.NewChunkTrackingGraph;
+import qouteall.imm_ptl.core.portal.PortalExtension;
+import qouteall.imm_ptl.core.portal.PortalManipulation;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
@@ -29,6 +26,9 @@ import org.apache.commons.lang3.Validate;
 import qouteall.mini_scaled.block.BoxBarrierBlock;
 import qouteall.mini_scaled.block.ScaleBoxPlaceholderBlock;
 import qouteall.mini_scaled.block.ScaleBoxPlaceholderBlockEntity;
+import qouteall.q_misc_util.Helper;
+import qouteall.q_misc_util.my_util.IntBox;
+import qouteall.q_misc_util.my_util.MyTaskList;
 
 import java.util.Arrays;
 
@@ -238,7 +238,7 @@ public class ScaleBoxGeneration {
     private static void loadChunksAndDo1(ChunkLoader chunkLoader, Runnable runnable) {
         NewChunkTrackingGraph.addGlobalAdditionalChunkLoader(chunkLoader);
         
-        ModMain.serverTaskList.addTask(MyTaskList.withDelayCondition(
+        IPGlobal.serverTaskList.addTask(MyTaskList.withDelayCondition(
             () -> chunkLoader.getLoadedChunkNum() < chunkLoader.getChunkNum(),
             MyTaskList.oneShotTask(() -> {
                 NewChunkTrackingGraph.removeGlobalAdditionalChunkLoader(chunkLoader);

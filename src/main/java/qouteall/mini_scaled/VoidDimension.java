@@ -2,9 +2,6 @@ package qouteall.mini_scaled;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
-import com.qouteall.immersive_portals.Helper;
-import com.qouteall.immersive_portals.McHelper;
-import com.qouteall.immersive_portals.api.IPDimensionAPI;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.block.Blocks;
@@ -27,12 +24,15 @@ import net.minecraft.world.gen.chunk.FlatChunkGenerator;
 import net.minecraft.world.gen.chunk.FlatChunkGeneratorConfig;
 import net.minecraft.world.gen.chunk.FlatChunkGeneratorLayer;
 import net.minecraft.world.gen.chunk.StructuresConfig;
+import qouteall.imm_ptl.core.McHelper;
+import qouteall.q_misc_util.Helper;
+import qouteall.q_misc_util.api.DimensionAPI;
 
 import java.util.Optional;
 
 public class VoidDimension {
     public static final RegistryKey<World> dimensionId = RegistryKey.of(
-        Registry.DIMENSION,
+        Registry.WORLD_KEY,
         new Identifier("mini_scaled:void")
     );
     
@@ -52,18 +52,18 @@ public class VoidDimension {
         
         Identifier dimId = new Identifier("mini_scaled:void");
         
-        IPDimensionAPI.addDimension(
+        DimensionAPI.addDimension(
             0,
             registry,
             dimId,
             () -> dimType,
             createVoidGenerator(registryManager)
         );
-        IPDimensionAPI.markDimensionNonPersistent(dimId);
+        DimensionAPI.markDimensionNonPersistent(dimId);
     }
     
     private static ChunkGenerator createVoidGenerator(DynamicRegistryManager rm) {
-        MutableRegistry<Biome> biomeRegistry = rm.get(Registry.BIOME_KEY);
+        Registry<Biome> biomeRegistry = rm.get(Registry.BIOME_KEY);
         
         StructuresConfig structuresConfig = new StructuresConfig(
             Optional.of(StructuresConfig.DEFAULT_STRONGHOLD),

@@ -1,7 +1,5 @@
 package qouteall.mini_scaled.block;
 
-import com.qouteall.immersive_portals.ModMain;
-import com.qouteall.immersive_portals.my_util.MyTaskList;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.block.AbstractBlock;
@@ -10,6 +8,8 @@ import net.minecraft.block.BlockState;
 import net.minecraft.block.BlockWithEntity;
 import net.minecraft.block.Material;
 import net.minecraft.block.entity.BlockEntity;
+import net.minecraft.block.entity.BlockEntityTicker;
+import net.minecraft.block.entity.BlockEntityType;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.ItemScatterer;
@@ -17,7 +17,10 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.registry.Registry;
 import net.minecraft.world.BlockView;
 import net.minecraft.world.World;
+import org.jetbrains.annotations.Nullable;
+import qouteall.imm_ptl.core.IPGlobal;
 import qouteall.mini_scaled.ScaleBoxItem;
+import qouteall.q_misc_util.my_util.MyTaskList;
 
 public class ScaleBoxPlaceholderBlock extends BlockWithEntity {
     public static final ScaleBoxPlaceholderBlock instance = new ScaleBoxPlaceholderBlock(
@@ -52,12 +55,6 @@ public class ScaleBoxPlaceholderBlock extends BlockWithEntity {
         return 1.0F;
     }
     
-    // nullable
-    @Override
-    public BlockEntity createBlockEntity(BlockView world) {
-        return new ScaleBoxPlaceholderBlockEntity();
-    }
-    
     @Override
     public void onStateReplaced(BlockState state, World world, BlockPos pos, BlockState newState, boolean moved) {
         if (newState.getBlock() != this) {
@@ -65,7 +62,7 @@ public class ScaleBoxPlaceholderBlock extends BlockWithEntity {
             if (blockEntity != null) {
                 ScaleBoxPlaceholderBlockEntity be = (ScaleBoxPlaceholderBlockEntity) blockEntity;
                 int boxId = be.boxId;
-                ModMain.serverTaskList.addTask(MyTaskList.oneShotTask(() -> {
+                IPGlobal.serverTaskList.addTask(MyTaskList.oneShotTask(() -> {
                     ScaleBoxPlaceholderBlockEntity.checkBlockIntegrity(boxId);
                 }));
                 ItemStack itemToDrop = ScaleBoxItem.boxIdToItem(boxId);
@@ -79,4 +76,19 @@ public class ScaleBoxPlaceholderBlock extends BlockWithEntity {
         
         super.onStateReplaced(state, world, pos, newState, moved);
     }
+    
+    @Nullable
+    @Override
+    public BlockEntity createBlockEntity(BlockPos pos, BlockState state) {
+        return new ScaleBoxPlaceholderBlockEntity(pos, state);
+    }
+    
+    @Nullable
+    public <T extends BlockEntity> BlockEntityTicker<T> getTicker(World world, BlockState state, BlockEntityType<T> type) {
+        return checkType(
+            type, ScaleBoxPlaceholderBlockEntity.blockEntityType,
+            ScaleBoxPlaceholderBlockEntity::staticTick
+        );
+    }
+    
 }

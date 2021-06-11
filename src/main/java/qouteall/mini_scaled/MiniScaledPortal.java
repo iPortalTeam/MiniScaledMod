@@ -1,8 +1,5 @@
 package qouteall.mini_scaled;
 
-import com.qouteall.immersive_portals.Helper;
-import com.qouteall.immersive_portals.McHelper;
-import com.qouteall.immersive_portals.portal.Portal;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.object.builder.v1.entity.FabricEntityTypeBuilder;
@@ -13,13 +10,15 @@ import net.minecraft.entity.EntityPose;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.SpawnGroup;
 import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.NbtCompound;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.Box;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.util.registry.Registry;
 import net.minecraft.util.shape.VoxelShape;
 import net.minecraft.world.World;
+import qouteall.imm_ptl.core.McHelper;
+import qouteall.imm_ptl.core.portal.Portal;
 
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -52,15 +51,15 @@ public class MiniScaledPortal extends Portal {
     }
     
     @Override
-    protected void readCustomDataFromTag(CompoundTag compoundTag) {
-        super.readCustomDataFromTag(compoundTag);
+    protected void readCustomDataFromNbt(NbtCompound compoundTag) {
+        super.readCustomDataFromNbt(compoundTag);
         generation = compoundTag.getInt("generation");
         boxId = compoundTag.getInt("boxId");
     }
     
     @Override
-    protected void writeCustomDataToTag(CompoundTag compoundTag) {
-        super.writeCustomDataToTag(compoundTag);
+    protected void writeCustomDataToNbt(NbtCompound compoundTag) {
+        super.writeCustomDataToNbt(compoundTag);
         compoundTag.putInt("generation", generation);
         compoundTag.putInt("boxId", boxId);
     }
@@ -100,13 +99,13 @@ public class MiniScaledPortal extends Portal {
         ScaleBoxRecord.Entry entry = ScaleBoxRecord.getEntryById(boxId);
         if (entry == null) {
             System.err.println("no scale box record " + boxId + this);
-            remove();
+            remove(RemovalReason.KILLED);
             return;
         }
         
         if (generation != entry.generation) {
             System.out.println("removing old portal " + this);
-            remove();
+            remove(RemovalReason.KILLED);
             return;
         }
     }

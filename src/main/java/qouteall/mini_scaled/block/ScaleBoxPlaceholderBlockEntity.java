@@ -1,56 +1,56 @@
 package qouteall.mini_scaled.block;
 
-import com.qouteall.immersive_portals.McHelper;
+import net.fabricmc.fabric.api.object.builder.v1.block.entity.FabricBlockEntityTypeBuilder;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
+import net.minecraft.block.entity.BeaconBlockEntity;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.block.entity.BlockEntityType;
-import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.NbtCompound;
 import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.Tickable;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.registry.Registry;
 import net.minecraft.util.registry.RegistryKey;
 import net.minecraft.world.World;
 import org.apache.commons.lang3.Validate;
+import qouteall.imm_ptl.core.McHelper;
 import qouteall.mini_scaled.ScaleBoxRecord;
+import qouteall.q_misc_util.MiscHelper;
 
-public class ScaleBoxPlaceholderBlockEntity extends BlockEntity implements Tickable {
+public class ScaleBoxPlaceholderBlockEntity extends BlockEntity {
     public static BlockEntityType<ScaleBoxPlaceholderBlockEntity> blockEntityType;
     
     public static void init() {
         blockEntityType = Registry.register(
             Registry.BLOCK_ENTITY_TYPE,
             "mini_scaled:placeholder_block_entity",
-            BlockEntityType.Builder.create(
+            FabricBlockEntityTypeBuilder.create(
                 ScaleBoxPlaceholderBlockEntity::new,
                 ScaleBoxPlaceholderBlock.instance
-            ).build(null)
+            ).build()
         );
     }
     
-    public ScaleBoxPlaceholderBlockEntity() {
-        super(blockEntityType);
+    public ScaleBoxPlaceholderBlockEntity(BlockPos blockPos, BlockState blockState) {
+        super(blockEntityType, blockPos, blockState);
     }
     
     public int boxId;
     
     @Override
-    public void fromTag(BlockState state, CompoundTag tag) {
-        super.fromTag(state, tag);
+    public void readNbt(NbtCompound tag) {
+        super.readNbt(tag);
         boxId = tag.getInt("boxId");
     }
     
     @Override
-    public CompoundTag toTag(CompoundTag tag) {
-        super.toTag(tag);
+    public NbtCompound writeNbt(NbtCompound tag) {
+        super.writeNbt(tag);
         tag.putInt("boxId", boxId);
         return tag;
     }
     
-    
-    @Override
-    public void tick() {
+    public void doTick() {
         if (world.isClient()) {
             return;
         }
@@ -60,6 +60,10 @@ public class ScaleBoxPlaceholderBlockEntity extends BlockEntity implements Ticka
         }
         
         checkValidity();
+    }
+    
+    public static void staticTick(World world, BlockPos pos, BlockState state, ScaleBoxPlaceholderBlockEntity blockEntity) {
+        blockEntity.doTick();
     }
     
     public void checkValidity() {
@@ -117,7 +121,7 @@ public class ScaleBoxPlaceholderBlockEntity extends BlockEntity implements Ticka
         }
         BlockPos currentEntrancePos = entry.currentEntrancePos;
         
-        ServerWorld entranceWorld = McHelper.getServer().getWorld(currentEntranceDim);
+        ServerWorld entranceWorld = MiscHelper.getServer().getWorld(currentEntranceDim);
         if (entranceWorld == null) {
             System.err.println("invalid entrance dim " + currentEntranceDim);
             return;
