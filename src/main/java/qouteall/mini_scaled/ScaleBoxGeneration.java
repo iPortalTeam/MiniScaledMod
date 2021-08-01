@@ -167,6 +167,15 @@ public class ScaleBoxGeneration {
         return new BlockPos(xIndex * 16 * 32, 64, zIndex * 16 * 32);
     }
     
+    public static BlockPos getNearestPosInScaleBoxToTeleportTo(BlockPos pos) {
+        double gridLen = 16.0 * 32;
+        return new BlockPos(
+            Math.round(pos.getX() / gridLen) * gridLen + 5,
+            64 + 5,
+            Math.round(pos.getZ() / gridLen) * gridLen + 5
+        );
+    }
+    
     private static BlockPos selectCoordinateFromBox(IntBox box, boolean high) {
         return high ? box.h : box.l;
     }
@@ -233,19 +242,6 @@ public class ScaleBoxGeneration {
                 selectCoordinateFromBox(box, true, true, true)
             )
         };
-    }
-    
-    //todo change to the one in IP
-    private static void loadChunksAndDo1(ChunkLoader chunkLoader, Runnable runnable) {
-        NewChunkTrackingGraph.addGlobalAdditionalChunkLoader(chunkLoader);
-        
-        IPGlobal.serverTaskList.addTask(MyTaskList.withDelayCondition(
-            () -> chunkLoader.getLoadedChunkNum() < chunkLoader.getChunkNum(),
-            MyTaskList.oneShotTask(() -> {
-                NewChunkTrackingGraph.removeGlobalAdditionalChunkLoader(chunkLoader);
-                runnable.run();
-            })
-        ));
     }
     
     private static void initializeInnerBoxBlocks(ScaleBoxRecord.Entry entry) {

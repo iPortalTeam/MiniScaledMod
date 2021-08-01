@@ -19,6 +19,7 @@ import net.minecraft.util.math.Vec3d;
 import net.minecraft.util.registry.Registry;
 import net.minecraft.util.shape.VoxelShape;
 import net.minecraft.world.World;
+import qouteall.imm_ptl.core.IPGlobal;
 import qouteall.imm_ptl.core.McHelper;
 import qouteall.imm_ptl.core.portal.Portal;
 
@@ -142,8 +143,14 @@ public class MiniScaledPortal extends Portal {
                 
                 ClientPlayerEntity player = (ClientPlayerEntity) entity;
                 if (player.getPose() == EntityPose.CROUCHING) {
-                    player.setPos(player.getX(), player.getY() - 0.01, player.getZ());
-                    McHelper.updateBoundingBox(player);
+                    IPGlobal.clientTaskList.addTask(() -> {
+                        if (player.world == world) {
+                            // changing player pos immediately may cause ConcurrentModificationExcetpion
+                            player.setPos(player.getX(), player.getY() - 0.01, player.getZ());
+                            McHelper.updateBoundingBox(player);
+                        }
+                        return true;
+                    });
                 }
                 
                 Vec3d velocity = entity.getVelocity();
