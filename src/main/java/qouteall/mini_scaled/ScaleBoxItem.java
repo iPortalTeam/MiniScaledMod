@@ -97,7 +97,7 @@ public class ScaleBoxItem extends Item {
         }
         
         ItemStack stack = context.getStack();
-        ItemInfo itemInfo = new ItemInfo(stack.getOrCreateTag());
+        ItemInfo itemInfo = new ItemInfo(stack.getOrCreateNbt());
         
         ServerPlayerEntity player = (ServerPlayerEntity) context.getPlayer();
         
@@ -123,7 +123,7 @@ public class ScaleBoxItem extends Item {
     @Override
     public void appendTooltip(ItemStack stack, World world, List<Text> tooltip, TooltipContext context) {
         super.appendTooltip(stack, world, tooltip, context);
-        ItemInfo itemInfo = new ItemInfo(stack.getOrCreateTag());
+        ItemInfo itemInfo = new ItemInfo(stack.getOrCreateNbt());
         tooltip.add(new TranslatableText("mini_scaled.color")
             .append(getColorText(itemInfo.color).formatted(Formatting.GOLD))
         );
@@ -145,7 +145,7 @@ public class ScaleBoxItem extends Item {
                     ItemStack itemStack = new ItemStack(instance);
                     
                     ItemInfo itemInfo = new ItemInfo(size, dyeColor);
-                    itemInfo.writeToTag(itemStack.getOrCreateTag());
+                    itemInfo.writeToTag(itemStack.getOrCreateNbt());
                     
                     stacks.add(itemStack);
                 }
@@ -157,7 +157,7 @@ public class ScaleBoxItem extends Item {
     
     @Override
     public Text getName(ItemStack stack) {
-        ItemInfo itemInfo = new ItemInfo(stack.getOrCreateTag());
+        ItemInfo itemInfo = new ItemInfo(stack.getOrCreateNbt());
         DyeColor color = itemInfo.color;
         MutableText result = new TranslatableText("item.mini_scaled.scale_box_item")
             .append(spaceText)
@@ -187,7 +187,7 @@ public class ScaleBoxItem extends Item {
         ItemStack itemStack = new ItemStack(ScaleBoxItem.instance);
         new ScaleBoxItem.ItemInfo(
             entry.size, entry.color, entry.ownerId, entry.ownerNameCache
-        ).writeToTag(itemStack.getOrCreateTag());
+        ).writeToTag(itemStack.getOrCreateNbt());
         
         return itemStack;
     }

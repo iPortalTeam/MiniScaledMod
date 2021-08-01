@@ -30,7 +30,7 @@ public class ScaleBoxRecord extends PersistentState {
     
     public static ScaleBoxRecord get() {
         ServerWorld overworld = MiscHelper.getServer().getOverworld();
-    
+        
         return overworld.getPersistentStateManager().getOrCreate(
             (nbt) -> {
                 ScaleBoxRecord record = new ScaleBoxRecord();
@@ -97,14 +97,14 @@ public class ScaleBoxRecord extends PersistentState {
         public Entry() {
         
         }
-    
+        
         IntBox getAreaBox() {
             return IntBox.getBoxByBasePointAndSize(
                 new BlockPos(this.size, this.size, this.size),
                 this.innerBoxPos
             );
         }
-    
+        
         void readFromNbt(NbtCompound tag) {
             id = tag.getInt("id");
             innerBoxPos = Helper.getVec3i(tag, "innerBoxPos");
