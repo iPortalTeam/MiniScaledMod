@@ -179,6 +179,7 @@ public class ScaleBoxGeneration {
         );
     }
     
+    // TODO change to use IP's version
     private static IntBox[] get12Edges(IntBox box) {
         return new IntBox[]{
             new IntBox(
@@ -262,7 +263,7 @@ public class ScaleBoxGeneration {
         
         // set block after fulling loading the chunk
         // to avoid lighting problems
-        loadChunksAndDo1(chunkLoader, () -> {
+        chunkLoader.loadChunksAndDo(() -> {
             IntBox expanded = box.getAdjusted(-1, -1, -1, 1, 1, 1);
             
             for (Direction direction : Direction.values()) {
@@ -279,8 +280,6 @@ public class ScaleBoxGeneration {
                     voidWorld.setBlockState(blockPos, frameBlock);
                 });
             }
-            
-            voidWorld.setBlockState(box.l, Blocks.BEDROCK.getDefaultState());
         });
         
     }
