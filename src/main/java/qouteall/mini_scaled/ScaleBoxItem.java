@@ -191,4 +191,15 @@ public class ScaleBoxItem extends Item {
         
         return itemStack;
     }
+    
+    public static int getRenderingColor(ItemStack stack) {
+        NbtCompound nbt = stack.getNbt();
+        if (nbt == null) {
+            return 0;
+        }
+        // does not use ItemInfo to improve performance
+        String colorText = nbt.getString("color");
+        DyeColor dyeColor = DyeColor.byName(colorText, DyeColor.BLACK);
+        return dyeColor.getMapColor().color;
+    }
 }

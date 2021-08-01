@@ -136,26 +136,26 @@ public class MiniScaledPortal extends Portal {
     private void onCollidingWithEntityClientOnly(Entity entity) {
         if (isOuterPortal() && (getNormal().y > 0.9)) {
             if (entity instanceof ClientPlayerEntity) {
-
+                
                 ClientPlayerEntity player = (ClientPlayerEntity) entity;
                 if (player.getPose() == EntityPose.CROUCHING) {
                     player.setPos(player.getX(), player.getY() - 0.01, player.getZ());
                     McHelper.updateBoundingBox(player);
                 }
-
+                
                 Vec3d velocity = entity.getVelocity();
-                if (velocity.y < 0) {
+                if (velocity.y < 0 && player.getY() < getY()) {
                     entity.setVelocity(new Vec3d(velocity.x, velocity.y * 0.4, velocity.z));
                 }
             }
         }
-
+        
     }
     
     @Override
     public void transformVelocity(Entity entity) {
         super.transformVelocity(entity);
-
+        
         if (isOuterPortal() && getNormal().y > 0.9) {
             entity.setVelocity(entity.getVelocity().multiply(0.5));
         }
