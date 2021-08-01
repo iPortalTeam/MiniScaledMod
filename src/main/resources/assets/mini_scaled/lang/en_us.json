@@ -2,5 +2,6 @@
   "item.mini_scaled.scale_box_item": "Scale Box",
   "mini_scaled.color": "Color: ",
   "mini_scaled.size": "Size: ",
-  "mini_scaled.owner": "Owner: "
+  "mini_scaled.owner": "Owner: ",
+  "mini_scaled.press_shift": "Press %1$s to Descend into the Scale Box"
 }

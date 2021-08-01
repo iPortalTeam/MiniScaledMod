@@ -3,6 +3,7 @@ package qouteall.mini_scaled;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.object.builder.v1.entity.FabricEntityTypeBuilder;
+import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityDimensions;
@@ -11,6 +12,7 @@ import net.minecraft.entity.EntityType;
 import net.minecraft.entity.SpawnGroup;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.nbt.NbtCompound;
+import net.minecraft.text.TranslatableText;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.Box;
 import net.minecraft.util.math.Vec3d;
@@ -136,6 +138,7 @@ public class MiniScaledPortal extends Portal {
     private void onCollidingWithEntityClientOnly(Entity entity) {
         if (isOuterPortal() && (getNormal().y > 0.9)) {
             if (entity instanceof ClientPlayerEntity) {
+                showShiftDescendMessage();
                 
                 ClientPlayerEntity player = (ClientPlayerEntity) entity;
                 if (player.getPose() == EntityPose.CROUCHING) {
@@ -168,6 +171,25 @@ public class MiniScaledPortal extends Portal {
     @Environment(EnvType.CLIENT)
     private void tickClient() {
     
+    }
+    
+    private static boolean messageShown = false;
+    
+    private void showShiftDescendMessage() {
+        if (messageShown) {
+            return;
+        }
+        messageShown = true;
+        
+        MinecraftClient client = MinecraftClient.getInstance();
+        
+        client.inGameHud.setOverlayMessage(
+            new TranslatableText(
+                "mini_scaled.press_shift",
+                client.options.keySneak.getBoundKeyLocalizedText()
+            ),
+            false
+        );
     }
     
 }
