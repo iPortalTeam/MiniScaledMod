@@ -37,9 +37,9 @@ dependencies {
 		transitive(false)
 	}
 
-//	modImplementation('com.github.qouteall:sodium-fabric:5cfc6674') {
-//		transitive = false
-//	}
+	modImplementation('com.github.qouteall:sodium-fabric:5cfc6674') {
+		transitive = false
+	}
 }
 
 processResources {
@@ -72,6 +72,13 @@ java {
 //		rename { "${it}_${project.archivesBaseName}"}
 //	}
 //}
+
+afterEvaluate {
+	remapJar {
+		input = file("${project.buildDir}/libs/$archivesBaseName-$version-dev.jar")
+		archiveName = "${archivesBaseName}-${version}-mc${project.minecraft_version}-fabric.jar"
+	}
+}
 
 // configure the maven publication
 publishing {
