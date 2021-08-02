@@ -254,7 +254,7 @@ public class ScaleBoxGeneration {
                 voidWorld.getRegistryKey(),
                 new ChunkPos(box.l)
             ),
-            0
+            2
         );
         
         // set block after fulling loading the chunk

@@ -15,7 +15,7 @@ import net.minecraft.world.BlockView;
 public class BoxBarrierBlock extends Block {
     public static final BoxBarrierBlock instance = new BoxBarrierBlock(
         AbstractBlock.Settings.of(Material.BARRIER)
-            .strength(0.3F)
+            .strength(-1.0F, 3600000.0F)
             .dropsNothing().nonOpaque()
             .noCollision()
     );
