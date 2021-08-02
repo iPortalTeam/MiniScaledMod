@@ -141,7 +141,8 @@ public class MiniScaledPortal extends Portal {
             if (entity instanceof ClientPlayerEntity) {
                 showShiftDescendMessage();
                 
-                ClientPlayerEntity player = (ClientPlayerEntity) entity;
+                // not ClientPlayerEntity to avoid dedicated server crash
+                PlayerEntity player = (PlayerEntity) entity;
                 if (player.getPose() == EntityPose.CROUCHING) {
                     IPGlobal.clientTaskList.addTask(() -> {
                         if (player.world == world) {
@@ -182,6 +183,7 @@ public class MiniScaledPortal extends Portal {
     
     private static boolean messageShown = false;
     
+    @Environment(EnvType.CLIENT)
     private void showShiftDescendMessage() {
         if (messageShown) {
             return;
