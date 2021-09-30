@@ -24,9 +24,9 @@ import net.minecraft.world.World;
 import java.util.List;
 import java.util.UUID;
 
-public class ScaleBoxItem extends Item {
+public class ScaleBoxEntranceItem extends Item {
     
-    public static final ScaleBoxItem instance = new ScaleBoxItem(new Item.Settings().group(ItemGroup.MISC));
+    public static final ScaleBoxEntranceItem instance = new ScaleBoxEntranceItem(new Item.Settings().group(ItemGroup.MISC));
     
     public static void init() {
         Registry.register(
@@ -73,7 +73,7 @@ public class ScaleBoxItem extends Item {
         }
     }
     
-    public ScaleBoxItem(Settings settings) {
+    public ScaleBoxEntranceItem(Settings settings) {
         super(settings);
     }
     
@@ -184,8 +184,8 @@ public class ScaleBoxItem extends Item {
             return null;
         }
         
-        ItemStack itemStack = new ItemStack(ScaleBoxItem.instance);
-        new ScaleBoxItem.ItemInfo(
+        ItemStack itemStack = new ItemStack(ScaleBoxEntranceItem.instance);
+        new ScaleBoxEntranceItem.ItemInfo(
             entry.size, entry.color, entry.ownerId, entry.ownerNameCache
         ).writeToTag(itemStack.getOrCreateNbt());
         

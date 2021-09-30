@@ -3,14 +3,12 @@ package qouteall.mini_scaled;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.entity.Entity;
-import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.LiteralText;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
-import net.minecraft.util.registry.RegistryKey;
 import net.minecraft.world.World;
 import qouteall.imm_ptl.core.IPGlobal;
 import qouteall.imm_ptl.core.teleportation.ServerTeleportationManager;
@@ -18,8 +16,6 @@ import qouteall.mini_scaled.block.BoxBarrierBlock;
 import qouteall.mini_scaled.block.ScaleBoxPlaceholderBlock;
 import qouteall.mini_scaled.block.ScaleBoxPlaceholderBlockEntity;
 import qouteall.q_misc_util.api.DimensionAPI;
-
-import java.util.Optional;
 
 public class MiniScaledModInitializer implements ModInitializer {
     
@@ -36,7 +32,7 @@ public class MiniScaledModInitializer implements ModInitializer {
         
         MiniScaledPortal.init();
         
-        ScaleBoxItem.init();
+        ScaleBoxEntranceItem.init();
         
         ScaleBoxCraftingRecipe.init();
         

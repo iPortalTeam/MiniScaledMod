@@ -28,18 +28,18 @@ dependencies {
 	// Fabric API. This is technically optional, but you probably want it anyway.
 	modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
 
-	modImplementation ('com.github.qouteall.ImmersivePortalsMod:imm_ptl_core:1.17-SNAPSHOT'){
+	modImplementation ('com.github.qouteall.ImmersivePortalsMod:imm_ptl_core:v0.29-1.17'){
 		exclude(group: "net.fabricmc.fabric-api")
 		transitive(false)
 	}
-	modImplementation ('com.github.qouteall.ImmersivePortalsMod:q_misc_util:1.17-SNAPSHOT'){
+	modImplementation ('com.github.qouteall.ImmersivePortalsMod:q_misc_util:v0.29-1.17'){
 		exclude(group: "net.fabricmc.fabric-api")
 		transitive(false)
 	}
 
-	modImplementation('com.github.qouteall:sodium-fabric:5cfc6674') {
-		transitive = false
-	}
+//	modImplementation('com.github.qouteall:sodium-fabric:5cfc6674') {
+//		transitive = false
+//	}
 }
 
 processResources {

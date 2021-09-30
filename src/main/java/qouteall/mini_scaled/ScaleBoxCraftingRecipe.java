@@ -87,8 +87,8 @@ public class ScaleBoxCraftingRecipe extends SpecialCraftingRecipe {
             size = 32;
         }
         
-        ItemStack itemStack = new ItemStack(ScaleBoxItem.instance);
-        ScaleBoxItem.ItemInfo itemInfo = new ScaleBoxItem.ItemInfo(size, dyeItem.getColor());
+        ItemStack itemStack = new ItemStack(ScaleBoxEntranceItem.instance);
+        ScaleBoxEntranceItem.ItemInfo itemInfo = new ScaleBoxEntranceItem.ItemInfo(size, dyeItem.getColor());
         itemInfo.writeToTag(itemStack.getOrCreateNbt());
         return itemStack;
     }

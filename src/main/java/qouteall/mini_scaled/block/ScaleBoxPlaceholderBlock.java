@@ -19,7 +19,7 @@ import net.minecraft.world.BlockView;
 import net.minecraft.world.World;
 import org.jetbrains.annotations.Nullable;
 import qouteall.imm_ptl.core.IPGlobal;
-import qouteall.mini_scaled.ScaleBoxItem;
+import qouteall.mini_scaled.ScaleBoxEntranceItem;
 import qouteall.q_misc_util.my_util.MyTaskList;
 
 public class ScaleBoxPlaceholderBlock extends BlockWithEntity {
@@ -65,7 +65,7 @@ public class ScaleBoxPlaceholderBlock extends BlockWithEntity {
                 IPGlobal.serverTaskList.addTask(MyTaskList.oneShotTask(() -> {
                     ScaleBoxPlaceholderBlockEntity.checkBlockIntegrity(boxId);
                 }));
-                ItemStack itemToDrop = ScaleBoxItem.boxIdToItem(boxId);
+                ItemStack itemToDrop = ScaleBoxEntranceItem.boxIdToItem(boxId);
                 if (itemToDrop != null) {
                     ItemScatterer.spawn(
                         world, pos.getX(), pos.getY(), pos.getZ(), itemToDrop
