@@ -5,7 +5,7 @@ import com.google.common.collect.Maps;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.block.Blocks;
-import net.minecraft.client.render.SkyProperties;
+import net.minecraft.client.render.DimensionEffects;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.Vec3d;
@@ -82,9 +82,9 @@ public class VoidDimension {
     }
     
     @Environment(EnvType.CLIENT)
-    public static class VoidSkyProperties extends SkyProperties {
+    public static class VoidSkyProperties extends DimensionEffects {
         public VoidSkyProperties() {
-            super(Float.NaN, true, SkyProperties.SkyType.NORMAL, false, false);
+            super(Float.NaN, true, DimensionEffects.SkyType.NORMAL, false, false);
         }
         
         public Vec3d adjustFogColor(Vec3d color, float sunHeight) {

@@ -1,10 +1,10 @@
 plugins {
-	id 'fabric-loom' version '0.8-SNAPSHOT'
+	id 'fabric-loom' version '0.10-SNAPSHOT'
 	id 'maven-publish'
 }
 
-sourceCompatibility = JavaVersion.VERSION_16
-targetCompatibility = JavaVersion.VERSION_16
+sourceCompatibility = JavaVersion.VERSION_17
+targetCompatibility = JavaVersion.VERSION_17
 
 archivesBaseName = project.archives_base_name
 version = project.mod_version
@@ -28,11 +28,11 @@ dependencies {
 	// Fabric API. This is technically optional, but you probably want it anyway.
 	modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
 
-	modImplementation ('com.github.qouteall.ImmersivePortalsMod:imm_ptl_core:v0.29-1.17'){
+	modImplementation ('com.github.qouteall.ImmersivePortalsMod:imm_ptl_core:v1.2.5-1.18'){
 		exclude(group: "net.fabricmc.fabric-api")
 		transitive(false)
 	}
-	modImplementation ('com.github.qouteall.ImmersivePortalsMod:q_misc_util:v0.29-1.17'){
+	modImplementation ('com.github.qouteall.ImmersivePortalsMod:q_misc_util:v1.2.5-1.18'){
 		exclude(group: "net.fabricmc.fabric-api")
 		transitive(false)
 	}
@@ -57,7 +57,7 @@ tasks.withType(JavaCompile).configureEach {
 	// If Javadoc is generated, this must be specified in that task too.
 	it.options.encoding = "UTF-8"
 
-	it.options.release = 16
+	it.options.release = 17
 }
 
 java {

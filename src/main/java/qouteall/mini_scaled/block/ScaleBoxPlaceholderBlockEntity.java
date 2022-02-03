@@ -44,10 +44,9 @@ public class ScaleBoxPlaceholderBlockEntity extends BlockEntity {
     }
     
     @Override
-    public NbtCompound writeNbt(NbtCompound tag) {
+    public void writeNbt(NbtCompound tag) {
         super.writeNbt(tag);
         tag.putInt("boxId", boxId);
-        return tag;
     }
     
     public void doTick() {
