@@ -20,6 +20,8 @@ import net.minecraft.util.collection.DefaultedList;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.registry.Registry;
 import net.minecraft.world.World;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 import java.util.UUID;
@@ -39,7 +41,9 @@ public class ScaleBoxEntranceItem extends Item {
     public static class ItemInfo {
         public int size;
         public DyeColor color;
+        @Nullable
         public UUID ownerId;
+        @Nullable
         public String ownerNameCache;
         
         public ItemInfo(int size, DyeColor color) {
@@ -47,7 +51,7 @@ public class ScaleBoxEntranceItem extends Item {
             this.color = color;
         }
         
-        public ItemInfo(int size, DyeColor color, UUID ownerId, String ownerNameCache) {
+        public ItemInfo(int size, DyeColor color, @NotNull UUID ownerId, @NotNull String ownerNameCache) {
             this.size = size;
             this.color = color;
             this.ownerId = ownerId;
@@ -107,9 +111,19 @@ public class ScaleBoxEntranceItem extends Item {
             return ActionResult.FAIL;
         }
         
+        UUID ownerId = itemInfo.ownerId;
+        String ownerNameCache = itemInfo.ownerNameCache;
+        
+        if (ownerId == null) {
+            ownerId = player.getUuid();
+        }
+        if (ownerNameCache == null) {
+            ownerNameCache = player.getName().asString();
+        }
+        
         ScaleBoxGeneration.putScaleBox(
             ((ServerWorld) world),
-            player,
+            ownerId, ownerNameCache,
             size,
             pos,
             itemInfo.color

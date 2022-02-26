@@ -31,20 +31,21 @@ import qouteall.q_misc_util.my_util.IntBox;
 import qouteall.q_misc_util.my_util.MyTaskList;
 
 import java.util.Arrays;
+import java.util.UUID;
 
 public class ScaleBoxGeneration {
     static final int[] supportedSizes = {8, 16, 32};
     
     public static void putScaleBox(
         ServerWorld world,
-        ServerPlayerEntity player,
+        UUID playerId, String playerName,
         int size,
         BlockPos outerBoxPos,
         DyeColor color
     ) {
         ScaleBoxRecord record = ScaleBoxRecord.get();
         
-        ScaleBoxRecord.Entry entry = getOrCreateEntry(player, size, color, record);
+        ScaleBoxRecord.Entry entry = getOrCreateEntry(playerId, playerName, size, color, record);
         
         entry.currentEntranceDim = world.getRegistryKey();
         entry.currentEntrancePos = outerBoxPos;
@@ -129,10 +130,12 @@ public class ScaleBoxGeneration {
     
     
     private static ScaleBoxRecord.Entry getOrCreateEntry(
-        ServerPlayerEntity player, int size, DyeColor color, ScaleBoxRecord record
+        UUID playerId, String playerName, int size, DyeColor color, ScaleBoxRecord record
     ) {
+        Validate.notNull(playerId);
+        
         ScaleBoxRecord.Entry entry = record.entries.stream().filter(e -> {
-            return e.ownerId.equals(player.getUuid()) && e.color == color &&
+            return e.ownerId.equals(playerId) && e.color == color &&
                 e.size == size;
         }).findFirst().orElse(null);
         
@@ -141,8 +144,8 @@ public class ScaleBoxGeneration {
             ScaleBoxRecord.Entry newEntry = new ScaleBoxRecord.Entry();
             newEntry.id = newId;
             newEntry.color = color;
-            newEntry.ownerId = player.getUuid();
-            newEntry.ownerNameCache = player.getName().asString();
+            newEntry.ownerId = playerId;
+            newEntry.ownerNameCache = playerName;
             newEntry.size = size;
             newEntry.generation = 0;
             newEntry.innerBoxPos = allocateInnerBoxPos(newId);
