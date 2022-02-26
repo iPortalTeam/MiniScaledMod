@@ -109,7 +109,7 @@ public class ScaleBoxEntranceItem extends Item {
         
         ScaleBoxGeneration.putScaleBox(
             ((ServerWorld) world),
-            player,
+            itemInfo.ownerId, itemInfo.ownerNameCache,
             size,
             pos,
             itemInfo.color
