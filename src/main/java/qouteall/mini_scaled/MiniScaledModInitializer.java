@@ -36,6 +36,8 @@ public class MiniScaledModInitializer implements ModInitializer {
         
         ScaleBoxCraftingRecipe.init();
         
+        ScaleBoxEntranceCreation.init();
+        
         IPGlobal.enableDepthClampForPortalRendering = true;
         
         ServerTickEvents.END_SERVER_TICK.register(MiniScaledModInitializer::teleportFallenEntities);

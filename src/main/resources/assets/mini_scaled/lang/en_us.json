@@ -3,5 +3,6 @@
   "mini_scaled.color": "Color: ",
   "mini_scaled.size": "Size: ",
   "mini_scaled.owner": "Owner: ",
-  "mini_scaled.press_shift": "Press %1$s to Descend into the Scale Box"
+  "mini_scaled.press_shift": "Press %1$s to Descend into the Scale Box",
+  "mini_scaled.invalid_box_size": "The glass box size %1$s is invalid. It should be either 8x8x8 or 16x16x16 or 32x32x32"
 }

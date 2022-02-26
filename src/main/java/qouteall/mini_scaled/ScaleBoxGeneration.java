@@ -268,7 +268,7 @@ public class ScaleBoxGeneration {
                 });
             }
             
-            Block woolBlock = Registry.BLOCK.get(new Identifier("minecraft:" + entry.color.getName() + "_wool"));
+            Block woolBlock = Registry.BLOCK.get(new Identifier("minecraft:" + entry.color.getName() + "_stained_glass"));
             BlockState frameBlock = woolBlock.getDefaultState();
             
             for (IntBox edge : get12Edges(box)) {

@@ -24,3 +24,6 @@ You can put a scale box inside itself and create a fractal.
 
 When you are standing on the top of a scale box, press shift to descend.
 
+In creative mode you can get scale box entrances in the Miscellaneous tab
+
+![scale box misc tab.png](https://i.loli.net/2021/09/30/bSmanXtOcPHl1rQ.png)
