@@ -195,7 +195,7 @@ public class MiniScaledPortal extends Portal {
         client.inGameHud.setOverlayMessage(
             new TranslatableText(
                 "mini_scaled.press_shift",
-                client.options.keySneak.getBoundKeyLocalizedText()
+                client.options.sneakKey.getBoundKeyLocalizedText()
             ),
             false
         );

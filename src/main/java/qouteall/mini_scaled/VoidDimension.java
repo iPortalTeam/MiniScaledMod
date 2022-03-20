@@ -12,6 +12,7 @@ import net.minecraft.util.math.Vec3d;
 import net.minecraft.util.registry.DynamicRegistryManager;
 import net.minecraft.util.registry.MutableRegistry;
 import net.minecraft.util.registry.Registry;
+import net.minecraft.util.registry.RegistryEntry;
 import net.minecraft.util.registry.RegistryKey;
 import net.minecraft.util.registry.SimpleRegistry;
 import net.minecraft.world.World;
@@ -23,7 +24,6 @@ import net.minecraft.world.gen.chunk.ChunkGenerator;
 import net.minecraft.world.gen.chunk.FlatChunkGenerator;
 import net.minecraft.world.gen.chunk.FlatChunkGeneratorConfig;
 import net.minecraft.world.gen.chunk.FlatChunkGeneratorLayer;
-import net.minecraft.world.gen.chunk.StructuresConfig;
 import qouteall.imm_ptl.core.McHelper;
 import qouteall.q_misc_util.Helper;
 import qouteall.q_misc_util.api.DimensionAPI;
@@ -39,24 +39,16 @@ public class VoidDimension {
     static void initializeVoidDimension(
         GeneratorOptions generatorOptions, DynamicRegistryManager registryManager
     ) {
-        SimpleRegistry<DimensionOptions> registry = generatorOptions.getDimensions();
+        Registry<DimensionOptions> registry = generatorOptions.getDimensions();
         
-        DimensionType dimType = registryManager.get(Registry.DIMENSION_TYPE_KEY).get(
-            new Identifier("mini_scaled:void_dim_type")
-        );
-        
-        if (dimType == null) {
-            Helper.err("Missing dimension type mini_scaled:void_dim_type");
-            return;
-        }
+        RegistryEntry<DimensionType> dimType = registryManager.get(Registry.DIMENSION_TYPE_KEY).getEntry(
+            RegistryKey.of(Registry.DIMENSION_TYPE_KEY, new Identifier("mini_scaled:void_dim_type"))
+        ).orElseThrow(() -> new RuntimeException("Missing dimension type mini_scaled:void_dim_type"));
         
         Identifier dimId = new Identifier("mini_scaled:void");
         
         DimensionAPI.addDimension(
-            0,
-            registry,
-            dimId,
-            () -> dimType,
+            registry, dimId, dimType,
             createVoidGenerator(registryManager)
         );
         DimensionAPI.markDimensionNonPersistent(dimId);
@@ -65,16 +57,16 @@ public class VoidDimension {
     private static ChunkGenerator createVoidGenerator(DynamicRegistryManager rm) {
         Registry<Biome> biomeRegistry = rm.get(Registry.BIOME_KEY);
         
-        StructuresConfig structuresConfig = new StructuresConfig(
-            Optional.of(StructuresConfig.DEFAULT_STRONGHOLD),
-            Maps.newHashMap(ImmutableMap.of())
-        );
+        
         FlatChunkGeneratorConfig flatChunkGeneratorConfig =
-            new FlatChunkGeneratorConfig(structuresConfig, biomeRegistry);
+            new FlatChunkGeneratorConfig(Optional.empty(), biomeRegistry);
         flatChunkGeneratorConfig.getLayers().add(new FlatChunkGeneratorLayer(1, Blocks.AIR));
         flatChunkGeneratorConfig.updateLayerBlocks();
         
-        return new FlatChunkGenerator(flatChunkGeneratorConfig);
+        return new FlatChunkGenerator(
+            rm.get(Registry.STRUCTURE_SET_KEY),
+            flatChunkGeneratorConfig
+        );
     }
     
     public static ServerWorld getVoidWorld() {
@@ -88,7 +80,7 @@ public class VoidDimension {
         }
         
         public Vec3d adjustFogColor(Vec3d color, float sunHeight) {
-            return color.multiply((double)(sunHeight * 0.94F + 0.06F), (double)(sunHeight * 0.94F + 0.06F), (double)(sunHeight * 0.91F + 0.09F));
+            return color.multiply((double) (sunHeight * 0.94F + 0.06F), (double) (sunHeight * 0.94F + 0.06F), (double) (sunHeight * 0.91F + 0.09F));
         }
         
         public boolean useThickFog(int camX, int camY) {

@@ -15,6 +15,8 @@ import qouteall.imm_ptl.core.teleportation.ServerTeleportationManager;
 import qouteall.mini_scaled.block.BoxBarrierBlock;
 import qouteall.mini_scaled.block.ScaleBoxPlaceholderBlock;
 import qouteall.mini_scaled.block.ScaleBoxPlaceholderBlockEntity;
+import qouteall.q_misc_util.LifecycleHack;
+import qouteall.q_misc_util.MiscHelper;
 import qouteall.q_misc_util.api.DimensionAPI;
 
 public class MiniScaledModInitializer implements ModInitializer {
@@ -23,6 +25,7 @@ public class MiniScaledModInitializer implements ModInitializer {
     public void onInitialize() {
         
         DimensionAPI.serverDimensionsLoadEvent.register(VoidDimension::initializeVoidDimension);
+        LifecycleHack.markNamespaceStable("mini_scaled");
         
         ScaleBoxPlaceholderBlock.init();
         
