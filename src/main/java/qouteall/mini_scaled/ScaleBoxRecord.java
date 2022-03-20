@@ -46,6 +46,7 @@ public class ScaleBoxRecord extends PersistentState {
     }
     
     //nullable
+    // TODO optimize it
     public static Entry getEntryById(int boxId) {
         ScaleBoxRecord scaleBoxRecord = get();
         Entry entry = scaleBoxRecord.entries.stream()
