@@ -62,6 +62,12 @@ public class MiniScaledModInitializer implements ModInitializer {
     }
     
     private static void teleportFallenEntity(Entity entity) {
+        if (entity == null) {
+            // cannot reproduce the crash stably
+            // TODO debug it
+            return;
+        }
+        
         if (entity.getY() < 32) {
             System.out.println("Entity fallen from scale box " + entity);
             
