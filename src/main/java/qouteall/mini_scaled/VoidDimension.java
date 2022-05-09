@@ -2,11 +2,13 @@ package qouteall.mini_scaled;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
+import com.mojang.serialization.Lifecycle;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.block.Blocks;
 import net.minecraft.client.render.DimensionEffects;
 import net.minecraft.server.world.ServerWorld;
+import net.minecraft.structure.StructureSet;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.util.registry.DynamicRegistryManager;
@@ -62,9 +64,15 @@ public class VoidDimension {
             new FlatChunkGeneratorConfig(Optional.empty(), biomeRegistry);
         flatChunkGeneratorConfig.getLayers().add(new FlatChunkGeneratorLayer(1, Blocks.AIR));
         flatChunkGeneratorConfig.updateLayerBlocks();
-        
+    
+//        Registry<StructureSet> structureSetRegistry = rm.get(Registry.STRUCTURE_SET_KEY);
+        Registry<StructureSet> structureSetRegistry = new SimpleRegistry<>(
+            Registry.STRUCTURE_SET_KEY,
+            Lifecycle.stable(),
+            null
+        );
         return new FlatChunkGenerator(
-            rm.get(Registry.STRUCTURE_SET_KEY),
+            structureSetRegistry,
             flatChunkGeneratorConfig
         );
     }
