@@ -14,10 +14,8 @@ import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.text.TranslatableText;
 import net.minecraft.util.Identifier;
-import net.minecraft.util.math.Box;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.util.registry.Registry;
-import net.minecraft.util.shape.VoxelShape;
 import net.minecraft.world.World;
 import qouteall.imm_ptl.core.IPGlobal;
 import qouteall.imm_ptl.core.McHelper;
@@ -25,7 +23,6 @@ import qouteall.imm_ptl.core.portal.Portal;
 
 import java.util.function.Consumer;
 import java.util.function.Supplier;
-import java.util.stream.Stream;
 
 public class MiniScaledPortal extends Portal {
     public static EntityType<MiniScaledPortal> entityType;
@@ -99,7 +96,7 @@ public class MiniScaledPortal extends Portal {
     }
     
     private void checkValidity() {
-        ScaleBoxRecord.Entry entry = ScaleBoxRecord.getEntryById(boxId);
+        ScaleBoxRecord.Entry entry = ScaleBoxRecord.get().getEntryById(boxId);
         if (entry == null) {
             System.err.println("no scale box record " + boxId + this);
             remove(RemovalReason.KILLED);

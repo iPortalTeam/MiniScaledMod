@@ -1,17 +1,13 @@
 package qouteall.mini_scaled;
 
-import qouteall.imm_ptl.core.IPGlobal;
 import qouteall.imm_ptl.core.McHelper;
 import qouteall.imm_ptl.core.chunk_loading.ChunkLoader;
 import qouteall.imm_ptl.core.chunk_loading.DimensionalChunkPos;
-import qouteall.imm_ptl.core.chunk_loading.NewChunkTrackingGraph;
 import qouteall.imm_ptl.core.portal.PortalExtension;
 import qouteall.imm_ptl.core.portal.PortalManipulation;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
-import net.minecraft.block.Blocks;
 import net.minecraft.block.entity.BlockEntity;
-import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.DyeColor;
 import net.minecraft.util.Identifier;
@@ -28,13 +24,12 @@ import qouteall.mini_scaled.block.ScaleBoxPlaceholderBlock;
 import qouteall.mini_scaled.block.ScaleBoxPlaceholderBlockEntity;
 import qouteall.q_misc_util.Helper;
 import qouteall.q_misc_util.my_util.IntBox;
-import qouteall.q_misc_util.my_util.MyTaskList;
 
 import java.util.Arrays;
 import java.util.UUID;
 
 public class ScaleBoxGeneration {
-    static final int[] supportedSizes = {8, 16, 32};
+    static final int[] supportedScales = {4, 8, 16, 32};
     
     public static void putScaleBox(
         ServerWorld world,
@@ -59,7 +54,7 @@ public class ScaleBoxGeneration {
             entry.getAreaBox().toRealNumberBox(),
             world,
             Vec3d.ofBottomCenter(outerBoxPos),
-            entry.size,
+            entry.scale,
             entry.id,
             entry.generation
         );
@@ -76,7 +71,7 @@ public class ScaleBoxGeneration {
     }
     
     private static void removeScaleBox(int boxId) {
-        ScaleBoxRecord.Entry entry = ScaleBoxRecord.getEntryById(boxId);
+        ScaleBoxRecord.Entry entry = ScaleBoxRecord.get().getEntryById(boxId);
         if (entry == null) {
             System.err.println("removing nonexistent box " + boxId);
             return;
@@ -134,10 +129,10 @@ public class ScaleBoxGeneration {
     ) {
         Validate.notNull(playerId);
         
-        ScaleBoxRecord.Entry entry = record.entries.stream().filter(e -> {
+        ScaleBoxRecord.Entry entry = record.getEntryByPredicate(e -> {
             return e.ownerId.equals(playerId) && e.color == color &&
-                e.size == size;
-        }).findFirst().orElse(null);
+                e.scale == size;
+        });
         
         if (entry == null) {
             int newId = allocateId(record);
@@ -146,10 +141,10 @@ public class ScaleBoxGeneration {
             newEntry.color = color;
             newEntry.ownerId = playerId;
             newEntry.ownerNameCache = playerName;
-            newEntry.size = size;
+            newEntry.scale = size;
             newEntry.generation = 0;
             newEntry.innerBoxPos = allocateInnerBoxPos(newId);
-            record.entries.add(newEntry);
+            record.addEntry(newEntry);
             record.setDirty(true);
             
             initializeInnerBoxBlocks(newEntry);
@@ -160,7 +155,7 @@ public class ScaleBoxGeneration {
     }
     
     private static int allocateId(ScaleBoxRecord record) {
-        return record.entries.stream().mapToInt(e -> e.id).max().orElse(0) + 1;
+        return record.allocateId();
     }
     
     private static BlockPos allocateInnerBoxPos(int boxId) {
@@ -283,8 +278,8 @@ public class ScaleBoxGeneration {
         
     }
     
-    public static boolean isValidSize(int size) {
-        return Arrays.stream(supportedSizes).anyMatch(s -> s == size);
+    public static boolean isValidScale(int size) {
+        return Arrays.stream(supportedScales).anyMatch(s -> s == size);
     }
     
 }

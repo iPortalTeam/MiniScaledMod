@@ -1,5 +1,6 @@
 package qouteall.mini_scaled;
 
+import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.nbt.NbtList;
 import net.minecraft.server.world.ServerWorld;
@@ -10,8 +11,7 @@ import net.minecraft.util.registry.Registry;
 import net.minecraft.util.registry.RegistryKey;
 import net.minecraft.world.PersistentState;
 import net.minecraft.world.World;
-import qouteall.imm_ptl.core.McHelper;
-import qouteall.imm_ptl.core.portal.global_portals.GlobalPortalStorage;
+import org.jetbrains.annotations.Nullable;
 import qouteall.q_misc_util.Helper;
 import qouteall.q_misc_util.MiscHelper;
 import qouteall.q_misc_util.my_util.IntBox;
@@ -19,10 +19,14 @@ import qouteall.q_misc_util.my_util.IntBox;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 public class ScaleBoxRecord extends PersistentState {
-    public List<Entry> entries = new ArrayList<>();
+    private List<Entry> entries = new ArrayList<>();
+    
+    @Nullable
+    private Int2ObjectOpenHashMap<Entry> cache;
     
     public ScaleBoxRecord() {
         super();
@@ -45,14 +49,35 @@ public class ScaleBoxRecord extends PersistentState {
         );
     }
     
-    //nullable
-    // TODO optimize it
-    public static Entry getEntryById(int boxId) {
-        ScaleBoxRecord scaleBoxRecord = get();
-        Entry entry = scaleBoxRecord.entries.stream()
-            .filter(e -> e.id == boxId)
-            .findFirst().orElse(null);
-        return entry;
+    @Nullable
+    public Entry getEntryById(int boxId) {
+        if (cache == null) {
+            cache = new Int2ObjectOpenHashMap<>();
+            for (Entry entry : entries) {
+                cache.put(entry.id, entry);
+            }
+        }
+        
+        return cache.get(boxId);
+    }
+    
+    @Nullable
+    public Entry getEntryByPredicate(Predicate<Entry> predicate) {
+        return entries.stream().filter(predicate).findFirst().orElse(null);
+    }
+    
+    public void addEntry(Entry entry) {
+        entries.add(entry);
+        cache = null;
+    }
+    
+    public void removeEntry(Entry entry) {
+        entries.remove(entry);
+        cache = null;
+    }
+    
+    public int allocateId() {
+        return entries.stream().mapToInt(e -> e.id).max().orElse(0) + 1;
     }
     
     private void readFromNbt(NbtCompound compoundTag) {
@@ -62,6 +87,7 @@ public class ScaleBoxRecord extends PersistentState {
             entry.readFromNbt(((NbtCompound) tag));
             return entry;
         }).collect(Collectors.toList());
+        cache = null;
     }
     
     private void writeToNbt(NbtCompound compoundTag) {
@@ -87,7 +113,7 @@ public class ScaleBoxRecord extends PersistentState {
     public static class Entry {
         public int id;
         public BlockPos innerBoxPos;
-        public int size;//16 or 32
+        public int scale;
         public DyeColor color;
         public UUID ownerId;
         public String ownerNameCache;
@@ -101,7 +127,7 @@ public class ScaleBoxRecord extends PersistentState {
         
         IntBox getAreaBox() {
             return IntBox.getBoxByBasePointAndSize(
-                new BlockPos(this.size, this.size, this.size),
+                new BlockPos(this.scale, this.scale, this.scale),
                 this.innerBoxPos
             );
         }
@@ -109,7 +135,7 @@ public class ScaleBoxRecord extends PersistentState {
         void readFromNbt(NbtCompound tag) {
             id = tag.getInt("id");
             innerBoxPos = Helper.getVec3i(tag, "innerBoxPos");
-            size = tag.getInt("size");
+            scale = tag.getInt("size"); // the old name is "size"
             color = DyeColor.byName(tag.getString("color"), DyeColor.BLACK);
             ownerId = tag.getUuid("ownerId");
             ownerNameCache = tag.getString("ownerNameCache");
@@ -125,7 +151,7 @@ public class ScaleBoxRecord extends PersistentState {
         void writeToNbt(NbtCompound tag) {
             tag.putInt("id", id);
             Helper.putVec3i(tag, "innerBoxPos", innerBoxPos);
-            tag.putInt("size", size);
+            tag.putInt("size", scale);
             tag.putString("color", color.getName());
             tag.putUuid("ownerId", ownerId);
             tag.putString("ownerNameCache", ownerNameCache);

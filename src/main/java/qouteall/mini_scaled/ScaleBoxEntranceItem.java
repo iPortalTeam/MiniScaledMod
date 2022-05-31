@@ -39,27 +39,27 @@ public class ScaleBoxEntranceItem extends Item {
     }
     
     public static class ItemInfo {
-        public int size;
+        public int scale;
         public DyeColor color;
         @Nullable
         public UUID ownerId;
         @Nullable
         public String ownerNameCache;
         
-        public ItemInfo(int size, DyeColor color) {
-            this.size = size;
+        public ItemInfo(int scale, DyeColor color) {
+            this.scale = scale;
             this.color = color;
         }
         
         public ItemInfo(int size, DyeColor color, @NotNull UUID ownerId, @NotNull String ownerNameCache) {
-            this.size = size;
+            this.scale = size;
             this.color = color;
             this.ownerId = ownerId;
             this.ownerNameCache = ownerNameCache;
         }
         
         public ItemInfo(NbtCompound tag) {
-            size = tag.getInt("size");
+            scale = tag.getInt("size");
             color = DyeColor.byName(tag.getString("color"), DyeColor.BLACK);
             if (tag.contains("ownerId")) {
                 ownerId = tag.getUuid("ownerId");
@@ -68,7 +68,7 @@ public class ScaleBoxEntranceItem extends Item {
         }
         
         public void writeToTag(NbtCompound compoundTag) {
-            compoundTag.putInt("size", size);
+            compoundTag.putInt("size", scale);
             compoundTag.putString("color", color.getName());
             if (ownerId != null) {
                 compoundTag.putUuid("ownerId", ownerId);
@@ -105,8 +105,8 @@ public class ScaleBoxEntranceItem extends Item {
         
         ServerPlayerEntity player = (ServerPlayerEntity) context.getPlayer();
         
-        int size = itemInfo.size;
-        if (!ScaleBoxGeneration.isValidSize(size)) {
+        int size = itemInfo.scale;
+        if (!ScaleBoxGeneration.isValidScale(size)) {
             player.sendMessage(new LiteralText("bad item data"), false);
             return ActionResult.FAIL;
         }
@@ -142,7 +142,7 @@ public class ScaleBoxEntranceItem extends Item {
             .append(getColorText(itemInfo.color).formatted(Formatting.GOLD))
         );
         tooltip.add(new TranslatableText("mini_scaled.size")
-            .append(new LiteralText(Integer.toString(itemInfo.size)).formatted(Formatting.AQUA))
+            .append(new LiteralText(Integer.toString(itemInfo.scale)).formatted(Formatting.AQUA))
         );
         if (itemInfo.ownerNameCache != null) {
             tooltip.add(new TranslatableText("mini_scaled.owner")
@@ -154,11 +154,11 @@ public class ScaleBoxEntranceItem extends Item {
     @Override
     public void appendStacks(ItemGroup group, DefaultedList<ItemStack> stacks) {
         if (this.isIn(group)) {
-            for (int size : ScaleBoxGeneration.supportedSizes) {
+            for (int scale : ScaleBoxGeneration.supportedScales) {
                 for (DyeColor dyeColor : DyeColor.values()) {
                     ItemStack itemStack = new ItemStack(instance);
                     
-                    ItemInfo itemInfo = new ItemInfo(size, dyeColor);
+                    ItemInfo itemInfo = new ItemInfo(scale, dyeColor);
                     itemInfo.writeToTag(itemStack.getOrCreateNbt());
                     
                     stacks.add(itemStack);
@@ -175,7 +175,7 @@ public class ScaleBoxEntranceItem extends Item {
         DyeColor color = itemInfo.color;
         MutableText result = new TranslatableText("item.mini_scaled.scale_box_item")
             .append(spaceText)
-            .append(new LiteralText(Integer.toString(itemInfo.size)))
+            .append(new LiteralText(Integer.toString(itemInfo.scale)))
             .append(spaceText)
             .append(getColorText(color));
         if (itemInfo.ownerNameCache != null) {
@@ -192,7 +192,7 @@ public class ScaleBoxEntranceItem extends Item {
     
     // nullable
     public static ItemStack boxIdToItem(int boxId) {
-        ScaleBoxRecord.Entry entry = ScaleBoxRecord.getEntryById(boxId);
+        ScaleBoxRecord.Entry entry = ScaleBoxRecord.get().getEntryById(boxId);
         if (entry == null) {
             System.err.println("invalid boxId for item " + boxId);
             return null;
@@ -200,7 +200,7 @@ public class ScaleBoxEntranceItem extends Item {
         
         ItemStack itemStack = new ItemStack(ScaleBoxEntranceItem.instance);
         new ScaleBoxEntranceItem.ItemInfo(
-            entry.size, entry.color, entry.ownerId, entry.ownerNameCache
+            entry.scale, entry.color, entry.ownerId, entry.ownerNameCache
         ).writeToTag(itemStack.getOrCreateNbt());
         
         return itemStack;

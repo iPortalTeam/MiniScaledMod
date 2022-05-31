@@ -3,7 +3,6 @@ package qouteall.mini_scaled.block;
 import net.fabricmc.fabric.api.object.builder.v1.block.entity.FabricBlockEntityTypeBuilder;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
-import net.minecraft.block.entity.BeaconBlockEntity;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.block.entity.BlockEntityType;
 import net.minecraft.nbt.NbtCompound;
@@ -13,7 +12,6 @@ import net.minecraft.util.registry.Registry;
 import net.minecraft.util.registry.RegistryKey;
 import net.minecraft.world.World;
 import org.apache.commons.lang3.Validate;
-import qouteall.imm_ptl.core.McHelper;
 import qouteall.mini_scaled.ScaleBoxRecord;
 import qouteall.q_misc_util.MiscHelper;
 
@@ -66,7 +64,7 @@ public class ScaleBoxPlaceholderBlockEntity extends BlockEntity {
     }
     
     public void checkValidity() {
-        ScaleBoxRecord.Entry entry = ScaleBoxRecord.getEntryById(boxId);
+        ScaleBoxRecord.Entry entry = ScaleBoxRecord.get().getEntryById(boxId);
         
         if (entry == null) {
             System.out.println("invalid box with id " + boxId);
@@ -97,7 +95,7 @@ public class ScaleBoxPlaceholderBlockEntity extends BlockEntity {
     }
     
     private static void notifyPortalBreak(int boxId) {
-        ScaleBoxRecord.Entry entry = ScaleBoxRecord.getEntryById(boxId);
+        ScaleBoxRecord.Entry entry = ScaleBoxRecord.get().getEntryById(boxId);
         if (entry != null) {
             entry.generation++;
             ScaleBoxRecord.get().setDirty(true);
@@ -107,7 +105,7 @@ public class ScaleBoxPlaceholderBlockEntity extends BlockEntity {
     public static void checkBlockIntegrity(
         int boxId
     ) {
-        ScaleBoxRecord.Entry entry = ScaleBoxRecord.getEntryById(boxId);
+        ScaleBoxRecord.Entry entry = ScaleBoxRecord.get().getEntryById(boxId);
         
         if (entry == null) {
             return;

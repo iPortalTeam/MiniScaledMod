@@ -1,7 +1,6 @@
 package qouteall.mini_scaled;
 
 import net.fabricmc.fabric.api.event.player.UseBlockCallback;
-import net.fabricmc.fabric.api.event.player.UseItemCallback;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.block.StainedGlassBlock;
@@ -12,7 +11,6 @@ import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.TranslatableText;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.DyeColor;
-import net.minecraft.util.TypedActionResult;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
 import org.jetbrains.annotations.Nullable;
@@ -92,7 +90,7 @@ public class ScaleBoxEntranceCreation {
     @Nullable
     private static Integer getBoxSizeAndValidate(IntBox box) {
         BlockPos size = box.getSize();
-        for (int len : ScaleBoxGeneration.supportedSizes) {
+        for (int len : ScaleBoxGeneration.supportedScales) {
             if (size.getX() == len && size.getY() == len && size.getZ() == len) {
                 return len;
             }
