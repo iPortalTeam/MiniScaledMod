@@ -1,5 +1,7 @@
 package qouteall.mini_scaled;
 
+import net.minecraft.block.Blocks;
+import org.jetbrains.annotations.Nullable;
 import qouteall.imm_ptl.core.McHelper;
 import qouteall.imm_ptl.core.chunk_loading.ChunkLoader;
 import qouteall.imm_ptl.core.chunk_loading.DimensionalChunkPos;
@@ -16,7 +18,6 @@ import net.minecraft.util.math.Box;
 import net.minecraft.util.math.ChunkPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.MathHelper;
-import net.minecraft.util.math.Vec3d;
 import net.minecraft.util.registry.Registry;
 import org.apache.commons.lang3.Validate;
 import qouteall.mini_scaled.block.BoxBarrierBlock;
@@ -31,43 +32,40 @@ import java.util.UUID;
 public class ScaleBoxGeneration {
     static final int[] supportedScales = {4, 8, 16, 32};
     
-    public static void putScaleBox(
-        ServerWorld world,
-        UUID playerId, String playerName,
-        int size,
-        BlockPos outerBoxPos,
-        DyeColor color
+    public static void putScaleBoxIntoWorld(
+        ScaleBoxRecord.Entry entry,
+        ServerWorld world, BlockPos outerBoxBasePos
     ) {
-        ScaleBoxRecord record = ScaleBoxRecord.get();
-        
-        ScaleBoxRecord.Entry entry = getOrCreateEntry(playerId, playerName, size, color, record);
-        
         entry.currentEntranceDim = world.getRegistryKey();
-        entry.currentEntrancePos = outerBoxPos;
+        entry.currentEntrancePos = outerBoxBasePos;
         entry.generation++;
-        record.setDirty(true);
         
+        ScaleBoxRecord.get().setDirty(true);
         
         ServerWorld voidWorld = VoidDimension.getVoidWorld();
         createScaleBoxPortals(
             voidWorld,
-            entry.getAreaBox().toRealNumberBox(),
+            entry.getInnerAreaBox().toRealNumberBox(),
             world,
-            Vec3d.ofBottomCenter(outerBoxPos),
+            entry.getOuterAreaBox().toRealNumberBox(),
             entry.scale,
             entry.id,
             entry.generation
         );
         
-        world.setBlockState(outerBoxPos, ScaleBoxPlaceholderBlock.instance.getDefaultState());
-        BlockEntity blockEntity = world.getBlockEntity(outerBoxPos);
-        if (blockEntity == null) {
-            System.err.println("cannot find block entity for scale box");
-        }
-        else {
-            ScaleBoxPlaceholderBlockEntity be = (ScaleBoxPlaceholderBlockEntity) blockEntity;
-            be.boxId = entry.id;
-        }
+        entry.getOuterAreaBox().stream().forEach(outerPos -> {
+            world.setBlockState(outerPos, ScaleBoxPlaceholderBlock.instance.getDefaultState());
+            
+            BlockEntity blockEntity = world.getBlockEntity(outerPos);
+            if (blockEntity == null) {
+                System.err.println("cannot find block entity for scale box");
+            }
+            else {
+                ScaleBoxPlaceholderBlockEntity be = (ScaleBoxPlaceholderBlockEntity) blockEntity;
+                be.boxId = entry.id;
+                be.isBasePos = outerPos.equals(entry.currentEntrancePos);
+            }
+        });
     }
     
     private static void removeScaleBox(int boxId) {
@@ -79,19 +77,17 @@ public class ScaleBoxGeneration {
     }
     
     private static void createScaleBoxPortals(
-        ServerWorld areaWorld, Box area,
-        ServerWorld boxWorld, Vec3d boxBottomCenter,
+        ServerWorld innerWorld, Box innerBox,
+        ServerWorld outerWorld, Box outerBox,
         double scale,
         int boxId, int generation
     ) {
-        Vec3d viewBoxSize = Helper.getBoxSize(area).multiply(1.0 / scale);
-        Box viewBox = Helper.getBoxByBottomPosAndSize(boxBottomCenter, viewBoxSize);
         for (Direction direction : Direction.values()) {
             MiniScaledPortal portal = PortalManipulation.createOrthodoxPortal(
                 MiniScaledPortal.entityType,
-                boxWorld, areaWorld,
-                direction, Helper.getBoxSurface(viewBox, direction),
-                Helper.getBoxSurface(area, direction).getCenter()
+                outerWorld, innerWorld,
+                direction, Helper.getBoxSurface(outerBox, direction),
+                Helper.getBoxSurface(innerBox, direction).getCenter()
             );
             portal.scaling = scale;
             portal.teleportChangesScale = false;
@@ -124,14 +120,14 @@ public class ScaleBoxGeneration {
     }
     
     
-    private static ScaleBoxRecord.Entry getOrCreateEntry(
-        UUID playerId, String playerName, int size, DyeColor color, ScaleBoxRecord record
+    public static ScaleBoxRecord.Entry getOrCreateEntry(
+        UUID playerId, String playerName, int scale, DyeColor color, ScaleBoxRecord record
     ) {
         Validate.notNull(playerId);
         
         ScaleBoxRecord.Entry entry = record.getEntryByPredicate(e -> {
             return e.ownerId.equals(playerId) && e.color == color &&
-                e.scale == size;
+                e.scale == scale;
         });
         
         if (entry == null) {
@@ -141,13 +137,14 @@ public class ScaleBoxGeneration {
             newEntry.color = color;
             newEntry.ownerId = playerId;
             newEntry.ownerNameCache = playerName;
-            newEntry.scale = size;
+            newEntry.scale = scale;
             newEntry.generation = 0;
             newEntry.innerBoxPos = allocateInnerBoxPos(newId);
+            newEntry.currentEntranceSize = new BlockPos(1, 1, 1);
             record.addEntry(newEntry);
             record.setDirty(true);
             
-            initializeInnerBoxBlocks(newEntry);
+            initializeInnerBoxBlocks(null, newEntry);
             
             entry = newEntry;
         }
@@ -186,79 +183,72 @@ public class ScaleBoxGeneration {
         );
     }
     
-    // TODO change to use IP's version
-    private static IntBox[] get12Edges(IntBox box) {
-        return new IntBox[]{
-            new IntBox(
-                selectCoordinateFromBox(box, false, false, false),
-                selectCoordinateFromBox(box, false, false, true)
-            ),
-            new IntBox(
-                selectCoordinateFromBox(box, false, true, false),
-                selectCoordinateFromBox(box, false, true, true)
-            ),
-            new IntBox(
-                selectCoordinateFromBox(box, true, false, false),
-                selectCoordinateFromBox(box, true, false, true)
-            ),
-            new IntBox(
-                selectCoordinateFromBox(box, true, true, false),
-                selectCoordinateFromBox(box, true, true, true)
-            ),
-            
-            new IntBox(
-                selectCoordinateFromBox(box, false, false, false),
-                selectCoordinateFromBox(box, false, true, false)
-            ),
-            new IntBox(
-                selectCoordinateFromBox(box, false, false, true),
-                selectCoordinateFromBox(box, false, true, true)
-            ),
-            new IntBox(
-                selectCoordinateFromBox(box, true, false, false),
-                selectCoordinateFromBox(box, true, true, false)
-            ),
-            new IntBox(
-                selectCoordinateFromBox(box, true, false, true),
-                selectCoordinateFromBox(box, true, true, true)
-            ),
-            
-            new IntBox(
-                selectCoordinateFromBox(box, false, false, false),
-                selectCoordinateFromBox(box, true, false, false)
-            ),
-            new IntBox(
-                selectCoordinateFromBox(box, false, false, true),
-                selectCoordinateFromBox(box, true, false, true)
-            ),
-            new IntBox(
-                selectCoordinateFromBox(box, false, true, false),
-                selectCoordinateFromBox(box, true, true, false)
-            ),
-            new IntBox(
-                selectCoordinateFromBox(box, false, true, true),
-                selectCoordinateFromBox(box, true, true, true)
-            )
-        };
-    }
-    
-    private static void initializeInnerBoxBlocks(ScaleBoxRecord.Entry entry) {
-        ServerWorld voidWorld = VoidDimension.getVoidWorld();
+    public static void initializeInnerBoxBlocks(
+        @Nullable BlockPos oldEntranceSize,
+        ScaleBoxRecord.Entry entry
+    ) {
+        IntBox innerAreaBox = entry.getInnerAreaBox();
         
-        IntBox box = entry.getAreaBox();
+        ServerWorld voidWorld = VoidDimension.getVoidWorld();
         
         ChunkLoader chunkLoader = new ChunkLoader(
             new DimensionalChunkPos(
                 voidWorld.getRegistryKey(),
-                new ChunkPos(box.l)
+                new ChunkPos(innerAreaBox.getCenter())
             ),
-            2
+            Math.max(innerAreaBox.getSize().getX(), innerAreaBox.getSize().getZ()) / 16 + 2
         );
+        
+        Block glassBlock = Registry.BLOCK.get(new Identifier("minecraft:" + entry.color.getName() + "_stained_glass"));
+        BlockState frameBlock = glassBlock.getDefaultState();
         
         // set block after fulling loading the chunk
         // to avoid lighting problems
         chunkLoader.loadChunksAndDo(() -> {
-            IntBox expanded = box.getAdjusted(-1, -1, -1, 1, 1, 1);
+            IntBox newEntranceOffsets = IntBox.getBoxByBasePointAndSize(entry.currentEntranceSize, BlockPos.ORIGIN);
+            IntBox oldEntranceOffsets = oldEntranceSize != null ?
+                IntBox.getBoxByBasePointAndSize(oldEntranceSize, BlockPos.ORIGIN) : null;
+            
+            
+            newEntranceOffsets.stream().forEach(offset -> {
+                if (oldEntranceOffsets != null) {
+                    if (oldEntranceOffsets.contains(offset)) {
+                        // if expanded, don't clear the existing regions
+                        return;
+                    }
+                }
+                
+                IntBox innerUnitBox = entry.getInnerUnitBox(offset);
+                
+                // clear the barrier blocks if the scale box expanded
+                innerUnitBox.fastStream().forEach(blockPos -> {
+                    voidWorld.setBlockState(blockPos, Blocks.AIR.getDefaultState());
+                });
+                
+                // setup the frame blocks
+                for (IntBox edge : innerUnitBox.get12Edges()) {
+                    edge.fastStream().forEach(blockPos -> {
+                        voidWorld.setBlockState(blockPos, frameBlock);
+                    });
+                }
+            });
+            
+            if (oldEntranceOffsets != null) {
+                // clear the shrunk area's blocks
+                oldEntranceOffsets.stream().forEach(offset -> {
+                    if (newEntranceOffsets.contains(offset)) {
+                        return;
+                    }
+                    
+                    IntBox innerUnitBox = entry.getInnerUnitBox(offset);
+                    
+                    innerUnitBox.fastStream().forEach(blockPos -> {
+                        voidWorld.setBlockState(blockPos, Blocks.AIR.getDefaultState());
+                    });
+                });
+            }
+            
+            IntBox expanded = innerAreaBox.getAdjusted(-1, -1, -1, 1, 1, 1);
             
             for (Direction direction : Direction.values()) {
                 expanded.getSurfaceLayer(direction).fastStream().forEach(blockPos -> {
@@ -266,14 +256,6 @@ public class ScaleBoxGeneration {
                 });
             }
             
-            Block woolBlock = Registry.BLOCK.get(new Identifier("minecraft:" + entry.color.getName() + "_stained_glass"));
-            BlockState frameBlock = woolBlock.getDefaultState();
-            
-            for (IntBox edge : get12Edges(box)) {
-                edge.fastStream().forEach(blockPos -> {
-                    voidWorld.setBlockState(blockPos, frameBlock);
-                });
-            }
         });
         
     }

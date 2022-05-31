@@ -10,16 +10,14 @@ import net.minecraft.block.Material;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.block.entity.BlockEntityTicker;
 import net.minecraft.block.entity.BlockEntityType;
-import net.minecraft.item.ItemStack;
+import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.Identifier;
-import net.minecraft.util.ItemScatterer;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.registry.Registry;
 import net.minecraft.world.BlockView;
 import net.minecraft.world.World;
 import org.jetbrains.annotations.Nullable;
 import qouteall.imm_ptl.core.IPGlobal;
-import qouteall.mini_scaled.ScaleBoxEntranceItem;
 import qouteall.q_misc_util.my_util.MyTaskList;
 
 public class ScaleBoxPlaceholderBlock extends BlockWithEntity {
@@ -57,22 +55,20 @@ public class ScaleBoxPlaceholderBlock extends BlockWithEntity {
     
     @Override
     public void onStateReplaced(BlockState state, World world, BlockPos pos, BlockState newState, boolean moved) {
-        if (newState.getBlock() != this) {
-            BlockEntity blockEntity = world.getBlockEntity(pos);
-            if (blockEntity != null) {
-                ScaleBoxPlaceholderBlockEntity be = (ScaleBoxPlaceholderBlockEntity) blockEntity;
-                int boxId = be.boxId;
-                IPGlobal.serverTaskList.addTask(MyTaskList.oneShotTask(() -> {
-                    ScaleBoxPlaceholderBlockEntity.checkBlockIntegrity(boxId);
-                }));
-                ItemStack itemToDrop = ScaleBoxEntranceItem.boxIdToItem(boxId);
-                if (itemToDrop != null) {
-                    ItemScatterer.spawn(
-                        world, pos.getX(), pos.getY(), pos.getZ(), itemToDrop
-                    );
+        if (!world.isClient()) {
+            if (newState.getBlock() != this) {
+                BlockEntity blockEntity = world.getBlockEntity(pos);
+                if (blockEntity != null) {
+                    ScaleBoxPlaceholderBlockEntity be = (ScaleBoxPlaceholderBlockEntity) blockEntity;
+                    int boxId = be.boxId;
+                    IPGlobal.serverTaskList.addTask(MyTaskList.oneShotTask(() -> {
+                        ScaleBoxPlaceholderBlockEntity.checkShouldRemovePortals(boxId, ((ServerWorld) world), pos);
+                    }));
+                    be.dropItemIfNecessary();
                 }
             }
         }
+        
         
         super.onStateReplaced(state, world, pos, newState, moved);
     }

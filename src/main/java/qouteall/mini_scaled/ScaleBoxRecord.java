@@ -71,10 +71,7 @@ public class ScaleBoxRecord extends PersistentState {
         cache = null;
     }
     
-    public void removeEntry(Entry entry) {
-        entries.remove(entry);
-        cache = null;
-    }
+    // does not allow removing entry
     
     public int allocateId() {
         return entries.stream().mapToInt(e -> e.id).max().orElse(0) + 1;
@@ -117,18 +114,37 @@ public class ScaleBoxRecord extends PersistentState {
         public DyeColor color;
         public UUID ownerId;
         public String ownerNameCache;
-        public RegistryKey<World> currentEntranceDim;
+        @Nullable
+        public RegistryKey<World> currentEntranceDim; // null means the scale box is not being put
         public BlockPos currentEntrancePos;
+        public BlockPos currentEntranceSize;
         public int generation;
         
         public Entry() {
         
         }
         
-        IntBox getAreaBox() {
+        public IntBox getOuterAreaBox() {
+            return IntBox.getBoxByBasePointAndSize(
+                currentEntranceSize, currentEntrancePos
+            );
+        }
+        
+        public IntBox getInnerAreaBox() {
+            return IntBox.getBoxByBasePointAndSize(
+                new BlockPos(
+                    this.scale * currentEntranceSize.getX(),
+                    this.scale * currentEntranceSize.getY(),
+                    this.scale * currentEntranceSize.getZ()
+                ),
+                this.innerBoxPos
+            );
+        }
+        
+        IntBox getInnerUnitBox(BlockPos outerOffset) {
             return IntBox.getBoxByBasePointAndSize(
                 new BlockPos(this.scale, this.scale, this.scale),
-                this.innerBoxPos
+                this.innerBoxPos.add(outerOffset.multiply(this.scale))
             );
         }
         
@@ -139,13 +155,18 @@ public class ScaleBoxRecord extends PersistentState {
             color = DyeColor.byName(tag.getString("color"), DyeColor.BLACK);
             ownerId = tag.getUuid("ownerId");
             ownerNameCache = tag.getString("ownerNameCache");
-            currentEntranceDim = RegistryKey.of(
-                Registry.WORLD_KEY,
-                new Identifier(tag.getString("currentEntranceDim"))
-            );
+            if (tag.contains("currentEntranceDim")) {
+                currentEntranceDim = RegistryKey.of(
+                    Registry.WORLD_KEY,
+                    new Identifier(tag.getString("currentEntranceDim"))
+                );
+            }
+            else {
+                currentEntranceDim = null;
+            }
             currentEntrancePos = Helper.getVec3i(tag, "currentEntrancePos");
+            currentEntranceSize = Helper.getVec3i(tag, "currentEntranceSize");
             generation = tag.getInt("generation");
-            
         }
         
         void writeToNbt(NbtCompound tag) {
@@ -155,8 +176,11 @@ public class ScaleBoxRecord extends PersistentState {
             tag.putString("color", color.getName());
             tag.putUuid("ownerId", ownerId);
             tag.putString("ownerNameCache", ownerNameCache);
-            tag.putString("currentEntranceDim", currentEntranceDim.getValue().getPath());
+            if (currentEntranceDim != null) {
+                tag.putString("currentEntranceDim", currentEntranceDim.getValue().getPath());
+            }
             Helper.putVec3i(tag, "currentEntrancePos", currentEntrancePos);
+            Helper.putVec3i(tag, "currentEntranceSize", currentEntranceSize);
             tag.putInt("generation", generation);
         }
     }

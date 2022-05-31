@@ -17,9 +17,18 @@ import org.jetbrains.annotations.Nullable;
 import qouteall.q_misc_util.my_util.IntBox;
 
 import java.util.Arrays;
+import java.util.List;
+import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 public class ScaleBoxEntranceCreation {
+    
+    private static final List<BoxFrameMatcher> boxFrameMatchers =
+        Arrays.stream(ScaleBoxGeneration.supportedScales).mapToObj(
+            s -> new BoxFrameMatcher(new BlockPos(s, s, s))
+        ).collect(Collectors.toList());
+    
     
     public static void init() {
         UseBlockCallback.EVENT.register((player, world, hand, hitResult) -> {
@@ -54,26 +63,43 @@ public class ScaleBoxEntranceCreation {
             return false;
         }
         
-        IntBox box = detectBoxFrame(world, pos, originBlockState);
+        IntBox box = detectBoxFrameOfAllowedSize(world, pos, originBlockState);
         
         if (box == null) {
+            IntBox roughBox = detectBoxSizeForErrorFeedback(world, pos, originBlockState);
+            
+            BlockPos size = roughBox.getSize();
+            
+            Predicate<BlockPos> blockPredicate = p -> world.getBlockState(p) == originBlockState;
+            boolean roughBoxFrameComplete =
+                Arrays.stream(roughBox.get12Edges()).allMatch(edge -> edge.fastStream().allMatch(blockPredicate));
+    
+            if (roughBoxFrameComplete) {
+                player.sendMessage(new TranslatableText(
+                    "mini_scaled.invalid_box_size",
+                    String.format("(%d,%d,%d)",
+                        size.getX(), size.getY(), size.getZ()
+                    )
+                ), false);
+            }
+            else {
+                player.sendMessage(new TranslatableText(
+                    "mini_scaled.glass_frame_incomplete",
+                    String.format("(%d,%d,%d)",
+                        size.getX(), size.getY(), size.getZ()
+                    )
+                ), false);
+            }
+    
             return false;
         }
         
-        Integer boxSize = getBoxSizeAndValidate(box);
-        
-        if (boxSize == null) {
-            player.sendMessage(new TranslatableText(
-                "mini_scaled.invalid_box_size",
-                String.format("(%d,%d,%d)", box.getSize().getX(), box.getSize().getY(), box.getSize().getZ())
-            ), false);
-            return false;
-        }
+        int boxLen = box.getSize().getX();
         
         // give player the item
         DyeColor color = stainedGlassBlock.getColor();
         ItemStack itemStack = new ItemStack(ScaleBoxEntranceItem.instance);
-        ScaleBoxEntranceItem.ItemInfo itemInfo = new ScaleBoxEntranceItem.ItemInfo(boxSize, color);
+        ScaleBoxEntranceItem.ItemInfo itemInfo = new ScaleBoxEntranceItem.ItemInfo(boxLen, color);
         itemInfo.writeToTag(itemStack.getOrCreateNbt());
         player.giveItemStack(itemStack);
         
@@ -87,47 +113,102 @@ public class ScaleBoxEntranceCreation {
         return true;
     }
     
-    @Nullable
-    private static Integer getBoxSizeAndValidate(IntBox box) {
-        BlockPos size = box.getSize();
-        for (int len : ScaleBoxGeneration.supportedScales) {
-            if (size.getX() == len && size.getY() == len && size.getZ() == len) {
-                return len;
-            }
+    public static class BoxFrameMatcher {
+        private final BlockPos size;
+        private final BlockPos[] vertexOffsets;
+        
+        public BoxFrameMatcher(BlockPos size) {
+            this.size = size;
+            
+            vertexOffsets = IntBox.getBoxByBasePointAndSize(size, BlockPos.ORIGIN).getEightVertices();
         }
-        return null;
+        
+        public IntBox matchFromVertex(BlockPos pos, Predicate<BlockPos> blockPredicate) {
+            for (BlockPos vertexOffset : vertexOffsets) {
+                BlockPos basePos = pos.subtract(vertexOffset);
+                
+                if (blockPredicate.test(basePos)) {
+                    IntBox box = IntBox.getBoxByBasePointAndSize(size, basePos);
+                    
+                    boolean allGlasses = Arrays.stream(box.get12Edges())
+                        .allMatch(edge -> edge.fastStream().allMatch(blockPredicate));
+                    
+                    if (allGlasses) {
+                        return box;
+                    }
+                }
+            }
+            return null;
+        }
     }
     
     @Nullable
-    private static IntBox detectBoxFrame(
+    private static IntBox detectBoxFrameOfAllowedSize(
         ServerWorld world,
         BlockPos pos,
         BlockState blockState
     ) {
-        Predicate<BlockPos> predicate = p -> world.getBlockState(p) == blockState;
+        Predicate<BlockPos> blockPredicate = p -> world.getBlockState(p) == blockState;
         
-        pos = getFurthest(pos, Direction.DOWN, predicate);
-        pos = getFurthest(pos, Direction.NORTH, predicate);
-        pos = getFurthest(pos, Direction.WEST, predicate);
-        pos = getFurthest(pos, Direction.DOWN, predicate);
-        pos = getFurthest(pos, Direction.NORTH, predicate);
-        pos = getFurthest(pos, Direction.WEST, predicate);
-        
-        BlockPos basePos = pos;
-        
-        int xLen = getFurthestLen(basePos, Direction.EAST, predicate);
-        int yLen = getFurthestLen(basePos, Direction.UP, predicate);
-        int zLen = getFurthestLen(basePos, Direction.SOUTH, predicate);
-        
-        IntBox box = IntBox.getBoxByBasePointAndSize(new BlockPos(xLen, yLen, zLen), basePos);
-        
-        boolean allGlasses = Arrays.stream(box.get12Edges()).allMatch(edge -> edge.fastStream().allMatch(predicate));
-        
-        if (!allGlasses) {
+        Function<BlockPos, IntBox> matcher = vertexPos -> {
+            for (BoxFrameMatcher boxFrameMatcher : boxFrameMatchers) {
+                IntBox result = boxFrameMatcher.matchFromVertex(vertexPos, blockPredicate);
+                if (result != null) {
+                    return result;
+                }
+            }
+            
             return null;
+        };
+        
+        IntBox result = null;
+        BlockPos.Mutable mutableBlockPos = new BlockPos.Mutable();
+        mutableBlockPos.set(pos);
+        
+        result = matchAlongPath(mutableBlockPos, Direction.DOWN, blockPredicate, matcher);
+        if (result != null) {
+            return result;
         }
         
-        return box;
+        result = matchAlongPath(mutableBlockPos, Direction.NORTH, blockPredicate, matcher);
+        if (result != null) {
+            return result;
+        }
+        
+        result = matchAlongPath(mutableBlockPos, Direction.WEST, blockPredicate, matcher);
+        if (result != null) {
+            return result;
+        }
+        
+        return result;
+    }
+    
+    @Nullable
+    private static IntBox matchAlongPath(
+        BlockPos.Mutable currentPos,
+        Direction direction,
+        Predicate<BlockPos> pathPredicate,
+        Function<BlockPos, IntBox> matchingFunc
+    ) {
+        for (int i = 0; i < 64; i++) {
+            IntBox box = matchingFunc.apply(currentPos);
+            
+            if (box != null) {
+                return box;
+            }
+            
+            currentPos.move(direction);
+            
+            if (pathPredicate.test(currentPos)) {
+                continue;
+            }
+            else {
+                // out of path. move back
+                currentPos.move(direction.getOpposite());
+                return null;
+            }
+        }
+        return null;
     }
     
     private static BlockPos getFurthest(
@@ -160,6 +241,30 @@ public class ScaleBoxEntranceCreation {
             }
         }
         return 64;
+    }
+    
+    private static IntBox detectBoxSizeForErrorFeedback(
+        ServerWorld world,
+        BlockPos pos,
+        BlockState blockState
+    ) {
+        Predicate<BlockPos> blockPredicate = p -> world.getBlockState(p) == blockState;
+        
+        BlockPos currPos = pos;
+        currPos = getFurthest(currPos, Direction.DOWN, blockPredicate);
+        currPos = getFurthest(currPos, Direction.NORTH, blockPredicate);
+        currPos = getFurthest(currPos, Direction.WEST, blockPredicate);
+        currPos = getFurthest(currPos, Direction.DOWN, blockPredicate);
+        currPos = getFurthest(currPos, Direction.NORTH, blockPredicate);
+        currPos = getFurthest(currPos, Direction.WEST, blockPredicate);
+        
+        BlockPos size = new BlockPos(
+            getFurthestLen(currPos, Direction.EAST, blockPredicate),
+            getFurthestLen(currPos, Direction.UP, blockPredicate),
+            getFurthestLen(currPos, Direction.SOUTH, blockPredicate)
+        );
+        
+        return IntBox.getBoxByBasePointAndSize(size, currPos);
     }
     
     

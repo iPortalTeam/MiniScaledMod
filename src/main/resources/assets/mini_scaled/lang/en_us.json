@@ -1,8 +1,18 @@
 {
   "item.mini_scaled.scale_box_item": "Scale Box Entrance",
   "mini_scaled.color": "Color: ",
-  "mini_scaled.size": "Size: ",
+  "mini_scaled.scale": "Scale: ",
   "mini_scaled.owner": "Owner: ",
+  "mini_scaled.entrance_size": "Size: ",
   "mini_scaled.press_shift": "Press %1$s to Descend into the Scale Box",
-  "mini_scaled.invalid_box_size": "The glass box size %1$s is invalid. It should be either 8x8x8 or 16x16x16 or 32x32x32"
+  "mini_scaled.invalid_box_size": "The glass frame size %1$s is invalid. It should be either 4x4x4 or 8x8x8 or 16x16x16 or 32x32x32",
+  "mini_scaled.glass_frame_incomplete": "The glass frame %1$s is incomplete.",
+  "mini_scaled.no_enough_space_to_place_scale_box": "There isn't enough space to place the scale box of size %1$s",
+  "mini_scaled.cannot_expand_direction": "The scale box can only be expanded from up, south and east faces.",
+  "mini_scaled.cannot_expand_mismatch": "Cannot expand the scale box because the owner, scale and color don't match.",
+  "mini_scaled.cannot_expand_not_enough": "Expanding the scale box requires %1$s entrance items.",
+  "mini_scaled.cannot_expand_size_limit": "Cannot expand the scale box because the maximum inner length is 64",
+  "mini_scaled.cannot_shrink_direction": "The scale box can only be shrunk from up, south and east faces.",
+  "mini_scaled.cannot_shrink_has_blocks": "Cannot shrink the scale box because the shrunk region has blocks remaining.",
+  "mini_scaled.whatever": "whatever"
 }
