@@ -11,11 +11,9 @@ import net.minecraft.entity.EntityPose;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.SpawnGroup;
 import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.text.TranslatableText;
 import net.minecraft.util.Identifier;
-import net.minecraft.util.ItemScatterer;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.util.registry.Registry;
 import net.minecraft.world.World;
@@ -200,4 +198,25 @@ public class MiniScaledPortal extends Portal {
         );
     }
     
+    @Override
+    public boolean isInteractable() {
+        if (world.isClient()) {
+            return isClientPlayerCrouching();
+        }
+        else {
+            return false;
+        }
+    }
+    
+    // when crouching, the player can directly manipulate the block inside scale box
+    // when not crouching, the player can break or interact the scale box placeholder block
+    @Environment(EnvType.CLIENT)
+    public static boolean isClientPlayerCrouching() {
+        ClientPlayerEntity player = MinecraftClient.getInstance().player;
+        
+        if (player != null) {
+            return player.getPose() == EntityPose.CROUCHING;
+        }
+        return false;
+    }
 }

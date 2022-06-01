@@ -7,10 +7,15 @@ import net.minecraft.block.Block;
 import net.minecraft.block.BlockRenderType;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Material;
+import net.minecraft.block.ShapeContext;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.registry.Registry;
+import net.minecraft.util.shape.VoxelShape;
+import net.minecraft.util.shape.VoxelShapes;
 import net.minecraft.world.BlockView;
+import net.minecraft.world.World;
+import qouteall.mini_scaled.MiniScaledPortal;
 
 public class BoxBarrierBlock extends Block {
     public static final BoxBarrierBlock instance = new BoxBarrierBlock(
@@ -43,5 +48,18 @@ public class BoxBarrierBlock extends Block {
     @Environment(EnvType.CLIENT)
     public float getAmbientOcclusionLightLevel(BlockState state, BlockView world, BlockPos pos) {
         return 1.0F;
+    }
+    
+    @Override
+    public VoxelShape getOutlineShape(BlockState state, BlockView world, BlockPos pos, ShapeContext context) {
+        if (world instanceof World world1) {
+            if (world1.isClient()) {
+                if (MiniScaledPortal.isClientPlayerCrouching()) {
+                    return VoxelShapes.empty();
+                }
+            }
+        }
+        
+        return VoxelShapes.fullCube();
     }
 }

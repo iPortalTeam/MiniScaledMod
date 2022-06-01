@@ -7,6 +7,7 @@ import net.minecraft.block.BlockRenderType;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.BlockWithEntity;
 import net.minecraft.block.Material;
+import net.minecraft.block.ShapeContext;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.block.entity.BlockEntityTicker;
 import net.minecraft.block.entity.BlockEntityType;
@@ -14,10 +15,13 @@ import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.registry.Registry;
+import net.minecraft.util.shape.VoxelShape;
+import net.minecraft.util.shape.VoxelShapes;
 import net.minecraft.world.BlockView;
 import net.minecraft.world.World;
 import org.jetbrains.annotations.Nullable;
 import qouteall.imm_ptl.core.IPGlobal;
+import qouteall.mini_scaled.MiniScaledPortal;
 import qouteall.q_misc_util.my_util.MyTaskList;
 
 public class ScaleBoxPlaceholderBlock extends BlockWithEntity {
@@ -85,6 +89,19 @@ public class ScaleBoxPlaceholderBlock extends BlockWithEntity {
             type, ScaleBoxPlaceholderBlockEntity.blockEntityType,
             ScaleBoxPlaceholderBlockEntity::staticTick
         );
+    }
+    
+    @Override
+    public VoxelShape getOutlineShape(BlockState state, BlockView world, BlockPos pos, ShapeContext context) {
+        if (world instanceof World world1) {
+            if (world1.isClient()) {
+                if (MiniScaledPortal.isClientPlayerCrouching()) {
+                    return VoxelShapes.empty();
+                }
+            }
+        }
+        
+        return VoxelShapes.fullCube();
     }
     
 }
