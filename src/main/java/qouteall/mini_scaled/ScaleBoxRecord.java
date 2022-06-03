@@ -165,7 +165,14 @@ public class ScaleBoxRecord extends PersistentState {
                 currentEntranceDim = null;
             }
             currentEntrancePos = Helper.getVec3i(tag, "currentEntrancePos");
-            currentEntranceSize = Helper.getVec3i(tag, "currentEntranceSize");
+            
+            if (tag.contains("currentEntranceSizeX")) {
+                currentEntranceSize = Helper.getVec3i(tag, "currentEntranceSize");
+            }
+            else {
+                currentEntranceSize = new BlockPos(1, 1, 1);
+            }
+            
             generation = tag.getInt("generation");
         }
         
