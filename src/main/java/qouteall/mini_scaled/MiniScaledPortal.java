@@ -204,7 +204,7 @@ public class MiniScaledPortal extends Portal {
             return isClientPlayerCrouching();
         }
         else {
-            return false;
+            return true;
         }
     }
     
