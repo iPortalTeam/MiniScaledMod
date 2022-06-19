@@ -14,10 +14,10 @@ import net.minecraft.item.Items;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
-import net.minecraft.text.LiteralText;
+import net.minecraft.text.LiteralTextContent;
 import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
-import net.minecraft.text.TranslatableText;
+import net.minecraft.text.TranslatableTextContent;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.DyeColor;
 import net.minecraft.util.Formatting;
@@ -131,7 +131,7 @@ public class ScaleBoxEntranceItem extends Item {
         
         int scale = itemInfo.scale;
         if (!ScaleBoxGeneration.isValidScale(scale)) {
-            player.sendMessage(new LiteralText("invalid scale"), false);
+            player.sendMessage(Text.literal("invalid scale"), false);
             return ActionResult.FAIL;
         }
         
@@ -142,7 +142,7 @@ public class ScaleBoxEntranceItem extends Item {
             ownerId = player.getUuid();
         }
         if (ownerNameCache == null) {
-            ownerNameCache = player.getName().asString();
+            ownerNameCache = player.getName().getString();
         }
         
         DyeColor color = itemInfo.color;
@@ -177,7 +177,7 @@ public class ScaleBoxEntranceItem extends Item {
         }
         else {
             player.sendMessage(
-                new TranslatableText(
+                Text.translatable(
                     "mini_scaled.no_enough_space_to_place_scale_box",
                     String.format("(%d, %d, %d)", entranceSize.getX(), entranceSize.getY(), entranceSize.getZ())
                 ),
@@ -204,14 +204,14 @@ public class ScaleBoxEntranceItem extends Item {
         BlockPos pointedBlockPos = hitResult.getBlockPos();
         BlockEntity be = world.getBlockEntity(pointedBlockPos);
         if (!(be instanceof ScaleBoxPlaceholderBlockEntity placeholderBlockEntity)) {
-            player.sendMessage(new LiteralText("Error no block entity"), false);
+            player.sendMessage(Text.literal("Error no block entity"), false);
             return ActionResult.FAIL;
         }
         
         int boxId = placeholderBlockEntity.boxId;
         ScaleBoxRecord.Entry entry = ScaleBoxRecord.get().getEntryById(boxId);
         if (entry == null) {
-            player.sendMessage(new LiteralText("Error invalid box id"), false);
+            player.sendMessage(Text.literal("Error invalid box id"), false);
             return ActionResult.FAIL;
         }
         
@@ -222,7 +222,7 @@ public class ScaleBoxEntranceItem extends Item {
             
             if (side.getDirection() != Direction.AxisDirection.POSITIVE) {
                 player.sendMessage(
-                    new TranslatableText("mini_scaled.cannot_expand_direction"),
+                    Text.translatable("mini_scaled.cannot_expand_direction"),
                     false
                 );
                 return ActionResult.FAIL;
@@ -240,7 +240,7 @@ public class ScaleBoxEntranceItem extends Item {
                 entry.scale != itemInfo.scale
             ) {
                 player.sendMessage(
-                    new TranslatableText("mini_scaled.cannot_expand_mismatch"),
+                    Text.translatable("mini_scaled.cannot_expand_mismatch"),
                     false
                 );
                 return ActionResult.FAIL;
@@ -253,7 +253,7 @@ public class ScaleBoxEntranceItem extends Item {
             
             if (side.getDirection() != Direction.AxisDirection.POSITIVE) {
                 player.sendMessage(
-                    new TranslatableText("mini_scaled.cannot_shrink_direction"),
+                    Text.translatable("mini_scaled.cannot_shrink_direction"),
                     false
                 );
                 return ActionResult.FAIL;
@@ -288,7 +288,7 @@ public class ScaleBoxEntranceItem extends Item {
             });
             if (hasRemainingBlocks) {
                 player.sendMessage(
-                    new TranslatableText("mini_scaled.cannot_shrink_has_blocks"),
+                    Text.translatable("mini_scaled.cannot_shrink_has_blocks"),
                     false
                 );
                 return ActionResult.FAIL;
@@ -356,7 +356,7 @@ public class ScaleBoxEntranceItem extends Item {
         
         if ((!player.isCreative()) && (stack.getCount() < requiredEntranceItemNum)) {
             player.sendMessage(
-                new TranslatableText("mini_scaled.cannot_expand_not_enough", requiredEntranceItemNum),
+                Text.translatable("mini_scaled.cannot_expand_not_enough", requiredEntranceItemNum),
                 false
             );
             return ActionResult.FAIL;
@@ -364,7 +364,7 @@ public class ScaleBoxEntranceItem extends Item {
         
         if ((lenOnDirection + 1) * entry.scale > 64) {
             player.sendMessage(
-                new TranslatableText("mini_scaled.cannot_expand_size_limit"),
+                Text.translatable("mini_scaled.cannot_expand_size_limit"),
                 false
             );
             return ActionResult.FAIL;
@@ -407,15 +407,15 @@ public class ScaleBoxEntranceItem extends Item {
     public void appendTooltip(ItemStack stack, World world, List<Text> tooltip, TooltipContext context) {
         super.appendTooltip(stack, world, tooltip, context);
         ItemInfo itemInfo = new ItemInfo(stack.getOrCreateNbt());
-        tooltip.add(new TranslatableText("mini_scaled.color")
+        tooltip.add(Text.translatable("mini_scaled.color")
             .append(getColorText(itemInfo.color).formatted(Formatting.GOLD))
         );
-        tooltip.add(new TranslatableText("mini_scaled.scale")
-            .append(new LiteralText(Integer.toString(itemInfo.scale)).formatted(Formatting.AQUA))
+        tooltip.add(Text.translatable("mini_scaled.scale")
+            .append(Text.literal(Integer.toString(itemInfo.scale)).formatted(Formatting.AQUA))
         );
         if (itemInfo.ownerNameCache != null) {
-            tooltip.add(new TranslatableText("mini_scaled.owner")
-                .append(new LiteralText(itemInfo.ownerNameCache).formatted(Formatting.YELLOW))
+            tooltip.add(Text.translatable("mini_scaled.owner")
+                .append(Text.literal(itemInfo.ownerNameCache).formatted(Formatting.YELLOW))
             );
         }
 
@@ -446,25 +446,25 @@ public class ScaleBoxEntranceItem extends Item {
         }
     }
     
-    private static final Text spaceText = new LiteralText(" ");
+    private static final Text spaceText = Text.literal(" ");
     
     @Override
     public Text getName(ItemStack stack) {
         ItemInfo itemInfo = new ItemInfo(stack.getOrCreateNbt());
         DyeColor color = itemInfo.color;
-        MutableText result = new TranslatableText("item.mini_scaled.scale_box_item")
+        MutableText result = Text.translatable("item.mini_scaled.scale_box_item")
             .append(spaceText)
-            .append(new LiteralText(Integer.toString(itemInfo.scale)));
+            .append(Text.literal(Integer.toString(itemInfo.scale)));
         if (itemInfo.ownerNameCache != null) {
             result = result.append(spaceText)
-                .append(new TranslatableText("mini_scaled.owner"))
-                .append(new LiteralText(itemInfo.ownerNameCache));
+                .append(Text.translatable("mini_scaled.owner"))
+                .append(Text.literal(itemInfo.ownerNameCache));
         }
         return result;
     }
     
-    public static TranslatableText getColorText(DyeColor color) {
-        return new TranslatableText("color.minecraft." + color.getName());
+    public static MutableText getColorText(DyeColor color) {
+        return Text.translatable("color.minecraft." + color.getName());
     }
     
     @Nullable

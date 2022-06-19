@@ -9,7 +9,8 @@ import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
-import net.minecraft.text.LiteralText;
+import net.minecraft.text.LiteralTextContent;
+import net.minecraft.text.Text;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.Hand;
 import net.minecraft.util.hit.BlockHitResult;
@@ -50,11 +51,11 @@ public class MiniScaledModInitializer implements ModInitializer {
         IPGlobal.enableDepthClampForPortalRendering = true;
         
         ServerTickEvents.END_SERVER_TICK.register(MiniScaledModInitializer::teleportFallenEntities);
-    
+        
         UseBlockCallback.EVENT.register((PlayerEntity player, World world, Hand hand, BlockHitResult hitResult) -> {
             Block block = world.getBlockState(hitResult.getBlockPos()).getBlock();
             if (block == ScaleBoxPlaceholderBlock.instance) {
-                return ScaleBoxEntranceItem.onRightClickScaleBox(player, world,hand, hitResult);
+                return ScaleBoxEntranceItem.onRightClickScaleBox(player, world, hand, hitResult);
             }
             
             return ActionResult.PASS;
@@ -97,7 +98,9 @@ public class MiniScaledModInitializer implements ModInitializer {
                 
                 IPGlobal.serverTaskList.addTask(() -> {
                     player.sendMessage(
-                        new LiteralText("You fell off the scale box. Returned to the spawn point"), false);
+                        Text.literal("You fell off the scale box. Returned to the spawn point"),
+                        false
+                    );
                     return true;
                 });
             }

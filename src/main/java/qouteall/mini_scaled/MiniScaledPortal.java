@@ -12,7 +12,8 @@ import net.minecraft.entity.EntityType;
 import net.minecraft.entity.SpawnGroup;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.nbt.NbtCompound;
-import net.minecraft.text.TranslatableText;
+import net.minecraft.text.Text;
+import net.minecraft.text.TranslatableTextContent;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.util.registry.Registry;
@@ -190,7 +191,7 @@ public class MiniScaledPortal extends Portal {
         MinecraftClient client = MinecraftClient.getInstance();
         
         client.inGameHud.setOverlayMessage(
-            new TranslatableText(
+            Text.translatable(
                 "mini_scaled.press_shift",
                 client.options.sneakKey.getBoundKeyLocalizedText()
             ),

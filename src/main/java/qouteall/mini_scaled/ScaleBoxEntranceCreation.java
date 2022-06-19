@@ -8,7 +8,8 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
-import net.minecraft.text.TranslatableText;
+import net.minecraft.text.Text;
+import net.minecraft.text.TranslatableTextContent;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.DyeColor;
 import net.minecraft.util.math.BlockPos;
@@ -75,7 +76,7 @@ public class ScaleBoxEntranceCreation {
                 Arrays.stream(roughBox.get12Edges()).allMatch(edge -> edge.fastStream().allMatch(blockPredicate));
     
             if (roughBoxFrameComplete) {
-                player.sendMessage(new TranslatableText(
+                player.sendMessage(Text.translatable(
                     "mini_scaled.invalid_box_size",
                     String.format("(%d,%d,%d)",
                         size.getX(), size.getY(), size.getZ()
@@ -83,7 +84,7 @@ public class ScaleBoxEntranceCreation {
                 ), false);
             }
             else {
-                player.sendMessage(new TranslatableText(
+                player.sendMessage(Text.translatable(
                     "mini_scaled.glass_frame_incomplete",
                     String.format("(%d,%d,%d)",
                         size.getX(), size.getY(), size.getZ()
