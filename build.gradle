@@ -75,8 +75,7 @@ java {
 
 afterEvaluate {
 	remapJar {
-		input = file("${project.buildDir}/libs/$archivesBaseName-$version-dev.jar")
-		archiveName = "${archivesBaseName}-${version}-mc${project.minecraft_version}-fabric.jar"
+		archiveFileName = "${archivesBaseName}-${project.mod_version}-mc${project.minecraft_version}-fabric.jar"
 	}
 }
 
