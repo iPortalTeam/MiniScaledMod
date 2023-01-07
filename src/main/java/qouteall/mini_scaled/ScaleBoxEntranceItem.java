@@ -36,6 +36,7 @@ import qouteall.q_misc_util.my_util.IntBox;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
+import java.util.function.Consumer;
 
 public class ScaleBoxEntranceItem extends Item {
     
@@ -260,7 +261,7 @@ public class ScaleBoxEntranceItem extends Item {
             if (lenOnDirection == 1) {
                 return ActionResult.FAIL;
             }
-    
+            
             BlockPos newEntranceSize = Helper.putCoordinate(oldEntranceSize, side.getAxis(), lenOnDirection - 1);
             
             IntBox oldOffsets = IntBox.getBoxByBasePointAndSize(oldEntranceSize, BlockPos.ORIGIN);
@@ -329,7 +330,7 @@ public class ScaleBoxEntranceItem extends Item {
         int volume = getVolume(oldEntranceSize);
         
         int lenOnDirection = Helper.getCoordinate(oldEntranceSize, side.getAxis());
-    
+        
         BlockPos newEntranceSize = Helper.putCoordinate(oldEntranceSize, side.getAxis(), lenOnDirection + 1);
         
         boolean areaClear = IntBox.getBoxByBasePointAndSize(newEntranceSize, entry.currentEntrancePos)
@@ -406,22 +407,19 @@ public class ScaleBoxEntranceItem extends Item {
 //            );
 //        }
     }
-//
-//    @Override
-//    public void appendStacks(ItemGroup group, DefaultedList<ItemStack> stacks) {
-//        if (this.isIn(group)) {
-//            for (int scale : ScaleBoxGeneration.supportedScales) {
-//                for (DyeColor dyeColor : DyeColor.values()) {
-//                    ItemStack itemStack = new ItemStack(instance);
-//
-//                    ItemInfo itemInfo = new ItemInfo(scale, dyeColor);
-//                    itemInfo.writeToTag(itemStack.getOrCreateNbt());
-//
-//                    stacks.add(itemStack);
-//                }
-//            }
-//        }
-//    }
+    
+    public static void registerCreativeInventory(Consumer<ItemStack> func) {
+        for (int scale : ScaleBoxGeneration.supportedScales) {
+            for (DyeColor dyeColor : DyeColor.values()) {
+                ItemStack itemStack = new ItemStack(instance);
+                
+                ItemInfo itemInfo = new ItemInfo(scale, dyeColor);
+                itemInfo.writeToTag(itemStack.getOrCreateNbt());
+                
+                func.accept(itemStack);
+            }
+        }
+    }
     
     private static final Text spaceText = Text.literal(" ");
     

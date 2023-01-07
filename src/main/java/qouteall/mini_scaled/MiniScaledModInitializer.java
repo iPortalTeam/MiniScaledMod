@@ -9,10 +9,15 @@ import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.event.player.UseBlockCallback;
+import net.fabricmc.fabric.api.itemgroup.v1.FabricItemGroup;
+import net.fabricmc.fabric.api.itemgroup.v1.FabricItemGroupEntries;
+import net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents;
+import net.fabricmc.fabric.impl.itemgroup.MinecraftItemGroups;
 import net.minecraft.block.Block;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.Item;
+import net.minecraft.item.ItemGroups;
 import net.minecraft.item.Items;
 import net.minecraft.registry.Registries;
 import net.minecraft.server.MinecraftServer;
@@ -71,22 +76,22 @@ public class MiniScaledModInitializer implements ModInitializer {
             
             return ActionResult.PASS;
         });
-    
+        
         // config
         AutoConfig.register(MiniScaledConfig.class, GsonConfigSerializer::new);
-        ServerLifecycleEvents.SERVER_STARTED.register(s ->{
+        ServerLifecycleEvents.SERVER_STARTED.register(s -> {
             MiniScaledConfig config = AutoConfig.getConfigHolder(MiniScaledConfig.class).getConfig();
             applyConfigServerSide(config);
         });
-        AutoConfig.getConfigHolder(MiniScaledConfig.class).registerSaveListener(new ConfigSerializeEvent.Save<MiniScaledConfig>() {
-            @Override
-            public ActionResult onSave(ConfigHolder<MiniScaledConfig> configHolder, MiniScaledConfig config) {
-                if (MiscHelper.getServer() != null) {
-                    applyConfigServerSide(config);
-                }
-                return ActionResult.PASS;
+        AutoConfig.getConfigHolder(MiniScaledConfig.class).registerSaveListener((configHolder, config) -> {
+            if (MiscHelper.getServer() != null) {
+                applyConfigServerSide(config);
             }
+            return ActionResult.PASS;
         });
+        
+        ItemGroupEvents.modifyEntriesEvent(MinecraftItemGroups.TOOLS_ID)
+            .register(entries -> ScaleBoxEntranceItem.registerCreativeInventory(entries::add));
         
         System.out.println("MiniScaled Mod Initializing");
     }
@@ -152,7 +157,7 @@ public class MiniScaledModInitializer implements ModInitializer {
             Identifier identifier = new Identifier(miniScaledConfig.creationItem);
             
             Item creationItem = Registries.ITEM.get(identifier);
-    
+            
             if (creationItem != Items.AIR) {
                 ScaleBoxEntranceCreation.creationItem = creationItem;
             }
