@@ -15,7 +15,6 @@ import net.minecraft.nbt.NbtCompound;
 import net.minecraft.registry.Registries;
 import net.minecraft.registry.Registry;
 import net.minecraft.text.Text;
-import net.minecraft.text.TranslatableTextContent;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
@@ -203,22 +202,10 @@ public class MiniScaledPortal extends Portal {
     @Override
     public boolean isInteractable() {
         if (world.isClient()) {
-            return isClientPlayerCrouching();
+            return ClientScaleBoxInteractionControl.canInteractInsideScaleBox();
         }
         else {
             return true;
         }
-    }
-    
-    // when crouching, the player can directly manipulate the block inside scale box
-    // when not crouching, the player can break or interact the scale box placeholder block
-    @Environment(EnvType.CLIENT)
-    public static boolean isClientPlayerCrouching() {
-        ClientPlayerEntity player = MinecraftClient.getInstance().player;
-        
-        if (player != null) {
-            return player.getPose() == EntityPose.CROUCHING;
-        }
-        return false;
     }
 }

@@ -22,6 +22,7 @@ import net.minecraft.world.BlockView;
 import net.minecraft.world.World;
 import org.jetbrains.annotations.Nullable;
 import qouteall.imm_ptl.core.IPGlobal;
+import qouteall.mini_scaled.ClientScaleBoxInteractionControl;
 import qouteall.mini_scaled.MiniScaledPortal;
 import qouteall.q_misc_util.my_util.MyTaskList;
 
@@ -96,7 +97,7 @@ public class ScaleBoxPlaceholderBlock extends BlockWithEntity {
     public VoxelShape getOutlineShape(BlockState state, BlockView world, BlockPos pos, ShapeContext context) {
         if (world instanceof World world1) {
             if (world1.isClient()) {
-                if (MiniScaledPortal.isClientPlayerCrouching()) {
+                if (ClientScaleBoxInteractionControl.canInteractInsideScaleBox()) {
                     return VoxelShapes.empty();
                 }
             }

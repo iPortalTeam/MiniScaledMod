@@ -93,6 +93,8 @@ public class MiniScaledModInitializer implements ModInitializer {
         ItemGroupEvents.modifyEntriesEvent(MinecraftItemGroups.TOOLS_ID)
             .register(entries -> ScaleBoxEntranceItem.registerCreativeInventory(entries::add));
         
+        ClientScaleBoxInteractionControl.init();
+        
         System.out.println("MiniScaled Mod Initializing");
     }
     

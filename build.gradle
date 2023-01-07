@@ -52,6 +52,8 @@ dependencies {
 		exclude(group: "net.fabricmc.fabric-api")
 	}
 	modImplementation "maven.modrinth:modmenu:${modmenu_version}"
+
+	include "me.shedaniel.cloth:cloth-config-fabric:${cloth_config_version}"
 }
 
 processResources {
