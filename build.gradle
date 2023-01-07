@@ -17,6 +17,17 @@ repositories {
 		name = 'Ladysnake Mods'
 		url = 'https://ladysnake.jfrog.io/artifactory/mods'
 	}
+
+	maven { url "https://maven.shedaniel.me/" }
+	maven { url "https://maven.terraformersmc.com/releases/" }
+
+	maven {
+		name = "Modrinth"
+		url = "https://api.modrinth.com/maven"
+		content {
+			includeGroup "maven.modrinth"
+		}
+	}
 }
 
 dependencies {
@@ -28,18 +39,19 @@ dependencies {
 	// Fabric API. This is technically optional, but you probably want it anyway.
 	modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
 
-	modImplementation ('com.github.iPortalTeam.ImmersivePortalsMod:imm_ptl_core:v2.4.4-mc1.19.3'){
+	modImplementation ('com.github.iPortalTeam.ImmersivePortalsMod:imm_ptl_core:v2.4.5-mc1.19.3'){
 		exclude(group: "net.fabricmc.fabric-api")
 		transitive(false)
 	}
-	modImplementation ('com.github.iPortalTeam.ImmersivePortalsMod:q_misc_util:v2.4.4-mc1.19.3'){
+	modImplementation ('com.github.iPortalTeam.ImmersivePortalsMod:q_misc_util:v2.4.5-mc1.19.3'){
 		exclude(group: "net.fabricmc.fabric-api")
 		transitive(false)
 	}
 
-//	modImplementation('com.github.qouteall:sodium-fabric:5cfc6674') {
-//		transitive = false
-//	}
+	modImplementation("me.shedaniel.cloth:cloth-config-fabric:${cloth_config_version}") {
+		exclude(group: "net.fabricmc.fabric-api")
+	}
+	modImplementation "maven.modrinth:modmenu:${modmenu_version}"
 }
 
 processResources {

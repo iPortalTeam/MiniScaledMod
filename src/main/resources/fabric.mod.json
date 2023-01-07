@@ -9,11 +9,11 @@
     "qouteall"
   ],
   "contact": {
-    "homepage": "?",
-    "sources": "?"
+    "homepage": "https://qouteall.fun/immptl/wiki/MiniScaled.html",
+    "sources": "https://github.com/iPortalTeam/MiniScaledMod"
   },
 
-  "license": "?",
+  "license": "Apache License 2.0",
   "icon": "assets/mini_scaled/icon.png",
 
   "environment": "*",
@@ -23,6 +23,9 @@
     ],
     "client": [
       "qouteall.mini_scaled.MiniScaledModInitializerClient"
+    ],
+    "modmenu": [
+      "qouteall.mini_scaled.config.MiniScaledConfigMenu"
     ]
   },
   "mixins": [
@@ -36,7 +39,6 @@
     "minecraft": "1.19.3"
   },
   "suggests": {
-    "another-mod": "*"
   },
 
   "custom": {

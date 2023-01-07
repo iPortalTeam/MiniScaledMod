@@ -1,32 +1,45 @@
 package qouteall.mini_scaled;
 
+import com.mojang.authlib.minecraft.client.MinecraftClient;
+import me.shedaniel.autoconfig.AutoConfig;
+import me.shedaniel.autoconfig.ConfigHolder;
+import me.shedaniel.autoconfig.event.ConfigSerializeEvent;
+import me.shedaniel.autoconfig.serializer.GsonConfigSerializer;
 import net.fabricmc.api.ModInitializer;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.event.player.UseBlockCallback;
 import net.minecraft.block.Block;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.item.Item;
+import net.minecraft.item.Items;
+import net.minecraft.registry.Registries;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
-import net.minecraft.text.LiteralTextContent;
 import net.minecraft.text.Text;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.Hand;
+import net.minecraft.util.Identifier;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import qouteall.imm_ptl.core.IPGlobal;
 import qouteall.imm_ptl.core.teleportation.ServerTeleportationManager;
 import qouteall.mini_scaled.block.BoxBarrierBlock;
 import qouteall.mini_scaled.block.ScaleBoxPlaceholderBlock;
 import qouteall.mini_scaled.block.ScaleBoxPlaceholderBlockEntity;
+import qouteall.mini_scaled.config.MiniScaledConfig;
 import qouteall.q_misc_util.LifecycleHack;
 import qouteall.q_misc_util.MiscHelper;
 import qouteall.q_misc_util.api.DimensionAPI;
 
 public class MiniScaledModInitializer implements ModInitializer {
+    private static final Logger LOGGER = LoggerFactory.getLogger(MiniScaledModInitializer.class);
     
     @Override
     public void onInitialize() {
@@ -57,6 +70,22 @@ public class MiniScaledModInitializer implements ModInitializer {
             }
             
             return ActionResult.PASS;
+        });
+    
+        // config
+        AutoConfig.register(MiniScaledConfig.class, GsonConfigSerializer::new);
+        ServerLifecycleEvents.SERVER_STARTED.register(s ->{
+            MiniScaledConfig config = AutoConfig.getConfigHolder(MiniScaledConfig.class).getConfig();
+            applyConfigServerSide(config);
+        });
+        AutoConfig.getConfigHolder(MiniScaledConfig.class).registerSaveListener(new ConfigSerializeEvent.Save<MiniScaledConfig>() {
+            @Override
+            public ActionResult onSave(ConfigHolder<MiniScaledConfig> configHolder, MiniScaledConfig config) {
+                if (MiscHelper.getServer() != null) {
+                    applyConfigServerSide(config);
+                }
+                return ActionResult.PASS;
+            }
         });
         
         System.out.println("MiniScaled Mod Initializing");
@@ -115,6 +144,25 @@ public class MiniScaledModInitializer implements ModInitializer {
                     ((ServerWorld) entity.world)
                 );
             }
+        }
+    }
+    
+    public static void applyConfigServerSide(MiniScaledConfig miniScaledConfig) {
+        try {
+            Identifier identifier = new Identifier(miniScaledConfig.creationItem);
+            
+            Item creationItem = Registries.ITEM.get(identifier);
+    
+            if (creationItem != Items.AIR) {
+                ScaleBoxEntranceCreation.creationItem = creationItem;
+            }
+            else {
+                LOGGER.error("Invalid scale box creation item {}", identifier);
+                ScaleBoxEntranceCreation.creationItem = null;
+            }
+        }
+        catch (Exception e) {
+            e.printStackTrace();
         }
     }
 }

@@ -14,5 +14,6 @@
   "mini_scaled.cannot_expand_size_limit": "Cannot expand the scale box because the maximum inner length is 64",
   "mini_scaled.cannot_shrink_direction": "The scale box can only be shrunk from up, south and east faces.",
   "mini_scaled.cannot_shrink_has_blocks": "Cannot shrink the scale box because the shrunk region has blocks remaining.",
-  "mini_scaled.whatever": "whatever"
+  "mini_scaled.whatever": "whatever",
+  "text.autoconfig.mini_scaled.option.creationItem": "Scale Box Creation Item"
 }

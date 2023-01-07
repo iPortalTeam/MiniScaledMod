@@ -4,6 +4,7 @@ import net.fabricmc.fabric.api.event.player.UseBlockCallback;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.block.StainedGlassBlock;
+import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -25,6 +26,8 @@ import java.util.stream.Collectors;
 
 public class ScaleBoxEntranceCreation {
     
+    public static Item creationItem;
+    
     private static final List<BoxFrameMatcher> boxFrameMatchers =
         Arrays.stream(ScaleBoxGeneration.supportedScales).mapToObj(
             s -> new BoxFrameMatcher(new BlockPos(s, s, s))
@@ -33,10 +36,14 @@ public class ScaleBoxEntranceCreation {
     
     public static void init() {
         UseBlockCallback.EVENT.register((player, world, hand, hitResult) -> {
+            if (creationItem == null) {
+                return ActionResult.PASS;
+            }
+            
             ItemStack stackInHand = player.getStackInHand(hand);
             
             if (player instanceof ServerPlayerEntity serverPlayer) {
-                if (stackInHand.getItem() == Items.NETHERITE_INGOT) {
+                if (stackInHand.getItem() == creationItem) {
                     boolean succeeded =
                         onRightClickBoxFrameUsingNetherite(serverPlayer, hitResult.getBlockPos());
                     if (succeeded) {
@@ -74,7 +81,7 @@ public class ScaleBoxEntranceCreation {
             Predicate<BlockPos> blockPredicate = p -> world.getBlockState(p) == originBlockState;
             boolean roughBoxFrameComplete =
                 Arrays.stream(roughBox.get12Edges()).allMatch(edge -> edge.fastStream().allMatch(blockPredicate));
-    
+            
             if (roughBoxFrameComplete) {
                 player.sendMessage(Text.translatable(
                     "mini_scaled.invalid_box_size",
@@ -91,7 +98,7 @@ public class ScaleBoxEntranceCreation {
                     )
                 ), false);
             }
-    
+            
             return false;
         }
         
