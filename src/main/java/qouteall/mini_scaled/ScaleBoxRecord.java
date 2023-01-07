@@ -3,12 +3,13 @@ package qouteall.mini_scaled;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.nbt.NbtList;
+import net.minecraft.registry.Registries;
+import net.minecraft.registry.RegistryKey;
+import net.minecraft.registry.RegistryKeys;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.DyeColor;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.registry.Registry;
-import net.minecraft.util.registry.RegistryKey;
 import net.minecraft.world.PersistentState;
 import net.minecraft.world.World;
 import org.jetbrains.annotations.Nullable;
@@ -157,7 +158,7 @@ public class ScaleBoxRecord extends PersistentState {
             ownerNameCache = tag.getString("ownerNameCache");
             if (tag.contains("currentEntranceDim")) {
                 currentEntranceDim = RegistryKey.of(
-                    Registry.WORLD_KEY,
+                    RegistryKeys.WORLD,
                     new Identifier(tag.getString("currentEntranceDim"))
                 );
             }

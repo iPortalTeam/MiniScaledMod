@@ -7,18 +7,20 @@ import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.block.Blocks;
 import net.minecraft.client.render.DimensionEffects;
+import net.minecraft.registry.DynamicRegistryManager;
+import net.minecraft.registry.Registries;
+import net.minecraft.registry.Registry;
+import net.minecraft.registry.RegistryKey;
+import net.minecraft.registry.RegistryKeys;
+import net.minecraft.registry.SimpleRegistry;
+import net.minecraft.registry.entry.RegistryEntry;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.structure.StructureSet;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.Vec3d;
-import net.minecraft.util.registry.DynamicRegistryManager;
-import net.minecraft.util.registry.MutableRegistry;
-import net.minecraft.util.registry.Registry;
-import net.minecraft.util.registry.RegistryEntry;
-import net.minecraft.util.registry.RegistryKey;
-import net.minecraft.util.registry.SimpleRegistry;
 import net.minecraft.world.World;
 import net.minecraft.world.biome.Biome;
+import net.minecraft.world.biome.BiomeKeys;
 import net.minecraft.world.dimension.DimensionOptions;
 import net.minecraft.world.dimension.DimensionType;
 import net.minecraft.world.gen.GeneratorOptions;
@@ -30,21 +32,22 @@ import qouteall.imm_ptl.core.McHelper;
 import qouteall.q_misc_util.Helper;
 import qouteall.q_misc_util.api.DimensionAPI;
 
+import java.util.ArrayList;
 import java.util.Optional;
 
 public class VoidDimension {
     public static final RegistryKey<World> dimensionId = RegistryKey.of(
-        Registry.WORLD_KEY,
+        RegistryKeys.WORLD,
         new Identifier("mini_scaled:void")
     );
     
     static void initializeVoidDimension(
         GeneratorOptions generatorOptions, DynamicRegistryManager registryManager
     ) {
-        Registry<DimensionOptions> registry = generatorOptions.getDimensions();
+        Registry<DimensionOptions> registry = registryManager.get(RegistryKeys.DIMENSION);
         
-        RegistryEntry<DimensionType> dimType = registryManager.get(Registry.DIMENSION_TYPE_KEY).getEntry(
-            RegistryKey.of(Registry.DIMENSION_TYPE_KEY, new Identifier("mini_scaled:void_dim_type"))
+        RegistryEntry<DimensionType> dimType = registryManager.get(RegistryKeys.DIMENSION_TYPE).getEntry(
+            RegistryKey.of(RegistryKeys.DIMENSION_TYPE, new Identifier("mini_scaled:void_dim_type"))
         ).orElseThrow(() -> new RuntimeException("Missing dimension type mini_scaled:void_dim_type"));
         
         Identifier dimId = new Identifier("mini_scaled:void");
@@ -53,26 +56,19 @@ public class VoidDimension {
             registry, dimId, dimType,
             createVoidGenerator(registryManager)
         );
-        DimensionAPI.markDimensionNonPersistent(dimId);
     }
     
     private static ChunkGenerator createVoidGenerator(DynamicRegistryManager rm) {
-        Registry<Biome> biomeRegistry = rm.get(Registry.BIOME_KEY);
+        Registry<Biome> biomeRegistry = rm.get(RegistryKeys.BIOME);
         
+        RegistryEntry.Reference<Biome> plains = biomeRegistry.getEntry(BiomeKeys.PLAINS).orElseThrow();
         
         FlatChunkGeneratorConfig flatChunkGeneratorConfig =
-            new FlatChunkGeneratorConfig(Optional.empty(), biomeRegistry);
+            new FlatChunkGeneratorConfig(Optional.empty(), plains, new ArrayList<>());
         flatChunkGeneratorConfig.getLayers().add(new FlatChunkGeneratorLayer(1, Blocks.AIR));
         flatChunkGeneratorConfig.updateLayerBlocks();
-    
-//        Registry<StructureSet> structureSetRegistry = rm.get(Registry.STRUCTURE_SET_KEY);
-        Registry<StructureSet> structureSetRegistry = new SimpleRegistry<>(
-            Registry.STRUCTURE_SET_KEY,
-            Lifecycle.stable(),
-            null
-        );
+        
         return new FlatChunkGenerator(
-            structureSetRegistry,
             flatChunkGeneratorConfig
         );
     }

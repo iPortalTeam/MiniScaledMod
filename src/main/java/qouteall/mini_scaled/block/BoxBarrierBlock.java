@@ -8,9 +8,10 @@ import net.minecraft.block.BlockRenderType;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Material;
 import net.minecraft.block.ShapeContext;
+import net.minecraft.registry.Registries;
+import net.minecraft.registry.Registry;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.registry.Registry;
 import net.minecraft.util.shape.VoxelShape;
 import net.minecraft.util.shape.VoxelShapes;
 import net.minecraft.world.BlockView;
@@ -27,7 +28,7 @@ public class BoxBarrierBlock extends Block {
     
     public static void init() {
         Registry.register(
-            Registry.BLOCK,
+            Registries.BLOCK,
             new Identifier("mini_scaled", "barrier"),
             BoxBarrierBlock.instance
         );

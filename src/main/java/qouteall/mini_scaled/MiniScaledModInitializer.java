@@ -44,8 +44,6 @@ public class MiniScaledModInitializer implements ModInitializer {
         
         ScaleBoxEntranceItem.init();
         
-        ScaleBoxCraftingRecipe.init();
-        
         ScaleBoxEntranceCreation.init();
         
         IPGlobal.enableDepthClampForPortalRendering = true;

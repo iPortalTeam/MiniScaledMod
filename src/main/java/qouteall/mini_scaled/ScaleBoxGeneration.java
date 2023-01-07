@@ -1,6 +1,8 @@
 package qouteall.mini_scaled;
 
 import net.minecraft.block.Blocks;
+import net.minecraft.registry.Registries;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import qouteall.imm_ptl.core.McHelper;
 import qouteall.imm_ptl.core.chunk_loading.ChunkLoader;
@@ -18,7 +20,6 @@ import net.minecraft.util.math.Box;
 import net.minecraft.util.math.ChunkPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.MathHelper;
-import net.minecraft.util.registry.Registry;
 import org.apache.commons.lang3.Validate;
 import qouteall.mini_scaled.block.BoxBarrierBlock;
 import qouteall.mini_scaled.block.ScaleBoxPlaceholderBlock;
@@ -199,7 +200,7 @@ public class ScaleBoxGeneration {
             Math.max(innerAreaBox.getSize().getX(), innerAreaBox.getSize().getZ()) / 16 + 2
         );
         
-        Block glassBlock = Registry.BLOCK.get(new Identifier("minecraft:" + entry.color.getName() + "_stained_glass"));
+        Block glassBlock = getGlassBlock(entry.color);
         BlockState frameBlock = glassBlock.getDefaultState();
         
         // set block after fulling loading the chunk
@@ -258,6 +259,10 @@ public class ScaleBoxGeneration {
             
         });
         
+    }
+    
+    private static Block getGlassBlock(DyeColor color) {
+        return Registries.BLOCK.get(new Identifier("minecraft:" + color.getName() + "_stained_glass"));
     }
     
     public static boolean isValidScale(int size) {

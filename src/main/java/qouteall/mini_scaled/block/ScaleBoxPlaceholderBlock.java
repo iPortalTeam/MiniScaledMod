@@ -11,10 +11,11 @@ import net.minecraft.block.ShapeContext;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.block.entity.BlockEntityTicker;
 import net.minecraft.block.entity.BlockEntityType;
+import net.minecraft.registry.Registries;
+import net.minecraft.registry.Registry;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.registry.Registry;
 import net.minecraft.util.shape.VoxelShape;
 import net.minecraft.util.shape.VoxelShapes;
 import net.minecraft.world.BlockView;
@@ -34,7 +35,7 @@ public class ScaleBoxPlaceholderBlock extends BlockWithEntity {
     
     public static void init() {
         Registry.register(
-            Registry.BLOCK,
+            Registries.BLOCK,
             new Identifier("mini_scaled", "scale_box_placeholder"),
             ScaleBoxPlaceholderBlock.instance
         );

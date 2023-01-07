@@ -1,35 +1,29 @@
 package qouteall.mini_scaled;
 
-import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.StainedGlassBlock;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.client.item.TooltipContext;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.Item;
-import net.minecraft.item.ItemGroup;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.ItemUsageContext;
 import net.minecraft.item.Items;
 import net.minecraft.nbt.NbtCompound;
+import net.minecraft.registry.Registries;
+import net.minecraft.registry.Registry;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
-import net.minecraft.text.LiteralTextContent;
 import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
-import net.minecraft.text.TranslatableTextContent;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.DyeColor;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.Hand;
 import net.minecraft.util.Identifier;
-import net.minecraft.util.collection.DefaultedList;
 import net.minecraft.util.hit.BlockHitResult;
-import net.minecraft.util.hit.HitResult;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
-import net.minecraft.util.math.Vec3i;
-import net.minecraft.util.registry.Registry;
 import net.minecraft.world.World;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -45,11 +39,11 @@ import java.util.UUID;
 
 public class ScaleBoxEntranceItem extends Item {
     
-    public static final ScaleBoxEntranceItem instance = new ScaleBoxEntranceItem(new Item.Settings().group(ItemGroup.MISC));
+    public static final ScaleBoxEntranceItem instance = new ScaleBoxEntranceItem(new Item.Settings());
     
     public static void init() {
         Registry.register(
-            Registry.ITEM,
+            Registries.ITEM,
             new Identifier("mini_scaled:scale_box_item"),
             instance
         );
@@ -266,10 +260,8 @@ public class ScaleBoxEntranceItem extends Item {
             if (lenOnDirection == 1) {
                 return ActionResult.FAIL;
             }
-            
-            BlockPos newEntranceSize = putCoordinate(
-                oldEntranceSize, side.getAxis(), lenOnDirection - 1
-            );
+    
+            BlockPos newEntranceSize = Helper.putCoordinate(oldEntranceSize, side.getAxis(), lenOnDirection - 1);
             
             IntBox oldOffsets = IntBox.getBoxByBasePointAndSize(oldEntranceSize, BlockPos.ORIGIN);
             IntBox newOffsets = IntBox.getBoxByBasePointAndSize(newEntranceSize, BlockPos.ORIGIN);
@@ -337,10 +329,8 @@ public class ScaleBoxEntranceItem extends Item {
         int volume = getVolume(oldEntranceSize);
         
         int lenOnDirection = Helper.getCoordinate(oldEntranceSize, side.getAxis());
-        
-        BlockPos newEntranceSize = putCoordinate(
-            oldEntranceSize, side.getAxis(), lenOnDirection + 1
-        );
+    
+        BlockPos newEntranceSize = Helper.putCoordinate(oldEntranceSize, side.getAxis(), lenOnDirection + 1);
         
         boolean areaClear = IntBox.getBoxByBasePointAndSize(newEntranceSize, entry.currentEntrancePos)
             .fastStream().allMatch(blockPos -> {
@@ -390,19 +380,6 @@ public class ScaleBoxEntranceItem extends Item {
         return ActionResult.SUCCESS;
     }
     
-    // TODO change to the version in immptl
-    private static BlockPos putCoordinate(Vec3i v, Direction.Axis axis, int value) {
-        if (axis == Direction.Axis.X) {
-            return new BlockPos(value, v.getY(), v.getZ());
-        }
-        else if (axis == Direction.Axis.Y) {
-            return new BlockPos(v.getX(), value, v.getZ());
-        }
-        else {
-            return new BlockPos(v.getX(), v.getY(), value);
-        }
-    }
-    
     @Override
     public void appendTooltip(ItemStack stack, World world, List<Text> tooltip, TooltipContext context) {
         super.appendTooltip(stack, world, tooltip, context);
@@ -429,22 +406,22 @@ public class ScaleBoxEntranceItem extends Item {
 //            );
 //        }
     }
-    
-    @Override
-    public void appendStacks(ItemGroup group, DefaultedList<ItemStack> stacks) {
-        if (this.isIn(group)) {
-            for (int scale : ScaleBoxGeneration.supportedScales) {
-                for (DyeColor dyeColor : DyeColor.values()) {
-                    ItemStack itemStack = new ItemStack(instance);
-                    
-                    ItemInfo itemInfo = new ItemInfo(scale, dyeColor);
-                    itemInfo.writeToTag(itemStack.getOrCreateNbt());
-                    
-                    stacks.add(itemStack);
-                }
-            }
-        }
-    }
+//
+//    @Override
+//    public void appendStacks(ItemGroup group, DefaultedList<ItemStack> stacks) {
+//        if (this.isIn(group)) {
+//            for (int scale : ScaleBoxGeneration.supportedScales) {
+//                for (DyeColor dyeColor : DyeColor.values()) {
+//                    ItemStack itemStack = new ItemStack(instance);
+//
+//                    ItemInfo itemInfo = new ItemInfo(scale, dyeColor);
+//                    itemInfo.writeToTag(itemStack.getOrCreateNbt());
+//
+//                    stacks.add(itemStack);
+//                }
+//            }
+//        }
+//    }
     
     private static final Text spaceText = Text.literal(" ");
     
@@ -488,7 +465,7 @@ public class ScaleBoxEntranceItem extends Item {
         if (nbt == null) {
             return 0;
         }
-        // does not use ItemInfo to improve performance
+        // not using ItemInfo to improve performance
         String colorText = nbt.getString("color");
         DyeColor dyeColor = DyeColor.byName(colorText, DyeColor.BLACK);
         return dyeColor.getMapColor().color;

@@ -18,12 +18,4 @@ public class MixinItemColors {
             ScaleBoxEntranceItem.instance
         );
     }
-
-//    @Inject(method = "getColor", at = @At("HEAD"), cancellable = true)
-//    private void onGetColor(ItemStack item, int tintIndex, CallbackInfoReturnable<Integer> cir) {
-//        if (item.getItem() == ScaleBoxItem.instance) {
-//            int renderingColor = ScaleBoxItem.getRenderingColor(item);
-//            cir.setReturnValue(renderingColor);
-//        }
-//    }
 }

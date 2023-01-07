@@ -7,11 +7,13 @@ import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.block.entity.BlockEntityType;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NbtCompound;
+import net.minecraft.registry.Registries;
+import net.minecraft.registry.Registry;
+import net.minecraft.registry.RegistryKey;
+import net.minecraft.registry.RegistryKeys;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.ItemScatterer;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.registry.Registry;
-import net.minecraft.util.registry.RegistryKey;
 import net.minecraft.world.World;
 import org.apache.commons.lang3.Validate;
 import qouteall.mini_scaled.ScaleBoxEntranceItem;
@@ -24,7 +26,7 @@ public class ScaleBoxPlaceholderBlockEntity extends BlockEntity {
     
     public static void init() {
         blockEntityType = Registry.register(
-            Registry.BLOCK_ENTITY_TYPE,
+            Registries.BLOCK_ENTITY_TYPE,
             "mini_scaled:placeholder_block_entity",
             FabricBlockEntityTypeBuilder.create(
                 ScaleBoxPlaceholderBlockEntity::new,

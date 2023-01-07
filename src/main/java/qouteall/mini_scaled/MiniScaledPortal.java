@@ -12,11 +12,12 @@ import net.minecraft.entity.EntityType;
 import net.minecraft.entity.SpawnGroup;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.nbt.NbtCompound;
+import net.minecraft.registry.Registries;
+import net.minecraft.registry.Registry;
 import net.minecraft.text.Text;
 import net.minecraft.text.TranslatableTextContent;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.Vec3d;
-import net.minecraft.util.registry.Registry;
 import net.minecraft.world.World;
 import qouteall.imm_ptl.core.IPGlobal;
 import qouteall.imm_ptl.core.McHelper;
@@ -80,7 +81,7 @@ public class MiniScaledPortal extends Portal {
         ).fireImmune().trackable(96, 20).build();
         setEntityType.accept(entityType);
         Registry.register(
-            Registry.ENTITY_TYPE,
+            Registries.ENTITY_TYPE,
             new Identifier(id),
             entityType
         );
@@ -92,7 +93,7 @@ public class MiniScaledPortal extends Portal {
             () -> entityType,
             "mini_scaled:portal",
             MiniScaledPortal::new,
-            Registry.ENTITY_TYPE
+            Registries.ENTITY_TYPE
         );
     }
     
