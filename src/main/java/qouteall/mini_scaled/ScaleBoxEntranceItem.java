@@ -304,7 +304,7 @@ public class ScaleBoxEntranceItem extends Item {
             
             if (!player.isCreative()) {
                 player.giveItemStack(new ItemStack(
-                    Items.NETHERITE_INGOT,
+                    ScaleBoxEntranceCreation.creationItem,
                     compensateNetheriteNum
                 ));
             }
