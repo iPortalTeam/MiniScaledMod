@@ -8,7 +8,6 @@ import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.ItemUsageContext;
-import net.minecraft.item.Items;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.registry.Registries;
 import net.minecraft.registry.Registry;
@@ -149,12 +148,11 @@ public class ScaleBoxEntranceItem extends Item {
         );
         
         BlockPos entranceSize = entry.currentEntranceSize;
-        
-        BlockPos realPlacementPos = IntBox
-            .getBoxByBasePointAndSize(entranceSize, BlockPos.ORIGIN)
+    
+        BlockPos realPlacementPos = IntBox.fromBasePointAndSize(BlockPos.ORIGIN, entranceSize)
             .stream()
             .map(offset -> placementPos.subtract(offset))
-            .filter(basePos -> IntBox.getBoxByBasePointAndSize(entranceSize, basePos)
+            .filter(basePos -> IntBox.fromBasePointAndSize(basePos, entranceSize)
                 .stream().allMatch(blockPos -> world.getBlockState(blockPos).isAir())
             )
             .findFirst().orElse(null);
@@ -263,9 +261,9 @@ public class ScaleBoxEntranceItem extends Item {
             }
             
             BlockPos newEntranceSize = Helper.putCoordinate(oldEntranceSize, side.getAxis(), lenOnDirection - 1);
-            
-            IntBox oldOffsets = IntBox.getBoxByBasePointAndSize(oldEntranceSize, BlockPos.ORIGIN);
-            IntBox newOffsets = IntBox.getBoxByBasePointAndSize(newEntranceSize, BlockPos.ORIGIN);
+    
+            IntBox oldOffsets = IntBox.fromBasePointAndSize(BlockPos.ORIGIN, oldEntranceSize);
+            IntBox newOffsets = IntBox.fromBasePointAndSize(BlockPos.ORIGIN, newEntranceSize);
             boolean hasRemainingBlocks = oldOffsets.stream().anyMatch(offset -> {
                 if (newOffsets.contains(offset)) {return false;}
                 IntBox innerUnitBox = entry.getInnerUnitBox(offset);
@@ -332,8 +330,8 @@ public class ScaleBoxEntranceItem extends Item {
         int lenOnDirection = Helper.getCoordinate(oldEntranceSize, side.getAxis());
         
         BlockPos newEntranceSize = Helper.putCoordinate(oldEntranceSize, side.getAxis(), lenOnDirection + 1);
-        
-        boolean areaClear = IntBox.getBoxByBasePointAndSize(newEntranceSize, entry.currentEntrancePos)
+    
+        boolean areaClear = IntBox.fromBasePointAndSize(entry.currentEntrancePos, newEntranceSize)
             .fastStream().allMatch(blockPos -> {
                 BlockState blockState = world.getBlockState(blockPos);
                 return blockState.isAir() || blockState.getBlock() == ScaleBoxPlaceholderBlock.instance;

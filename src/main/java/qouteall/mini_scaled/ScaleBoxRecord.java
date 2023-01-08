@@ -3,7 +3,6 @@ package qouteall.mini_scaled;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.nbt.NbtList;
-import net.minecraft.registry.Registries;
 import net.minecraft.registry.RegistryKey;
 import net.minecraft.registry.RegistryKeys;
 import net.minecraft.server.world.ServerWorld;
@@ -13,6 +12,8 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.PersistentState;
 import net.minecraft.world.World;
 import org.jetbrains.annotations.Nullable;
+import qouteall.mini_scaled.util.AARotation;
+import qouteall.mini_scaled.util.MSUtil;
 import qouteall.q_misc_util.Helper;
 import qouteall.q_misc_util.MiscHelper;
 import qouteall.q_misc_util.my_util.IntBox;
@@ -118,35 +119,44 @@ public class ScaleBoxRecord extends PersistentState {
         @Nullable
         public RegistryKey<World> currentEntranceDim; // null means the scale box is not being put
         public BlockPos currentEntrancePos;
-        public BlockPos currentEntranceSize;
+        public BlockPos currentEntranceSize; // before rotation
         public int generation;
+        @Nullable
+        public AARotation entranceRotation;
         
         public Entry() {
         
         }
         
         public IntBox getOuterAreaBox() {
-            return IntBox.getBoxByBasePointAndSize(
-                currentEntranceSize, currentEntrancePos
-            );
+            AARotation rot = getEntranceRotation();
+            BlockPos actualEntranceSize = rot.transform(currentEntranceSize);
+            return MSUtil.getBoxByPosAndSignedSize(currentEntrancePos, actualEntranceSize);
         }
         
         public IntBox getInnerAreaBox() {
-            return IntBox.getBoxByBasePointAndSize(
+            return IntBox.fromBasePointAndSize(
+                this.innerBoxPos,
                 new BlockPos(
                     this.scale * currentEntranceSize.getX(),
                     this.scale * currentEntranceSize.getY(),
                     this.scale * currentEntranceSize.getZ()
-                ),
-                this.innerBoxPos
+                )
             );
         }
         
         IntBox getInnerUnitBox(BlockPos outerOffset) {
-            return IntBox.getBoxByBasePointAndSize(
-                new BlockPos(this.scale, this.scale, this.scale),
-                this.innerBoxPos.add(outerOffset.multiply(this.scale))
+            return IntBox.fromBasePointAndSize(
+                this.innerBoxPos.add(outerOffset.multiply(this.scale)),
+                new BlockPos(this.scale, this.scale, this.scale)
             );
+        }
+        
+        public AARotation getEntranceRotation() {
+            if (entranceRotation == null) {
+                return AARotation.IDENTITY;
+            }
+            return entranceRotation;
         }
         
         void readFromNbt(NbtCompound tag) {
@@ -175,6 +185,13 @@ public class ScaleBoxRecord extends PersistentState {
             }
             
             generation = tag.getInt("generation");
+            
+            if (tag.contains("entranceRotation")) {
+                entranceRotation = AARotation.values()[tag.getInt("entranceRotation")];
+            }
+            else {
+                entranceRotation = null;
+            }
         }
         
         void writeToNbt(NbtCompound tag) {
@@ -190,6 +207,9 @@ public class ScaleBoxRecord extends PersistentState {
             Helper.putVec3i(tag, "currentEntrancePos", currentEntrancePos);
             Helper.putVec3i(tag, "currentEntranceSize", currentEntranceSize);
             tag.putInt("generation", generation);
+            if (entranceRotation != null) {
+                tag.putInt("entranceRotation", entranceRotation.ordinal());
+            }
         }
     }
 }

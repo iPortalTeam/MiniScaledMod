@@ -6,11 +6,9 @@ import net.minecraft.block.Blocks;
 import net.minecraft.block.StainedGlassBlock;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.Text;
-import net.minecraft.text.TranslatableTextContent;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.DyeColor;
 import net.minecraft.util.math.BlockPos;
@@ -127,8 +125,8 @@ public class ScaleBoxEntranceCreation {
         
         public BoxFrameMatcher(BlockPos size) {
             this.size = size;
-            
-            vertexOffsets = IntBox.getBoxByBasePointAndSize(size, BlockPos.ORIGIN).getEightVertices();
+    
+            vertexOffsets = IntBox.fromBasePointAndSize(BlockPos.ORIGIN, size).getEightVertices();
         }
         
         public IntBox matchFromVertex(BlockPos pos, Predicate<BlockPos> blockPredicate) {
@@ -136,7 +134,7 @@ public class ScaleBoxEntranceCreation {
                 BlockPos basePos = pos.subtract(vertexOffset);
                 
                 if (blockPredicate.test(basePos)) {
-                    IntBox box = IntBox.getBoxByBasePointAndSize(size, basePos);
+                    IntBox box = IntBox.fromBasePointAndSize(basePos, size);
                     
                     boolean allGlasses = Arrays.stream(box.get12Edges())
                         .allMatch(edge -> edge.fastStream().allMatch(blockPredicate));
@@ -271,8 +269,8 @@ public class ScaleBoxEntranceCreation {
             getFurthestLen(currPos, Direction.UP, blockPredicate),
             getFurthestLen(currPos, Direction.SOUTH, blockPredicate)
         );
-        
-        return IntBox.getBoxByBasePointAndSize(size, currPos);
+    
+        return IntBox.fromBasePointAndSize(currPos, size);
     }
     
     

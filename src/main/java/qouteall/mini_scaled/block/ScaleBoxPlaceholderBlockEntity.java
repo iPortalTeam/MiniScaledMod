@@ -10,7 +10,6 @@ import net.minecraft.nbt.NbtCompound;
 import net.minecraft.registry.Registries;
 import net.minecraft.registry.Registry;
 import net.minecraft.registry.RegistryKey;
-import net.minecraft.registry.RegistryKeys;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.ItemScatterer;
 import net.minecraft.util.math.BlockPos;
@@ -82,8 +81,8 @@ public class ScaleBoxPlaceholderBlockEntity extends BlockEntity {
             destroyBlockAndBlockEntity();
             return;
         }
-        
-        IntBox scaleBoxOuterArea = IntBox.getBoxByBasePointAndSize(entry.currentEntranceSize, entry.currentEntrancePos);
+    
+        IntBox scaleBoxOuterArea = IntBox.fromBasePointAndSize(entry.currentEntrancePos, entry.currentEntranceSize);
         
         boolean posEquals = scaleBoxOuterArea.contains(getPos());
         if (!posEquals) {

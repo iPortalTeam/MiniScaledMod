@@ -46,10 +46,10 @@ public enum AARotation {
     
     public static final AARotation IDENTITY = SOUTH_ROT0;
     
-    private final Direction transformedX;
-    private final Direction transformedY;
-    private final Direction transformedZ;
-    private final DiligentMatcher.IntMatrix3 matrix;
+    public final Direction transformedX;
+    public final Direction transformedY;
+    public final Direction transformedZ;
+    public final DiligentMatcher.IntMatrix3 matrix;
     
     
     AARotation(Direction transformedZ, Direction transformedX) {
