@@ -2,13 +2,17 @@ package qouteall.mini_scaled.util;
 
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
+import net.minecraft.util.math.DirectionTransformation;
 import net.minecraft.util.math.Vec3i;
 import qouteall.imm_ptl.core.portal.custom_portal_gen.form.DiligentMatcher;
 
+import java.util.Arrays;
+
 /**
- * Axis-Aligned Rotations
+ * Axis-Aligned Rotations.
+ * Vanilla's {@link DirectionTransformation} contains the mirrored transformations. This only contain rotations.
  */
-public enum AARotations {
+public enum AARotation {
     
     SOUTH_ROT0(Direction.SOUTH, Direction.EAST),
     SOUTH_ROT90(Direction.SOUTH, Direction.UP),
@@ -40,13 +44,15 @@ public enum AARotations {
     DOWN_ROT180(Direction.DOWN, Direction.NORTH),
     DOWN_ROT270(Direction.DOWN, Direction.EAST);
     
+    public static final AARotation IDENTITY = SOUTH_ROT0;
+    
     private final Direction transformedX;
     private final Direction transformedY;
     private final Direction transformedZ;
     private final DiligentMatcher.IntMatrix3 matrix;
     
     
-    AARotations(Direction transformedZ, Direction transformedX) {
+    AARotation(Direction transformedZ, Direction transformedX) {
         this.transformedZ = transformedZ;
         this.transformedX = transformedX;
         this.transformedY = dirCrossProduct(transformedZ, transformedX);
@@ -73,31 +79,31 @@ public enum AARotations {
         );
     }
     
-    private static final AARotations[][] multiplicationCache = new AARotations[12][12];
+    private static final AARotation[][] multiplicationCache = new AARotation[24][24];
     
     static {
-        for (AARotations a : values()) {
-            for (AARotations b : values()) {
+        for (AARotation a : values()) {
+            for (AARotation b : values()) {
                 multiplicationCache[a.ordinal()][b.ordinal()] = a.rawMultiply(b);
             }
         }
     }
     
     // firstly apply other, then apply this
-    public AARotations multiply(AARotations other) {
+    public AARotation multiply(AARotation other) {
         return multiplicationCache[this.ordinal()][other.ordinal()];
     }
     
     // firstly apply other, then apply this
-    private AARotations rawMultiply(AARotations other) {
+    private AARotation rawMultiply(AARotation other) {
         return getAARotationFromZX(
             transformDirection(other.transformedZ),
             transformDirection(other.transformedX)
         );
     }
     
-    private static AARotations getAARotationFromZX(Direction transformedZ, Direction transformedX) {
-        for (AARotations value : values()) {
+    private static AARotation getAARotationFromZX(Direction transformedZ, Direction transformedX) {
+        for (AARotation value : values()) {
             if (value.transformedZ == transformedZ && value.transformedX == transformedX) {
                 return value;
             }
@@ -105,4 +111,20 @@ public enum AARotations {
         throw new IllegalArgumentException();
     }
     
+    private static final AARotation[] inverseCache = new AARotation[24];
+    
+    static {
+        AARotation[] values = values();
+        for (int i = 0; i < values.length; i++) {
+            AARotation rot = values[i];
+            // brute force inverse
+            AARotation inverse = Arrays.stream(values())
+                .filter(b -> rot.multiply(b) == IDENTITY).findFirst().orElseThrow();
+            inverseCache[i] = inverse;
+        }
+    }
+    
+    public AARotation getInverse() {
+        return inverseCache[this.ordinal()];
+    }
 }
