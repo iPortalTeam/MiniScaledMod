@@ -12,10 +12,12 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.PersistentState;
 import net.minecraft.world.World;
 import org.jetbrains.annotations.Nullable;
-import qouteall.mini_scaled.util.AARotation;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import qouteall.mini_scaled.util.MSUtil;
 import qouteall.q_misc_util.Helper;
 import qouteall.q_misc_util.MiscHelper;
+import qouteall.q_misc_util.my_util.AARotation;
 import qouteall.q_misc_util.my_util.IntBox;
 
 import java.util.ArrayList;
@@ -25,6 +27,8 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 public class ScaleBoxRecord extends PersistentState {
+    private static final Logger LOGGER = LoggerFactory.getLogger(ScaleBoxRecord.class);
+    
     private List<Entry> entries = new ArrayList<>();
     
     @Nullable
@@ -183,6 +187,10 @@ public class ScaleBoxRecord extends PersistentState {
             
             if (tag.contains("currentEntranceSizeX")) {
                 currentEntranceSize = Helper.getVec3i(tag, "currentEntranceSize");
+                if (currentEntranceSize.getX() == 0 || currentEntranceSize.getY() == 0 || currentEntranceSize.getZ() == 0) {
+                    LOGGER.error("Invalid entrance size in {}", tag);
+                    currentEntranceSize = new BlockPos(1, 1, 1);
+                }
             }
             else {
                 currentEntranceSize = new BlockPos(1, 1, 1);
@@ -201,7 +209,7 @@ public class ScaleBoxRecord extends PersistentState {
         void writeToNbt(NbtCompound tag) {
             tag.putInt("id", id);
             Helper.putVec3i(tag, "innerBoxPos", innerBoxPos);
-            tag.putInt("size", scale);
+            tag.putInt("size", scale); // the old name is "size"
             tag.putString("color", color.getName());
             tag.putUuid("ownerId", ownerId);
             tag.putString("ownerNameCache", ownerNameCache);

@@ -31,9 +31,9 @@ import org.jetbrains.annotations.Nullable;
 import qouteall.mini_scaled.block.BoxBarrierBlock;
 import qouteall.mini_scaled.block.ScaleBoxPlaceholderBlock;
 import qouteall.mini_scaled.block.ScaleBoxPlaceholderBlockEntity;
-import qouteall.mini_scaled.util.AARotation;
 import qouteall.mini_scaled.util.MSUtil;
 import qouteall.q_misc_util.Helper;
+import qouteall.q_misc_util.my_util.AARotation;
 import qouteall.q_misc_util.my_util.IntBox;
 
 import java.util.Arrays;
@@ -176,12 +176,15 @@ public class ScaleBoxEntranceItem extends Item {
         
         BlockPos entranceSize = entry.currentEntranceSize;
         BlockPos transformedEntranceSize = entranceRotation.transform(entranceSize);
-    
-        BlockPos realPlacementPos = MSUtil.getBoxByPosAndSignedSize(BlockPos.ORIGIN, entranceSize)
+        
+        BlockPos realPlacementPos = MSUtil.getBoxByPosAndSignedSize(BlockPos.ORIGIN, transformedEntranceSize)
             .stream()
             .map(offsetFromBasePosToPlacementPos -> placementPos.subtract(offsetFromBasePosToPlacementPos))
-            .filter(basePosCandidate -> MSUtil.getBoxByPosAndSignedSize(basePosCandidate, entranceSize)
-                .stream().allMatch(blockPos -> world.getBlockState(blockPos).isAir())
+            .filter(basePosCandidate -> MSUtil.getBoxByPosAndSignedSize(basePosCandidate, transformedEntranceSize)
+                .stream().allMatch(
+                    blockPos -> world.getBlockState(blockPos).isAir()
+                        && !blockPos.equals(player.getBlockPos()) // should not intersect with player
+                )
             )
             .findFirst().orElse(null);
         
@@ -239,7 +242,7 @@ public class ScaleBoxEntranceItem extends Item {
         
         Direction outerSide = hitResult.getSide();
         Direction innerSide = entry.getRotationToInner().transformDirection(outerSide);
-    
+        
         if (item == ScaleBoxEntranceItem.instance) {
             // try to expand the scale box
             
