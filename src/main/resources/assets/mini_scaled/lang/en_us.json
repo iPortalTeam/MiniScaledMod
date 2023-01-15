@@ -15,5 +15,6 @@
   "mini_scaled.cannot_shrink_direction": "The scale box can only be shrunk the faces of inner up, south and east directions.",
   "mini_scaled.cannot_shrink_has_blocks": "Cannot shrink the scale box because the shrunk region has blocks remaining.",
   "mini_scaled.whatever": "whatever",
+  "mini_scaled.cannot_break_barrier": "Cannot break the scale box barrier block. You can use commands to remove the block.",
   "text.autoconfig.mini_scaled.option.creationItem": "Scale Box Creation Item"
 }
