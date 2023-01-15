@@ -161,11 +161,15 @@ public class MiniScaledPortal extends Portal {
         
     }
     
+    private boolean isFacingUp() {
+        return ((Portal) this).getNormal().y > 0.9;
+    }
+    
     @Override
     public void transformVelocity(Entity entity) {
         super.transformVelocity(entity);
         
-        if (isOuterPortal() && getNormal().y > 0.9) {
+        if (isOuterPortal() && isFacingUp()) {
             entity.setVelocity(entity.getVelocity().multiply(0.5));
         }
 

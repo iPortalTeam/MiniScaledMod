@@ -36,9 +36,11 @@ import qouteall.mini_scaled.config.MiniScaledConfig;
 import qouteall.q_misc_util.LifecycleHack;
 import qouteall.q_misc_util.MiscHelper;
 import qouteall.q_misc_util.api.DimensionAPI;
+import qouteall.q_misc_util.my_util.LimitedLogger;
 
 public class MiniScaledModInitializer implements ModInitializer {
     private static final Logger LOGGER = LoggerFactory.getLogger(MiniScaledModInitializer.class);
+    private static final LimitedLogger LIMITED_LOGGER = new LimitedLogger(50);
     
     @Override
     public void onInitialize() {
@@ -108,12 +110,13 @@ public class MiniScaledModInitializer implements ModInitializer {
     private static void teleportFallenEntity(Entity entity) {
         if (entity == null) {
             // cannot reproduce the crash stably
-            // TODO debug it
             return;
         }
         
         if (entity.getY() < 32) {
-            System.out.println("Entity fallen from scale box " + entity);
+            LIMITED_LOGGER.invoke(() -> {
+                LOGGER.info("Entity fallen from scale box " + entity);
+            });
             
             if (entity instanceof ServerPlayerEntity) {
                 ServerPlayerEntity player = (ServerPlayerEntity) entity;

@@ -178,9 +178,9 @@ public class ScaleBoxGeneration {
     public static BlockPos getNearestPosInScaleBoxToTeleportTo(BlockPos pos) {
         double gridLen = 16.0 * 32;
         return new BlockPos(
-            Math.round(pos.getX() / gridLen) * gridLen + 5,
-            64 + 5,
-            Math.round(pos.getZ() / gridLen) * gridLen + 5
+            Math.round(pos.getX() / gridLen) * gridLen + 2,
+            64 + 2,
+            Math.round(pos.getZ() / gridLen) * gridLen + 2
         );
     }
     
