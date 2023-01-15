@@ -119,10 +119,10 @@ public class ScaleBoxRecord extends PersistentState {
         @Nullable
         public RegistryKey<World> currentEntranceDim; // null means the scale box is not being put
         public BlockPos currentEntrancePos;
-        public BlockPos currentEntranceSize; // before rotation
+        public BlockPos currentEntranceSize; // Note: before rotation
         public int generation;
         @Nullable
-        public AARotation entranceRotation;
+        public AARotation entranceRotation; // the rotation from inner scale box to outer entrance
         
         public Entry() {
         
@@ -157,6 +157,10 @@ public class ScaleBoxRecord extends PersistentState {
                 return AARotation.IDENTITY;
             }
             return entranceRotation;
+        }
+        
+        public AARotation getRotationToInner() {
+            return getEntranceRotation().getInverse();
         }
         
         void readFromNbt(NbtCompound tag) {

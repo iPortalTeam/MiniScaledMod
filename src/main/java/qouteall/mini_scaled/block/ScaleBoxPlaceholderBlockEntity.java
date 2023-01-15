@@ -82,7 +82,7 @@ public class ScaleBoxPlaceholderBlockEntity extends BlockEntity {
             return;
         }
     
-        IntBox scaleBoxOuterArea = IntBox.fromBasePointAndSize(entry.currentEntrancePos, entry.currentEntranceSize);
+        IntBox scaleBoxOuterArea = entry.getOuterAreaBox();
         
         boolean posEquals = scaleBoxOuterArea.contains(getPos());
         if (!posEquals) {

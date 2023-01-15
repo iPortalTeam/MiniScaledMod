@@ -80,18 +80,18 @@ public class ScaleBoxGeneration {
         DQuaternion quaternion = toInnerRotation.matrix.toQuaternion();
         int boxId = entry.id;
         int generation = entry.generation;
-    
+        
         for (Direction outerDirection : Direction.values()) {
             MiniScaledPortal portal = MiniScaledPortal.entityType.create(outerWorld);
             Validate.notNull(portal);
             
             portal.setDestinationDimension(innerWorld.getRegistryKey());
-    
+            
             Direction innerDirection = toInnerRotation.transformDirection(outerDirection);
-    
+            
             portal.setOriginPos(Helper.getBoxSurface(outerAreaBox, outerDirection).getCenter());
             portal.setDestination(Helper.getBoxSurface(innerAreaBox, innerDirection).getCenter());
-    
+            
             Pair<Direction, Direction> perpendicularDirections = Helper.getPerpendicularDirections(outerDirection);
             Direction pd1 = perpendicularDirections.getLeft();
             Direction pd2 = perpendicularDirections.getRight();

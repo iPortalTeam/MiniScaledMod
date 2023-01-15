@@ -23,15 +23,21 @@ import net.minecraft.util.Identifier;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
+import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
+import org.apache.commons.lang3.Validate;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import qouteall.mini_scaled.block.BoxBarrierBlock;
 import qouteall.mini_scaled.block.ScaleBoxPlaceholderBlock;
 import qouteall.mini_scaled.block.ScaleBoxPlaceholderBlockEntity;
+import qouteall.mini_scaled.util.AARotation;
+import qouteall.mini_scaled.util.MSUtil;
 import qouteall.q_misc_util.Helper;
 import qouteall.q_misc_util.my_util.IntBox;
 
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
@@ -94,6 +100,25 @@ public class ScaleBoxEntranceItem extends Item {
         super(settings);
     }
     
+    private static AARotation getEntranceRotationForPlacing(ItemUsageContext context) {
+        Validate.isTrue(context.getPlayer() != null);
+        
+        Direction placingSide = context.getSide();
+        
+        Direction[] otherDirs = Helper.getAnotherFourDirections(placingSide.getAxis());
+        
+        Vec3d hitPosToEye = context.getPlayer().getEyePos().subtract(context.getHitPos());
+        
+        Direction directionPointingToPlayer = Arrays.stream(otherDirs).max(
+            Comparator.comparingDouble(dir -> {
+                Vec3d vec = Vec3d.of(dir.getVector());
+                return vec.dotProduct(hitPosToEye);
+            })
+        ).orElseThrow();
+        
+        return AARotation.getAARotationFromYZ(placingSide, directionPointingToPlayer);
+    }
+    
     @Override
     public ActionResult useOnBlock(ItemUsageContext context) {
         
@@ -147,12 +172,15 @@ public class ScaleBoxEntranceItem extends Item {
             ownerId, ownerNameCache, scale, color, record
         );
         
+        AARotation entranceRotation = getEntranceRotationForPlacing(context);
+        
         BlockPos entranceSize = entry.currentEntranceSize;
+        BlockPos transformedEntranceSize = entranceRotation.transform(entranceSize);
     
-        BlockPos realPlacementPos = IntBox.fromBasePointAndSize(BlockPos.ORIGIN, entranceSize)
+        BlockPos realPlacementPos = MSUtil.getBoxByPosAndSignedSize(BlockPos.ORIGIN, entranceSize)
             .stream()
-            .map(offset -> placementPos.subtract(offset))
-            .filter(basePos -> IntBox.fromBasePointAndSize(basePos, entranceSize)
+            .map(offsetFromBasePosToPlacementPos -> placementPos.subtract(offsetFromBasePosToPlacementPos))
+            .filter(basePosCandidate -> MSUtil.getBoxByPosAndSignedSize(basePosCandidate, entranceSize)
                 .stream().allMatch(blockPos -> world.getBlockState(blockPos).isAir())
             )
             .findFirst().orElse(null);
@@ -161,7 +189,8 @@ public class ScaleBoxEntranceItem extends Item {
             ScaleBoxGeneration.putScaleBoxIntoWorld(
                 entry,
                 ((ServerWorld) world),
-                realPlacementPos
+                realPlacementPos,
+                entranceRotation
             );
             
             stack.decrement(1);
@@ -208,12 +237,13 @@ public class ScaleBoxEntranceItem extends Item {
             return ActionResult.FAIL;
         }
         
-        Direction side = hitResult.getSide();
-        
+        Direction outerSide = hitResult.getSide();
+        Direction innerSide = entry.getRotationToInner().transformDirection(outerSide);
+    
         if (item == ScaleBoxEntranceItem.instance) {
             // try to expand the scale box
             
-            if (side.getDirection() != Direction.AxisDirection.POSITIVE) {
+            if (innerSide.getDirection() != Direction.AxisDirection.POSITIVE) {
                 player.sendMessage(
                     Text.translatable("mini_scaled.cannot_expand_direction"),
                     false
@@ -239,12 +269,12 @@ public class ScaleBoxEntranceItem extends Item {
                 return ActionResult.FAIL;
             }
             
-            return tryToExpandScaleBox(player, (ServerWorld) world, stack, entry, side);
+            return tryToExpandScaleBox(player, (ServerWorld) world, stack, entry, outerSide, innerSide);
         }
         else if (stack.isEmpty()) {
             // try to shrink the scale box
             
-            if (side.getDirection() != Direction.AxisDirection.POSITIVE) {
+            if (innerSide.getDirection() != Direction.AxisDirection.POSITIVE) {
                 player.sendMessage(
                     Text.translatable("mini_scaled.cannot_shrink_direction"),
                     false
@@ -254,18 +284,18 @@ public class ScaleBoxEntranceItem extends Item {
             
             BlockPos oldEntranceSize = entry.currentEntranceSize;
             
-            int lenOnDirection = Helper.getCoordinate(oldEntranceSize, side.getAxis());
+            int lenOnDirection = Helper.getCoordinate(oldEntranceSize, innerSide.getAxis());
             
             if (lenOnDirection == 1) {
                 return ActionResult.FAIL;
             }
             
-            BlockPos newEntranceSize = Helper.putCoordinate(oldEntranceSize, side.getAxis(), lenOnDirection - 1);
-    
-            IntBox oldOffsets = IntBox.fromBasePointAndSize(BlockPos.ORIGIN, oldEntranceSize);
-            IntBox newOffsets = IntBox.fromBasePointAndSize(BlockPos.ORIGIN, newEntranceSize);
-            boolean hasRemainingBlocks = oldOffsets.stream().anyMatch(offset -> {
-                if (newOffsets.contains(offset)) {return false;}
+            BlockPos newEntranceSize = Helper.putCoordinate(oldEntranceSize, innerSide.getAxis(), lenOnDirection - 1);
+            
+            IntBox oldInnerOffsets = IntBox.fromBasePointAndSize(BlockPos.ORIGIN, oldEntranceSize);
+            IntBox newInnerOffsets = IntBox.fromBasePointAndSize(BlockPos.ORIGIN, newEntranceSize);
+            boolean hasRemainingBlocks = oldInnerOffsets.stream().anyMatch(offset -> {
+                if (newInnerOffsets.contains(offset)) {return false;}
                 IntBox innerUnitBox = entry.getInnerUnitBox(offset);
                 
                 ServerWorld voidWorld = VoidDimension.getVoidWorld();
@@ -275,6 +305,7 @@ public class ScaleBoxEntranceItem extends Item {
                     return blockState.getBlock() == BoxBarrierBlock.instance ||
                         blockState.isAir() ||
                         (player.isCreative() && blockState.getBlock() instanceof StainedGlassBlock);
+                    // in creative mode, the glass is considered clear
                 });
             });
             if (hasRemainingBlocks) {
@@ -291,16 +322,16 @@ public class ScaleBoxEntranceItem extends Item {
             ScaleBoxGeneration.putScaleBoxIntoWorld(
                 entry,
                 ((ServerWorld) world),
-                entry.currentEntrancePos
+                entry.currentEntrancePos,
+                entry.getEntranceRotation()
             );
             
             ScaleBoxGeneration.initializeInnerBoxBlocks(
                 oldEntranceSize, entry
             );
             
-            int compensateNetheriteNum = getVolume(oldEntranceSize) - getVolume(newEntranceSize);
-            
             if (!player.isCreative()) {
+                int compensateNetheriteNum = getVolume(oldEntranceSize) - getVolume(newEntranceSize);
                 player.giveItemStack(new ItemStack(
                     ScaleBoxEntranceCreation.creationItem,
                     compensateNetheriteNum
@@ -320,18 +351,22 @@ public class ScaleBoxEntranceItem extends Item {
     
     private static ActionResult tryToExpandScaleBox(
         PlayerEntity player, ServerWorld world, ItemStack stack,
-        ScaleBoxRecord.Entry entry, Direction side
+        ScaleBoxRecord.Entry entry, Direction outerSide, Direction innerSide
     ) {
         // expand existing scale box
         
         BlockPos oldEntranceSize = entry.currentEntranceSize;
         int volume = getVolume(oldEntranceSize);
         
-        int lenOnDirection = Helper.getCoordinate(oldEntranceSize, side.getAxis());
+        int lenOnDirection = Helper.getCoordinate(oldEntranceSize, innerSide.getAxis());
         
-        BlockPos newEntranceSize = Helper.putCoordinate(oldEntranceSize, side.getAxis(), lenOnDirection + 1);
-    
-        boolean areaClear = IntBox.fromBasePointAndSize(entry.currentEntrancePos, newEntranceSize)
+        BlockPos newEntranceSize = Helper.putCoordinate(
+            oldEntranceSize, innerSide.getAxis(), lenOnDirection + 1
+        );
+        
+        BlockPos transformedNewEntranceSize = entry.getEntranceRotation().transform(newEntranceSize);
+        
+        boolean areaClear = MSUtil.getBoxByPosAndSignedSize(entry.currentEntrancePos, transformedNewEntranceSize)
             .fastStream().allMatch(blockPos -> {
                 BlockState blockState = world.getBlockState(blockPos);
                 return blockState.isAir() || blockState.getBlock() == ScaleBoxPlaceholderBlock.instance;
@@ -369,7 +404,8 @@ public class ScaleBoxEntranceItem extends Item {
         ScaleBoxGeneration.putScaleBoxIntoWorld(
             entry,
             world,
-            entry.currentEntrancePos
+            entry.currentEntrancePos,
+            entry.getEntranceRotation()
         );
         
         ScaleBoxGeneration.initializeInnerBoxBlocks(

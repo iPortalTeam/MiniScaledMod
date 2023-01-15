@@ -102,9 +102,27 @@ public enum AARotation {
         );
     }
     
-    private static AARotation getAARotationFromZX(Direction transformedZ, Direction transformedX) {
+    public static AARotation getAARotationFromZX(Direction transformedZ, Direction transformedX) {
         for (AARotation value : values()) {
             if (value.transformedZ == transformedZ && value.transformedX == transformedX) {
+                return value;
+            }
+        }
+        throw new IllegalArgumentException();
+    }
+    
+    public static AARotation getAARotationFromYZ(Direction transformedY, Direction transformedZ) {
+        for (AARotation value : values()) {
+            if (value.transformedY == transformedY && value.transformedZ == transformedZ) {
+                return value;
+            }
+        }
+        throw new IllegalArgumentException();
+    }
+    
+    public static AARotation getAARotationFromXY(Direction transformedX, Direction transformedY) {
+        for (AARotation value : values()) {
+            if (value.transformedX == transformedX && value.transformedY == transformedY) {
                 return value;
             }
         }
