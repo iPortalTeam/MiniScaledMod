@@ -2,27 +2,22 @@ package qouteall.mini_scaled.block;
 
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
-import net.minecraft.block.AbstractBlock;
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockRenderType;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.Material;
-import net.minecraft.block.ShapeContext;
-import net.minecraft.block.entity.BlockEntity;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.network.ClientPlayerEntity;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.item.ItemStack;
-import net.minecraft.registry.Registries;
-import net.minecraft.registry.Registry;
-import net.minecraft.text.Text;
-import net.minecraft.util.Identifier;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Vec3d;
-import net.minecraft.util.shape.VoxelShape;
-import net.minecraft.util.shape.VoxelShapes;
-import net.minecraft.world.BlockView;
-import net.minecraft.world.World;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Registry;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.BlockGetter;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.RenderShape;
+import net.minecraft.world.level.block.state.BlockBehaviour;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.material.Material;
+import net.minecraft.world.phys.shapes.CollisionContext;
+import net.minecraft.world.phys.shapes.Shapes;
+import net.minecraft.world.phys.shapes.VoxelShape;
 import org.jetbrains.annotations.Nullable;
 import qouteall.imm_ptl.core.IPGlobal;
 import qouteall.mini_scaled.ClientScaleBoxInteractionControl;
@@ -31,58 +26,58 @@ import qouteall.q_misc_util.my_util.MyTaskList;
 
 public class BoxBarrierBlock extends Block {
     public static final BoxBarrierBlock instance = new BoxBarrierBlock(
-        AbstractBlock.Settings.of(Material.BARRIER)
+        BlockBehaviour.Properties.of(Material.BARRIER)
             .strength(-1.0F, 3600000.0F)
-            .dropsNothing().nonOpaque()
-            .noCollision()
+            .noLootTable().noOcclusion()
+            .noCollission()
     );
     
     public static void init() {
         Registry.register(
-            Registries.BLOCK,
-            new Identifier("mini_scaled", "barrier"),
+            BuiltInRegistries.BLOCK,
+            new ResourceLocation("mini_scaled", "barrier"),
             BoxBarrierBlock.instance
         );
     }
     
-    public BoxBarrierBlock(Settings settings) {
+    public BoxBarrierBlock(Properties settings) {
         super(settings);
     }
     
-    public boolean isTranslucent(BlockState state, BlockView world, BlockPos pos) {
+    public boolean propagatesSkylightDown(BlockState state, BlockGetter world, BlockPos pos) {
         return true;
     }
     
-    public BlockRenderType getRenderType(BlockState state) {
-        return BlockRenderType.INVISIBLE;
+    public RenderShape getRenderShape(BlockState state) {
+        return RenderShape.INVISIBLE;
     }
     
     @Environment(EnvType.CLIENT)
-    public float getAmbientOcclusionLightLevel(BlockState state, BlockView world, BlockPos pos) {
+    public float getShadeBrightness(BlockState state, BlockGetter world, BlockPos pos) {
         return 1.0F;
     }
     
     @Override
-    public VoxelShape getOutlineShape(BlockState state, BlockView world, BlockPos pos, ShapeContext context) {
-        if (world instanceof World world1) {
-            if (world1.isClient()) {
+    public VoxelShape getShape(BlockState state, BlockGetter world, BlockPos pos, CollisionContext context) {
+        if (world instanceof Level world1) {
+            if (world1.isClientSide()) {
                 if (ClientScaleBoxInteractionControl.canInteractInsideScaleBox()) {
-                    return VoxelShapes.empty();
+                    return Shapes.empty();
                 }
             }
         }
         
-        return VoxelShapes.fullCube();
+        return Shapes.block();
     }
     
     // cannot be broken by creative mode player
     @Override
-    public void onBreak(World world, BlockPos pos, BlockState state, PlayerEntity player){
-        super.onBreak(world, pos, state, player);
-        if (!player.world.isClient()) {
+    public void playerWillDestroy(Level world, BlockPos pos, BlockState state, Player player){
+        super.playerWillDestroy(world, pos, state, player);
+        if (!player.level.isClientSide()) {
             IPGlobal.serverTaskList.addTask(MyTaskList.oneShotTask(() -> {
-                world.setBlockState(pos, state);
-                player.sendMessage(Text.translatable("mini_scaled.cannot_break_barrier"), true);
+                world.setBlockAndUpdate(pos, state);
+                player.displayClientMessage(Component.translatable("mini_scaled.cannot_break_barrier"), true);
             }));
         }
     }

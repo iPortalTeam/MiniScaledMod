@@ -1,19 +1,19 @@
 package qouteall.mini_scaled.block;
 
 import net.fabricmc.fabric.api.object.builder.v1.block.entity.FabricBlockEntityTypeBuilder;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.Blocks;
-import net.minecraft.block.entity.BlockEntity;
-import net.minecraft.block.entity.BlockEntityType;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NbtCompound;
-import net.minecraft.registry.Registries;
-import net.minecraft.registry.Registry;
-import net.minecraft.registry.RegistryKey;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.ItemScatterer;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.World;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Registry;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.Containers;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.BlockEntityType;
+import net.minecraft.world.level.block.state.BlockState;
 import org.apache.commons.lang3.Validate;
 import qouteall.mini_scaled.ScaleBoxEntranceItem;
 import qouteall.mini_scaled.ScaleBoxRecord;
@@ -25,7 +25,7 @@ public class ScaleBoxPlaceholderBlockEntity extends BlockEntity {
     
     public static void init() {
         blockEntityType = Registry.register(
-            Registries.BLOCK_ENTITY_TYPE,
+            BuiltInRegistries.BLOCK_ENTITY_TYPE,
             "mini_scaled:placeholder_block_entity",
             FabricBlockEntityTypeBuilder.create(
                 ScaleBoxPlaceholderBlockEntity::new,
@@ -42,8 +42,8 @@ public class ScaleBoxPlaceholderBlockEntity extends BlockEntity {
     public boolean isBasePos = true;
     
     @Override
-    public void readNbt(NbtCompound tag) {
-        super.readNbt(tag);
+    public void load(CompoundTag tag) {
+        super.load(tag);
         boxId = tag.getInt("boxId");
         if (tag.contains("isBasePos")) {
             isBasePos = tag.getBoolean("isBasePos");
@@ -51,25 +51,25 @@ public class ScaleBoxPlaceholderBlockEntity extends BlockEntity {
     }
     
     @Override
-    public void writeNbt(NbtCompound tag) {
-        super.writeNbt(tag);
+    public void saveAdditional(CompoundTag tag) {
+        super.saveAdditional(tag);
         tag.putInt("boxId", boxId);
         tag.putBoolean("isBasePos", isBasePos);
     }
     
     public void doTick() {
-        if (world.isClient()) {
+        if (level.isClientSide()) {
             return;
         }
         
-        if (world.getTime() % 7 != 2) {
+        if (level.getGameTime() % 7 != 2) {
             return;
         }
         
         checkValidity();
     }
     
-    public static void staticTick(World world, BlockPos pos, BlockState state, ScaleBoxPlaceholderBlockEntity blockEntity) {
+    public static void staticTick(Level world, BlockPos pos, BlockState state, ScaleBoxPlaceholderBlockEntity blockEntity) {
         blockEntity.doTick();
     }
     
@@ -84,26 +84,26 @@ public class ScaleBoxPlaceholderBlockEntity extends BlockEntity {
     
         IntBox scaleBoxOuterArea = entry.getOuterAreaBox();
         
-        boolean posEquals = scaleBoxOuterArea.contains(getPos());
+        boolean posEquals = scaleBoxOuterArea.contains(getBlockPos());
         if (!posEquals) {
-            System.out.println("invalid box entrance position " + boxId + getPos() + entry.currentEntrancePos);
+            System.out.println("invalid box entrance position " + boxId + getBlockPos() + entry.currentEntrancePos);
             destroyBlockAndBlockEntity();
             return;
         }
         
-        boolean dimEquals = entry.currentEntranceDim == world.getRegistryKey();
+        boolean dimEquals = entry.currentEntranceDim == level.dimension();
         if (!dimEquals) {
-            System.out.println("invalid box dim " + boxId + world.getRegistryKey() + entry.currentEntranceDim);
+            System.out.println("invalid box dim " + boxId + level.dimension() + entry.currentEntranceDim);
             destroyBlockAndBlockEntity();
             return;
         }
     }
     
     private void destroyBlockAndBlockEntity() {
-        Validate.isTrue(!world.isClient());
+        Validate.isTrue(!level.isClientSide());
         System.out.println("destroy scale box " + boxId);
-        world.setBlockState(getPos(), Blocks.AIR.getDefaultState());
-        markRemoved();
+        level.setBlockAndUpdate(getBlockPos(), Blocks.AIR.defaultBlockState());
+        setRemoved();
         
         dropItemIfNecessary();
         
@@ -115,8 +115,8 @@ public class ScaleBoxPlaceholderBlockEntity extends BlockEntity {
             // the up-facing outer portal breaks. drop item
             ItemStack itemToDrop = ScaleBoxEntranceItem.boxIdToItem(boxId);
             if (itemToDrop != null) {
-                ItemScatterer.spawn(
-                    world, getPos().getX() + 0.5, getPos().getY() + 0.5, getPos().getZ() + 0.5, itemToDrop
+                Containers.dropItemStack(
+                    level, getBlockPos().getX() + 0.5, getBlockPos().getY() + 0.5, getBlockPos().getZ() + 0.5, itemToDrop
                 );
             }
             
@@ -148,7 +148,7 @@ public class ScaleBoxPlaceholderBlockEntity extends BlockEntity {
      */
     public static void checkShouldRemovePortals(
         int boxId,
-        ServerWorld world,
+        ServerLevel world,
         BlockPos pos
     ) {
         ScaleBoxRecord record = ScaleBoxRecord.get();
@@ -158,20 +158,20 @@ public class ScaleBoxPlaceholderBlockEntity extends BlockEntity {
             return;
         }
         
-        RegistryKey<World> currentEntranceDim = entry.currentEntranceDim;
+        ResourceKey<Level> currentEntranceDim = entry.currentEntranceDim;
         if (currentEntranceDim == null) {
             notifyPortalBreak(boxId);
             return;
         }
         
-        ServerWorld entranceWorld = MiscHelper.getServer().getWorld(currentEntranceDim);
+        ServerLevel entranceWorld = MiscHelper.getServer().getLevel(currentEntranceDim);
         if (entranceWorld == null) {
             System.err.println("invalid entrance dim " + currentEntranceDim);
-            entry.currentEntranceDim = World.OVERWORLD;
+            entry.currentEntranceDim = Level.OVERWORLD;
             return;
         }
         
-        boolean chunkLoaded = entranceWorld.isChunkLoaded(entry.currentEntrancePos);
+        boolean chunkLoaded = entranceWorld.hasChunkAt(entry.currentEntrancePos);
         if (!chunkLoaded) {
             return;
         }

@@ -3,21 +3,21 @@ package qouteall.mini_scaled;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.object.builder.v1.entity.FabricEntityTypeBuilder;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.network.ClientPlayerEntity;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.EntityDimensions;
-import net.minecraft.entity.EntityPose;
-import net.minecraft.entity.EntityType;
-import net.minecraft.entity.SpawnGroup;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.nbt.NbtCompound;
-import net.minecraft.registry.Registries;
-import net.minecraft.registry.Registry;
-import net.minecraft.text.Text;
-import net.minecraft.util.Identifier;
-import net.minecraft.util.math.Vec3d;
-import net.minecraft.world.World;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.core.Registry;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityDimensions;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.MobCategory;
+import net.minecraft.world.entity.Pose;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.Vec3;
 import qouteall.imm_ptl.core.IPGlobal;
 import qouteall.imm_ptl.core.McHelper;
 import qouteall.imm_ptl.core.portal.Portal;
@@ -31,7 +31,7 @@ public class MiniScaledPortal extends Portal {
     public int boxId = 0;
     public int generation = 0;
     
-    public MiniScaledPortal(EntityType<?> entityType, World world) {
+    public MiniScaledPortal(EntityType<?> entityType, Level world) {
         super(entityType, world);
     }
     
@@ -39,28 +39,28 @@ public class MiniScaledPortal extends Portal {
     public void tick() {
         super.tick();
         
-        if (world.isClient()) {
+        if (level.isClientSide()) {
             tickClient();
         }
         else {
-            if (world.getTime() % 2 == 0) {
-                world.getProfiler().push("validate");
+            if (level.getGameTime() % 2 == 0) {
+                level.getProfiler().push("validate");
                 checkValidity();
-                world.getProfiler().pop();
+                level.getProfiler().pop();
             }
         }
     }
     
     @Override
-    protected void readCustomDataFromNbt(NbtCompound compoundTag) {
-        super.readCustomDataFromNbt(compoundTag);
+    protected void readAdditionalSaveData(CompoundTag compoundTag) {
+        super.readAdditionalSaveData(compoundTag);
         generation = compoundTag.getInt("generation");
         boxId = compoundTag.getInt("boxId");
     }
     
     @Override
-    protected void writeCustomDataToNbt(NbtCompound compoundTag) {
-        super.writeCustomDataToNbt(compoundTag);
+    protected void addAdditionalSaveData(CompoundTag compoundTag) {
+        super.addAdditionalSaveData(compoundTag);
         compoundTag.putInt("generation", generation);
         compoundTag.putInt("boxId", boxId);
     }
@@ -73,15 +73,15 @@ public class MiniScaledPortal extends Portal {
         Registry<EntityType<?>> registry
     ) {
         EntityType<T> entityType = FabricEntityTypeBuilder.create(
-            SpawnGroup.MISC,
+            MobCategory.MISC,
             constructor
         ).dimensions(
             new EntityDimensions(1, 1, true)
         ).fireImmune().trackable(96, 20).build();
         setEntityType.accept(entityType);
         Registry.register(
-            Registries.ENTITY_TYPE,
-            new Identifier(id),
+            BuiltInRegistries.ENTITY_TYPE,
+            new ResourceLocation(id),
             entityType
         );
     }
@@ -92,7 +92,7 @@ public class MiniScaledPortal extends Portal {
             () -> entityType,
             "mini_scaled:portal",
             MiniScaledPortal::new,
-            Registries.ENTITY_TYPE
+            BuiltInRegistries.ENTITY_TYPE
         );
     }
     
@@ -127,7 +127,7 @@ public class MiniScaledPortal extends Portal {
     
     @Override
     public void onCollidingWithEntity(Entity entity) {
-        if (world.isClient()) {
+        if (level.isClientSide()) {
             onCollidingWithEntityClientOnly(entity);
         }
         
@@ -136,25 +136,25 @@ public class MiniScaledPortal extends Portal {
     @Environment(EnvType.CLIENT)
     private void onCollidingWithEntityClientOnly(Entity entity) {
         if (isOuterPortal() && (getNormal().y > 0.9)) {
-            if (entity instanceof ClientPlayerEntity) {
+            if (entity instanceof LocalPlayer) {
                 showShiftDescendMessage();
                 
                 // not ClientPlayerEntity to avoid dedicated server crash
-                PlayerEntity player = (PlayerEntity) entity;
-                if (player.getPose() == EntityPose.CROUCHING) {
+                Player player = (Player) entity;
+                if (player.getPose() == Pose.CROUCHING) {
                     IPGlobal.clientTaskList.addTask(() -> {
-                        if (player.world == world) {
+                        if (player.level == level) {
                             // changing player pos immediately may cause ConcurrentModificationExcetpion
-                            player.setPos(player.getX(), player.getY() - 0.01, player.getZ());
+                            player.setPosRaw(player.getX(), player.getY() - 0.01, player.getZ());
                             McHelper.updateBoundingBox(player);
                         }
                         return true;
                     });
                 }
                 
-                Vec3d velocity = entity.getVelocity();
+                Vec3 velocity = entity.getDeltaMovement();
                 if (velocity.y < 0 && player.getY() < getY()) {
-                    entity.setVelocity(new Vec3d(velocity.x, velocity.y * 0.4, velocity.z));
+                    entity.setDeltaMovement(new Vec3(velocity.x, velocity.y * 0.4, velocity.z));
                 }
             }
         }
@@ -170,7 +170,7 @@ public class MiniScaledPortal extends Portal {
         super.transformVelocity(entity);
         
         if (isOuterPortal() && isFacingUp()) {
-            entity.setVelocity(entity.getVelocity().multiply(0.5));
+            entity.setDeltaMovement(entity.getDeltaMovement().scale(0.5));
         }
 
 //        if (!isOuterPortal() && getNormal().y < -0.9) {
@@ -192,12 +192,12 @@ public class MiniScaledPortal extends Portal {
         }
         messageShown = true;
         
-        MinecraftClient client = MinecraftClient.getInstance();
+        Minecraft client = Minecraft.getInstance();
         
-        client.inGameHud.setOverlayMessage(
-            Text.translatable(
+        client.gui.setOverlayMessage(
+            Component.translatable(
                 "mini_scaled.press_shift",
-                client.options.sneakKey.getBoundKeyLocalizedText()
+                client.options.keyShift.getTranslatedKeyMessage()
             ),
             false
         );
@@ -205,7 +205,7 @@ public class MiniScaledPortal extends Portal {
     
     @Override
     public boolean isInteractable() {
-        if (world.isClient()) {
+        if (level.isClientSide()) {
             return ClientScaleBoxInteractionControl.canInteractInsideScaleBox();
         }
         else {

@@ -1,6 +1,6 @@
 package qouteall.mini_scaled.util;
 
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.core.BlockPos;
 import qouteall.q_misc_util.my_util.IntBox;
 
 public class MSUtil {

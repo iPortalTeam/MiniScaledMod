@@ -1,18 +1,18 @@
 package qouteall.mini_scaled;
 
 import net.fabricmc.fabric.api.event.player.UseBlockCallback;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.Blocks;
-import net.minecraft.block.StainedGlassBlock;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.text.Text;
-import net.minecraft.util.ActionResult;
-import net.minecraft.util.DyeColor;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Direction;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.item.DyeColor;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.StainedGlassBlock;
+import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.Nullable;
 import qouteall.q_misc_util.my_util.IntBox;
 
@@ -35,34 +35,34 @@ public class ScaleBoxEntranceCreation {
     public static void init() {
         UseBlockCallback.EVENT.register((player, world, hand, hitResult) -> {
             if (creationItem == null) {
-                return ActionResult.PASS;
+                return InteractionResult.PASS;
             }
             
-            ItemStack stackInHand = player.getStackInHand(hand);
+            ItemStack stackInHand = player.getItemInHand(hand);
             
-            if (player instanceof ServerPlayerEntity serverPlayer) {
+            if (player instanceof ServerPlayer serverPlayer) {
                 if (stackInHand.getItem() == creationItem) {
                     boolean succeeded =
                         onRightClickBoxFrameUsingNetherite(serverPlayer, hitResult.getBlockPos());
                     if (succeeded) {
-                        stackInHand.decrement(1);
-                        return ActionResult.CONSUME;
+                        stackInHand.shrink(1);
+                        return InteractionResult.CONSUME;
                     }
                     else {
-                        return ActionResult.FAIL;
+                        return InteractionResult.FAIL;
                     }
                 }
             }
             
-            return ActionResult.PASS;
+            return InteractionResult.PASS;
         });
     }
     
     private static boolean onRightClickBoxFrameUsingNetherite(
-        ServerPlayerEntity player,
+        ServerPlayer player,
         BlockPos pos
     ) {
-        ServerWorld world = (ServerWorld) player.world;
+        ServerLevel world = (ServerLevel) player.level;
         
         BlockState originBlockState = world.getBlockState(pos);
         if (!(originBlockState.getBlock() instanceof StainedGlassBlock stainedGlassBlock)) {
@@ -81,7 +81,7 @@ public class ScaleBoxEntranceCreation {
                 Arrays.stream(roughBox.get12Edges()).allMatch(edge -> edge.fastStream().allMatch(blockPredicate));
             
             if (roughBoxFrameComplete) {
-                player.sendMessage(Text.translatable(
+                player.displayClientMessage(Component.translatable(
                     "mini_scaled.invalid_box_size",
                     String.format("(%d,%d,%d)",
                         size.getX(), size.getY(), size.getZ()
@@ -89,7 +89,7 @@ public class ScaleBoxEntranceCreation {
                 ), false);
             }
             else {
-                player.sendMessage(Text.translatable(
+                player.displayClientMessage(Component.translatable(
                     "mini_scaled.glass_frame_incomplete",
                     String.format("(%d,%d,%d)",
                         size.getX(), size.getY(), size.getZ()
@@ -106,13 +106,13 @@ public class ScaleBoxEntranceCreation {
         DyeColor color = stainedGlassBlock.getColor();
         ItemStack itemStack = new ItemStack(ScaleBoxEntranceItem.instance);
         ScaleBoxEntranceItem.ItemInfo itemInfo = new ScaleBoxEntranceItem.ItemInfo(boxLen, color);
-        itemInfo.writeToTag(itemStack.getOrCreateNbt());
-        player.giveItemStack(itemStack);
+        itemInfo.writeToTag(itemStack.getOrCreateTag());
+        player.addItem(itemStack);
         
         // remove the frame
         for (IntBox edge : box.get12Edges()) {
             edge.fastStream().forEach(p -> {
-                world.setBlockState(p, Blocks.AIR.getDefaultState());
+                world.setBlockAndUpdate(p, Blocks.AIR.defaultBlockState());
             });
         }
         
@@ -126,7 +126,7 @@ public class ScaleBoxEntranceCreation {
         public BoxFrameMatcher(BlockPos size) {
             this.size = size;
     
-            vertexOffsets = IntBox.fromBasePointAndSize(BlockPos.ORIGIN, size).getEightVertices();
+            vertexOffsets = IntBox.fromBasePointAndSize(BlockPos.ZERO, size).getEightVertices();
         }
         
         public IntBox matchFromVertex(BlockPos pos, Predicate<BlockPos> blockPredicate) {
@@ -150,7 +150,7 @@ public class ScaleBoxEntranceCreation {
     
     @Nullable
     private static IntBox detectBoxFrameOfAllowedSize(
-        ServerWorld world,
+        ServerLevel world,
         BlockPos pos,
         BlockState blockState
     ) {
@@ -168,7 +168,7 @@ public class ScaleBoxEntranceCreation {
         };
         
         IntBox result = null;
-        BlockPos.Mutable mutableBlockPos = new BlockPos.Mutable();
+        BlockPos.MutableBlockPos mutableBlockPos = new BlockPos.MutableBlockPos();
         mutableBlockPos.set(pos);
         
         result = matchAlongPath(mutableBlockPos, Direction.DOWN, blockPredicate, matcher);
@@ -191,7 +191,7 @@ public class ScaleBoxEntranceCreation {
     
     @Nullable
     private static IntBox matchAlongPath(
-        BlockPos.Mutable currentPos,
+        BlockPos.MutableBlockPos currentPos,
         Direction direction,
         Predicate<BlockPos> pathPredicate,
         Function<BlockPos, IntBox> matchingFunc
@@ -224,7 +224,7 @@ public class ScaleBoxEntranceCreation {
     ) {
         BlockPos current = pos;
         for (int i = 1; i < 64; i++) {
-            BlockPos newPos = pos.add(direction.getVector().multiply(i));
+            BlockPos newPos = pos.offset(direction.getNormal().multiply(i));
             if (predicate.test(newPos)) {
                 current = newPos;
             }
@@ -241,7 +241,7 @@ public class ScaleBoxEntranceCreation {
         Predicate<BlockPos> predicate
     ) {
         for (int i = 1; i < 64; i++) {
-            BlockPos newPos = pos.add(direction.getVector().multiply(i));
+            BlockPos newPos = pos.offset(direction.getNormal().multiply(i));
             if (!predicate.test(newPos)) {
                 return i;
             }
@@ -250,7 +250,7 @@ public class ScaleBoxEntranceCreation {
     }
     
     private static IntBox detectBoxSizeForErrorFeedback(
-        ServerWorld world,
+        ServerLevel world,
         BlockPos pos,
         BlockState blockState
     ) {

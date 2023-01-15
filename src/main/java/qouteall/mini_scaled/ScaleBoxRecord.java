@@ -1,16 +1,6 @@
 package qouteall.mini_scaled;
 
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
-import net.minecraft.nbt.NbtCompound;
-import net.minecraft.nbt.NbtList;
-import net.minecraft.registry.RegistryKey;
-import net.minecraft.registry.RegistryKeys;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.DyeColor;
-import net.minecraft.util.Identifier;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.PersistentState;
-import net.minecraft.world.World;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,8 +15,18 @@ import java.util.List;
 import java.util.UUID;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.item.DyeColor;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.saveddata.SavedData;
 
-public class ScaleBoxRecord extends PersistentState {
+public class ScaleBoxRecord extends SavedData {
     private static final Logger LOGGER = LoggerFactory.getLogger(ScaleBoxRecord.class);
     
     private List<Entry> entries = new ArrayList<>();
@@ -39,9 +39,9 @@ public class ScaleBoxRecord extends PersistentState {
     }
     
     public static ScaleBoxRecord get() {
-        ServerWorld overworld = MiscHelper.getServer().getOverworld();
+        ServerLevel overworld = MiscHelper.getServer().overworld();
         
-        return overworld.getPersistentStateManager().getOrCreate(
+        return overworld.getDataStorage().computeIfAbsent(
             (nbt) -> {
                 ScaleBoxRecord record = new ScaleBoxRecord();
                 record.readFromNbt(nbt);
@@ -83,32 +83,32 @@ public class ScaleBoxRecord extends PersistentState {
         return entries.stream().mapToInt(e -> e.id).max().orElse(0) + 1;
     }
     
-    private void readFromNbt(NbtCompound compoundTag) {
-        NbtList list = compoundTag.getList("entries", compoundTag.getType());
+    private void readFromNbt(CompoundTag compoundTag) {
+        ListTag list = compoundTag.getList("entries", compoundTag.getId());
         entries = list.stream().map(tag -> {
             Entry entry = new Entry();
-            entry.readFromNbt(((NbtCompound) tag));
+            entry.readFromNbt(((CompoundTag) tag));
             return entry;
         }).collect(Collectors.toList());
         cache = null;
     }
     
-    private void writeToNbt(NbtCompound compoundTag) {
-        NbtList listTag = new NbtList();
+    private void writeToNbt(CompoundTag compoundTag) {
+        ListTag listTag = new ListTag();
         for (Entry entry : entries) {
-            NbtCompound tag = new NbtCompound();
+            CompoundTag tag = new CompoundTag();
             entry.writeToNbt(tag);
             listTag.add(tag);
         }
         compoundTag.put("entries", listTag);
     }
     
-    public void fromTag(NbtCompound tag) {
+    public void fromTag(CompoundTag tag) {
         readFromNbt(tag);
     }
     
     @Override
-    public NbtCompound writeNbt(NbtCompound tag) {
+    public CompoundTag save(CompoundTag tag) {
         writeToNbt(tag);
         return tag;
     }
@@ -121,7 +121,7 @@ public class ScaleBoxRecord extends PersistentState {
         public UUID ownerId;
         public String ownerNameCache;
         @Nullable
-        public RegistryKey<World> currentEntranceDim; // null means the scale box is not being put
+        public ResourceKey<Level> currentEntranceDim; // null means the scale box is not being put
         public BlockPos currentEntrancePos;
         public BlockPos currentEntranceSize; // Note: before rotation
         public int generation;
@@ -151,7 +151,7 @@ public class ScaleBoxRecord extends PersistentState {
         
         IntBox getInnerUnitBox(BlockPos outerOffset) {
             return IntBox.fromBasePointAndSize(
-                this.innerBoxPos.add(outerOffset.multiply(this.scale)),
+                this.innerBoxPos.offset(outerOffset.multiply(this.scale)),
                 new BlockPos(this.scale, this.scale, this.scale)
             );
         }
@@ -167,17 +167,17 @@ public class ScaleBoxRecord extends PersistentState {
             return getEntranceRotation().getInverse();
         }
         
-        void readFromNbt(NbtCompound tag) {
+        void readFromNbt(CompoundTag tag) {
             id = tag.getInt("id");
             innerBoxPos = Helper.getVec3i(tag, "innerBoxPos");
             scale = tag.getInt("size"); // the old name is "size"
             color = DyeColor.byName(tag.getString("color"), DyeColor.BLACK);
-            ownerId = tag.getUuid("ownerId");
+            ownerId = tag.getUUID("ownerId");
             ownerNameCache = tag.getString("ownerNameCache");
             if (tag.contains("currentEntranceDim")) {
-                currentEntranceDim = RegistryKey.of(
-                    RegistryKeys.WORLD,
-                    new Identifier(tag.getString("currentEntranceDim"))
+                currentEntranceDim = ResourceKey.create(
+                    Registries.DIMENSION,
+                    new ResourceLocation(tag.getString("currentEntranceDim"))
                 );
             }
             else {
@@ -206,15 +206,15 @@ public class ScaleBoxRecord extends PersistentState {
             }
         }
         
-        void writeToNbt(NbtCompound tag) {
+        void writeToNbt(CompoundTag tag) {
             tag.putInt("id", id);
             Helper.putVec3i(tag, "innerBoxPos", innerBoxPos);
             tag.putInt("size", scale); // the old name is "size"
             tag.putString("color", color.getName());
-            tag.putUuid("ownerId", ownerId);
+            tag.putUUID("ownerId", ownerId);
             tag.putString("ownerNameCache", ownerNameCache);
             if (currentEntranceDim != null) {
-                tag.putString("currentEntranceDim", currentEntranceDim.getValue().getPath());
+                tag.putString("currentEntranceDim", currentEntranceDim.location().getPath());
             }
             Helper.putVec3i(tag, "currentEntrancePos", currentEntrancePos);
             Helper.putVec3i(tag, "currentEntranceSize", currentEntranceSize);

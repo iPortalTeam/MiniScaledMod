@@ -1,34 +1,34 @@
 package qouteall.mini_scaled;
 
-import net.minecraft.client.item.TooltipContext;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.ItemUsageContext;
-import net.minecraft.nbt.NbtCompound;
-import net.minecraft.registry.Registries;
-import net.minecraft.registry.Registry;
-import net.minecraft.text.MutableText;
-import net.minecraft.text.Text;
-import net.minecraft.util.ActionResult;
-import net.minecraft.util.DyeColor;
-import net.minecraft.util.Formatting;
-import net.minecraft.util.Identifier;
-import net.minecraft.world.World;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 import java.util.UUID;
 import java.util.function.Consumer;
+import net.minecraft.ChatFormatting;
+import net.minecraft.core.Registry;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.item.DyeColor;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.TooltipFlag;
+import net.minecraft.world.item.context.UseOnContext;
+import net.minecraft.world.level.Level;
 
 public class ScaleBoxEntranceItem extends Item {
     
-    public static final ScaleBoxEntranceItem instance = new ScaleBoxEntranceItem(new Item.Settings());
+    public static final ScaleBoxEntranceItem instance = new ScaleBoxEntranceItem(new Item.Properties());
     
     public static void init() {
         Registry.register(
-            Registries.ITEM,
-            new Identifier("mini_scaled:scale_box_item"),
+            BuiltInRegistries.ITEM,
+            new ResourceLocation("mini_scaled:scale_box_item"),
             instance
         );
     }
@@ -55,48 +55,48 @@ public class ScaleBoxEntranceItem extends Item {
             this.ownerNameCache = ownerNameCache;
         }
         
-        public ItemInfo(NbtCompound tag) {
+        public ItemInfo(CompoundTag tag) {
             scale = tag.getInt("size");
             color = DyeColor.byName(tag.getString("color"), DyeColor.BLACK);
             if (tag.contains("ownerId")) {
-                ownerId = tag.getUuid("ownerId");
+                ownerId = tag.getUUID("ownerId");
                 ownerNameCache = tag.getString("ownerNameCache");
             }
         }
         
-        public void writeToTag(NbtCompound compoundTag) {
+        public void writeToTag(CompoundTag compoundTag) {
             compoundTag.putInt("size", scale);
             compoundTag.putString("color", color.getName());
             if (ownerId != null) {
-                compoundTag.putUuid("ownerId", ownerId);
+                compoundTag.putUUID("ownerId", ownerId);
                 compoundTag.putString("ownerNameCache", ownerNameCache);
             }
         }
     }
     
-    public ScaleBoxEntranceItem(Settings settings) {
+    public ScaleBoxEntranceItem(Properties settings) {
         super(settings);
     }
     
     @Override
-    public ActionResult useOnBlock(ItemUsageContext context) {
+    public InteractionResult useOn(UseOnContext context) {
     
         return ScaleBoxManipulation.onRightClickUsingEntrance(context);
     }
     
     @Override
-    public void appendTooltip(ItemStack stack, World world, List<Text> tooltip, TooltipContext context) {
-        super.appendTooltip(stack, world, tooltip, context);
-        ItemInfo itemInfo = new ItemInfo(stack.getOrCreateNbt());
-        tooltip.add(Text.translatable("mini_scaled.color")
-            .append(getColorText(itemInfo.color).formatted(Formatting.GOLD))
+    public void appendHoverText(ItemStack stack, Level world, List<Component> tooltip, TooltipFlag context) {
+        super.appendHoverText(stack, world, tooltip, context);
+        ItemInfo itemInfo = new ItemInfo(stack.getOrCreateTag());
+        tooltip.add(Component.translatable("mini_scaled.color")
+            .append(getColorText(itemInfo.color).withStyle(ChatFormatting.GOLD))
         );
-        tooltip.add(Text.translatable("mini_scaled.scale")
-            .append(Text.literal(Integer.toString(itemInfo.scale)).formatted(Formatting.AQUA))
+        tooltip.add(Component.translatable("mini_scaled.scale")
+            .append(Component.literal(Integer.toString(itemInfo.scale)).withStyle(ChatFormatting.AQUA))
         );
         if (itemInfo.ownerNameCache != null) {
-            tooltip.add(Text.translatable("mini_scaled.owner")
-                .append(Text.literal(itemInfo.ownerNameCache).formatted(Formatting.YELLOW))
+            tooltip.add(Component.translatable("mini_scaled.owner")
+                .append(Component.literal(itemInfo.ownerNameCache).withStyle(ChatFormatting.YELLOW))
             );
         }
 
@@ -118,32 +118,32 @@ public class ScaleBoxEntranceItem extends Item {
                 ItemStack itemStack = new ItemStack(instance);
                 
                 ItemInfo itemInfo = new ItemInfo(scale, dyeColor);
-                itemInfo.writeToTag(itemStack.getOrCreateNbt());
+                itemInfo.writeToTag(itemStack.getOrCreateTag());
                 
                 func.accept(itemStack);
             }
         }
     }
     
-    private static final Text spaceText = Text.literal(" ");
+    private static final Component spaceText = Component.literal(" ");
     
     @Override
-    public Text getName(ItemStack stack) {
-        ItemInfo itemInfo = new ItemInfo(stack.getOrCreateNbt());
+    public Component getName(ItemStack stack) {
+        ItemInfo itemInfo = new ItemInfo(stack.getOrCreateTag());
         DyeColor color = itemInfo.color;
-        MutableText result = Text.translatable("item.mini_scaled.scale_box_item")
+        MutableComponent result = Component.translatable("item.mini_scaled.scale_box_item")
             .append(spaceText)
-            .append(Text.literal(Integer.toString(itemInfo.scale)));
+            .append(Component.literal(Integer.toString(itemInfo.scale)));
         if (itemInfo.ownerNameCache != null) {
             result = result.append(spaceText)
-                .append(Text.translatable("mini_scaled.owner"))
-                .append(Text.literal(itemInfo.ownerNameCache));
+                .append(Component.translatable("mini_scaled.owner"))
+                .append(Component.literal(itemInfo.ownerNameCache));
         }
         return result;
     }
     
-    public static MutableText getColorText(DyeColor color) {
-        return Text.translatable("color.minecraft." + color.getName());
+    public static MutableComponent getColorText(DyeColor color) {
+        return Component.translatable("color.minecraft." + color.getName());
     }
     
     @Nullable
@@ -157,19 +157,19 @@ public class ScaleBoxEntranceItem extends Item {
         ItemStack itemStack = new ItemStack(ScaleBoxEntranceItem.instance);
         new ScaleBoxEntranceItem.ItemInfo(
             entry.scale, entry.color, entry.ownerId, entry.ownerNameCache
-        ).writeToTag(itemStack.getOrCreateNbt());
+        ).writeToTag(itemStack.getOrCreateTag());
         
         return itemStack;
     }
     
     public static int getRenderingColor(ItemStack stack) {
-        NbtCompound nbt = stack.getNbt();
+        CompoundTag nbt = stack.getTag();
         if (nbt == null) {
             return 0;
         }
         // not using ItemInfo to improve performance
         String colorText = nbt.getString("color");
         DyeColor dyeColor = DyeColor.byName(colorText, DyeColor.BLACK);
-        return dyeColor.getMapColor().color;
+        return dyeColor.getMaterialColor().col;
     }
 }

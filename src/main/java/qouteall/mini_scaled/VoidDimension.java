@@ -5,29 +5,26 @@ import com.google.common.collect.Maps;
 import com.mojang.serialization.Lifecycle;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
-import net.minecraft.block.Blocks;
-import net.minecraft.client.render.DimensionEffects;
-import net.minecraft.registry.DynamicRegistryManager;
-import net.minecraft.registry.Registries;
-import net.minecraft.registry.Registry;
-import net.minecraft.registry.RegistryKey;
-import net.minecraft.registry.RegistryKeys;
-import net.minecraft.registry.SimpleRegistry;
-import net.minecraft.registry.entry.RegistryEntry;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.structure.StructureSet;
-import net.minecraft.util.Identifier;
-import net.minecraft.util.math.Vec3d;
-import net.minecraft.world.World;
-import net.minecraft.world.biome.Biome;
-import net.minecraft.world.biome.BiomeKeys;
-import net.minecraft.world.dimension.DimensionOptions;
-import net.minecraft.world.dimension.DimensionType;
-import net.minecraft.world.gen.GeneratorOptions;
-import net.minecraft.world.gen.chunk.ChunkGenerator;
-import net.minecraft.world.gen.chunk.FlatChunkGenerator;
-import net.minecraft.world.gen.chunk.FlatChunkGeneratorConfig;
-import net.minecraft.world.gen.chunk.FlatChunkGeneratorLayer;
+import net.minecraft.client.renderer.DimensionSpecialEffects;
+import net.minecraft.core.Holder;
+import net.minecraft.core.Registry;
+import net.minecraft.core.RegistryAccess;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.biome.Biome;
+import net.minecraft.world.level.biome.Biomes;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.chunk.ChunkGenerator;
+import net.minecraft.world.level.dimension.DimensionType;
+import net.minecraft.world.level.dimension.LevelStem;
+import net.minecraft.world.level.levelgen.FlatLevelSource;
+import net.minecraft.world.level.levelgen.WorldOptions;
+import net.minecraft.world.level.levelgen.flat.FlatLayerInfo;
+import net.minecraft.world.level.levelgen.flat.FlatLevelGeneratorSettings;
+import net.minecraft.world.phys.Vec3;
 import qouteall.imm_ptl.core.McHelper;
 import qouteall.q_misc_util.Helper;
 import qouteall.q_misc_util.api.DimensionAPI;
@@ -36,21 +33,21 @@ import java.util.ArrayList;
 import java.util.Optional;
 
 public class VoidDimension {
-    public static final RegistryKey<World> dimensionId = RegistryKey.of(
-        RegistryKeys.WORLD,
-        new Identifier("mini_scaled:void")
+    public static final ResourceKey<Level> dimensionId = ResourceKey.create(
+        Registries.DIMENSION,
+        new ResourceLocation("mini_scaled:void")
     );
     
     static void initializeVoidDimension(
-        GeneratorOptions generatorOptions, DynamicRegistryManager registryManager
+        WorldOptions generatorOptions, RegistryAccess registryManager
     ) {
-        Registry<DimensionOptions> registry = registryManager.get(RegistryKeys.DIMENSION);
+        Registry<LevelStem> registry = registryManager.registryOrThrow(Registries.LEVEL_STEM);
         
-        RegistryEntry<DimensionType> dimType = registryManager.get(RegistryKeys.DIMENSION_TYPE).getEntry(
-            RegistryKey.of(RegistryKeys.DIMENSION_TYPE, new Identifier("mini_scaled:void_dim_type"))
+        Holder<DimensionType> dimType = registryManager.registryOrThrow(Registries.DIMENSION_TYPE).getHolder(
+            ResourceKey.create(Registries.DIMENSION_TYPE, new ResourceLocation("mini_scaled:void_dim_type"))
         ).orElseThrow(() -> new RuntimeException("Missing dimension type mini_scaled:void_dim_type"));
         
-        Identifier dimId = new Identifier("mini_scaled:void");
+        ResourceLocation dimId = new ResourceLocation("mini_scaled:void");
         
         DimensionAPI.addDimension(
             registry, dimId, dimType,
@@ -58,36 +55,36 @@ public class VoidDimension {
         );
     }
     
-    private static ChunkGenerator createVoidGenerator(DynamicRegistryManager rm) {
-        Registry<Biome> biomeRegistry = rm.get(RegistryKeys.BIOME);
+    private static ChunkGenerator createVoidGenerator(RegistryAccess rm) {
+        Registry<Biome> biomeRegistry = rm.registryOrThrow(Registries.BIOME);
         
-        RegistryEntry.Reference<Biome> plains = biomeRegistry.getEntry(BiomeKeys.PLAINS).orElseThrow();
+        Holder.Reference<Biome> plains = biomeRegistry.getHolder(Biomes.PLAINS).orElseThrow();
         
-        FlatChunkGeneratorConfig flatChunkGeneratorConfig =
-            new FlatChunkGeneratorConfig(Optional.empty(), plains, new ArrayList<>());
-        flatChunkGeneratorConfig.getLayers().add(new FlatChunkGeneratorLayer(1, Blocks.AIR));
-        flatChunkGeneratorConfig.updateLayerBlocks();
+        FlatLevelGeneratorSettings flatChunkGeneratorConfig =
+            new FlatLevelGeneratorSettings(Optional.empty(), plains, new ArrayList<>());
+        flatChunkGeneratorConfig.getLayersInfo().add(new FlatLayerInfo(1, Blocks.AIR));
+        flatChunkGeneratorConfig.updateLayers();
         
-        return new FlatChunkGenerator(
+        return new FlatLevelSource(
             flatChunkGeneratorConfig
         );
     }
     
-    public static ServerWorld getVoidWorld() {
+    public static ServerLevel getVoidWorld() {
         return McHelper.getServerWorld(dimensionId);
     }
     
     @Environment(EnvType.CLIENT)
-    public static class VoidSkyProperties extends DimensionEffects {
+    public static class VoidSkyProperties extends DimensionSpecialEffects {
         public VoidSkyProperties() {
-            super(Float.NaN, true, DimensionEffects.SkyType.NORMAL, false, false);
+            super(Float.NaN, true, DimensionSpecialEffects.SkyType.NORMAL, false, false);
         }
         
-        public Vec3d adjustFogColor(Vec3d color, float sunHeight) {
+        public Vec3 getBrightnessDependentFogColor(Vec3 color, float sunHeight) {
             return color.multiply((double) (sunHeight * 0.94F + 0.06F), (double) (sunHeight * 0.94F + 0.06F), (double) (sunHeight * 0.91F + 0.09F));
         }
         
-        public boolean useThickFog(int camX, int camY) {
+        public boolean isFoggyAt(int camX, int camY) {
             return false;
         }
     }

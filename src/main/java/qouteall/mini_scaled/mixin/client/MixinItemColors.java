@@ -10,7 +10,7 @@ import qouteall.mini_scaled.ScaleBoxEntranceItem;
 
 @Mixin(ItemColors.class)
 public class MixinItemColors {
-    @Inject(method = "create", at = @At("RETURN"), cancellable = true)
+    @Inject(method = "createDefault", at = @At("RETURN"))
     private static void onCreate(BlockColors blockColors, CallbackInfoReturnable<ItemColors> cir) {
         ItemColors itemColors = cir.getReturnValue();
         itemColors.register(

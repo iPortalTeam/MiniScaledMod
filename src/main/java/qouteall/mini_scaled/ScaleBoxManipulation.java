@@ -1,23 +1,5 @@
 package qouteall.mini_scaled;
 
-import net.minecraft.block.BlockState;
-import net.minecraft.block.StainedGlassBlock;
-import net.minecraft.block.entity.BlockEntity;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.ItemUsageContext;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.text.Text;
-import net.minecraft.util.ActionResult;
-import net.minecraft.util.DyeColor;
-import net.minecraft.util.Hand;
-import net.minecraft.util.hit.BlockHitResult;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Direction;
-import net.minecraft.util.math.Vec3d;
-import net.minecraft.world.World;
 import org.apache.commons.lang3.Validate;
 import qouteall.mini_scaled.block.BoxBarrierBlock;
 import qouteall.mini_scaled.block.ScaleBoxPlaceholderBlock;
@@ -31,65 +13,83 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Objects;
 import java.util.UUID;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.DyeColor;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.context.UseOnContext;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.StainedGlassBlock;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.Vec3;
 
 public class ScaleBoxManipulation {
-    private static AARotation getEntranceRotationForPlacing(ItemUsageContext context) {
+    private static AARotation getEntranceRotationForPlacing(UseOnContext context) {
         Validate.isTrue(context.getPlayer() != null);
         
-        Direction placingSide = context.getSide();
+        Direction placingSide = context.getClickedFace();
         
         Direction[] otherDirs = Helper.getAnotherFourDirections(placingSide.getAxis());
         
-        Vec3d hitPosToEye = context.getPlayer().getEyePos().subtract(context.getHitPos());
+        Vec3 hitPosToEye = context.getPlayer().getEyePosition().subtract(context.getClickLocation());
         
         Direction directionPointingToPlayer = Arrays.stream(otherDirs).max(
             Comparator.comparingDouble(dir -> {
-                Vec3d vec = Vec3d.of(dir.getVector());
-                return vec.dotProduct(hitPosToEye);
+                Vec3 vec = Vec3.atLowerCornerOf(dir.getNormal());
+                return vec.dot(hitPosToEye);
             })
         ).orElseThrow();
         
         return AARotation.getAARotationFromYZ(placingSide, directionPointingToPlayer);
     }
     
-    static ActionResult onRightClickUsingEntrance(ItemUsageContext context) {
-        World world = context.getWorld();
+    static InteractionResult onRightClickUsingEntrance(UseOnContext context) {
+        Level world = context.getLevel();
         
-        if (world.isClient()) {
-            return ActionResult.FAIL;
+        if (world.isClientSide()) {
+            return InteractionResult.FAIL;
         }
         
         if (context.getPlayer() == null) {
-            return ActionResult.FAIL;
+            return InteractionResult.FAIL;
         }
         
-        BlockPos pointedBlockPos = context.getBlockPos();
-        BlockPos placementPos = pointedBlockPos.offset(context.getSide());
+        BlockPos pointedBlockPos = context.getClickedPos();
+        BlockPos placementPos = pointedBlockPos.relative(context.getClickedFace());
         
-        if (!world.isAir(placementPos)) {
-            return ActionResult.FAIL;
+        if (!world.isEmptyBlock(placementPos)) {
+            return InteractionResult.FAIL;
         }
         
         if (world.getBlockState(pointedBlockPos).getBlock() == ScaleBoxPlaceholderBlock.instance) {
-            return ActionResult.PASS;
+            return InteractionResult.PASS;
         }
         
-        ItemStack stack = context.getStack();
-        ScaleBoxEntranceItem.ItemInfo itemInfo = new ScaleBoxEntranceItem.ItemInfo(stack.getOrCreateNbt());
+        ItemStack stack = context.getItemInHand();
+        ScaleBoxEntranceItem.ItemInfo itemInfo = new ScaleBoxEntranceItem.ItemInfo(stack.getOrCreateTag());
         
-        ServerPlayerEntity player = (ServerPlayerEntity) context.getPlayer();
+        ServerPlayer player = (ServerPlayer) context.getPlayer();
         
         int scale = itemInfo.scale;
         if (!ScaleBoxGeneration.isValidScale(scale)) {
-            player.sendMessage(Text.literal("invalid scale"), false);
-            return ActionResult.FAIL;
+            player.displayClientMessage(Component.literal("invalid scale"), false);
+            return InteractionResult.FAIL;
         }
         
         UUID ownerId = itemInfo.ownerId;
         String ownerNameCache = itemInfo.ownerNameCache;
         
         if (ownerId == null) {
-            ownerId = player.getUuid();
+            ownerId = player.getUUID();
         }
         if (ownerNameCache == null) {
             ownerNameCache = player.getName().getString();
@@ -108,13 +108,13 @@ public class ScaleBoxManipulation {
         BlockPos entranceSize = entry.currentEntranceSize;
         BlockPos transformedEntranceSize = entranceRotation.transform(entranceSize);
         
-        BlockPos realPlacementPos = MSUtil.getBoxByPosAndSignedSize(BlockPos.ORIGIN, transformedEntranceSize)
+        BlockPos realPlacementPos = MSUtil.getBoxByPosAndSignedSize(BlockPos.ZERO, transformedEntranceSize)
             .stream()
             .map(offsetFromBasePosToPlacementPos -> placementPos.subtract(offsetFromBasePosToPlacementPos))
             .filter(basePosCandidate -> MSUtil.getBoxByPosAndSignedSize(basePosCandidate, transformedEntranceSize)
                 .stream().allMatch(
                     blockPos -> world.getBlockState(blockPos).isAir()
-                        && !blockPos.equals(player.getBlockPos()) // should not intersect with player
+                        && !blockPos.equals(player.blockPosition()) // should not intersect with player
                 )
             )
             .findFirst().orElse(null);
@@ -122,98 +122,98 @@ public class ScaleBoxManipulation {
         if (realPlacementPos != null) {
             ScaleBoxGeneration.putScaleBoxIntoWorld(
                 entry,
-                ((ServerWorld) world),
+                ((ServerLevel) world),
                 realPlacementPos,
                 entranceRotation
             );
             
-            stack.decrement(1);
+            stack.shrink(1);
     
-            return ActionResult.SUCCESS;
+            return InteractionResult.SUCCESS;
         }
         else {
-            player.sendMessage(
-                Text.translatable(
+            player.displayClientMessage(
+                Component.translatable(
                     "mini_scaled.no_enough_space_to_place_scale_box",
                     String.format("(%d, %d, %d)", entranceSize.getX(), entranceSize.getY(), entranceSize.getZ())
                 ),
                 false
             );
-            return ActionResult.FAIL;
+            return InteractionResult.FAIL;
         }
     }
     
-    public static ActionResult onHandRightClickEntrance(
-        PlayerEntity player,
-        World world,
-        Hand hand,
+    public static InteractionResult onHandRightClickEntrance(
+        Player player,
+        Level world,
+        InteractionHand hand,
         BlockHitResult hitResult
     ) {
-        if (world.isClient()) {
-            return ActionResult.SUCCESS;
+        if (world.isClientSide()) {
+            return InteractionResult.SUCCESS;
         }
         
-        ItemStack stack = player.getStackInHand(hand);
+        ItemStack stack = player.getItemInHand(hand);
         
         Item item = stack.getItem();
         
         BlockPos pointedBlockPos = hitResult.getBlockPos();
         BlockEntity be = world.getBlockEntity(pointedBlockPos);
         if (!(be instanceof ScaleBoxPlaceholderBlockEntity placeholderBlockEntity)) {
-            player.sendMessage(Text.literal("Error no block entity"), false);
-            return ActionResult.FAIL;
+            player.displayClientMessage(Component.literal("Error no block entity"), false);
+            return InteractionResult.FAIL;
         }
         
         int boxId = placeholderBlockEntity.boxId;
         ScaleBoxRecord.Entry entry = ScaleBoxRecord.get().getEntryById(boxId);
         if (entry == null) {
-            player.sendMessage(Text.literal("Error invalid box id"), false);
-            return ActionResult.FAIL;
+            player.displayClientMessage(Component.literal("Error invalid box id"), false);
+            return InteractionResult.FAIL;
         }
         
-        Direction outerSide = hitResult.getSide();
+        Direction outerSide = hitResult.getDirection();
         Direction innerSide = entry.getRotationToInner().transformDirection(outerSide);
         
         if (item == ScaleBoxEntranceItem.instance) {
             // try to expand the scale box
             
-            if (innerSide.getDirection() != Direction.AxisDirection.POSITIVE) {
-                player.sendMessage(
-                    Text.translatable("mini_scaled.cannot_expand_direction"),
+            if (innerSide.getAxisDirection() != Direction.AxisDirection.POSITIVE) {
+                player.displayClientMessage(
+                    Component.translatable("mini_scaled.cannot_expand_direction"),
                     false
                 );
-                return ActionResult.FAIL;
+                return InteractionResult.FAIL;
             }
             
-            ScaleBoxEntranceItem.ItemInfo itemInfo = new ScaleBoxEntranceItem.ItemInfo(stack.getOrCreateNbt());
+            ScaleBoxEntranceItem.ItemInfo itemInfo = new ScaleBoxEntranceItem.ItemInfo(stack.getOrCreateTag());
             
             UUID ownerId = itemInfo.ownerId;
             if (ownerId == null) {
-                ownerId = player.getUuid();
+                ownerId = player.getUUID();
             }
             
             if (!Objects.equals(entry.ownerId, ownerId) ||
                 entry.color != itemInfo.color ||
                 entry.scale != itemInfo.scale
             ) {
-                player.sendMessage(
-                    Text.translatable("mini_scaled.cannot_expand_mismatch"),
+                player.displayClientMessage(
+                    Component.translatable("mini_scaled.cannot_expand_mismatch"),
                     false
                 );
-                return ActionResult.FAIL;
+                return InteractionResult.FAIL;
             }
             
-            return tryToExpandScaleBox(player, (ServerWorld) world, stack, entry, outerSide, innerSide);
+            return tryToExpandScaleBox(player, (ServerLevel) world, stack, entry, outerSide, innerSide);
         }
         else if (stack.isEmpty()) {
             // try to shrink the scale box
             
-            if (innerSide.getDirection() != Direction.AxisDirection.POSITIVE) {
-                player.sendMessage(
-                    Text.translatable("mini_scaled.cannot_shrink_direction"),
+            if (innerSide.getAxisDirection() != Direction.AxisDirection.POSITIVE) {
+                player.displayClientMessage(
+                    Component.translatable("mini_scaled.cannot_shrink_direction"),
                     false
                 );
-                return ActionResult.FAIL;
+                return InteractionResult.FAIL;
             }
             
             BlockPos oldEntranceSize = entry.currentEntranceSize;
@@ -221,18 +221,18 @@ public class ScaleBoxManipulation {
             int lenOnDirection = Helper.getCoordinate(oldEntranceSize, innerSide.getAxis());
             
             if (lenOnDirection == 1) {
-                return ActionResult.FAIL;
+                return InteractionResult.FAIL;
             }
             
             BlockPos newEntranceSize = Helper.putCoordinate(oldEntranceSize, innerSide.getAxis(), lenOnDirection - 1);
             
-            IntBox oldInnerOffsets = IntBox.fromBasePointAndSize(BlockPos.ORIGIN, oldEntranceSize);
-            IntBox newInnerOffsets = IntBox.fromBasePointAndSize(BlockPos.ORIGIN, newEntranceSize);
+            IntBox oldInnerOffsets = IntBox.fromBasePointAndSize(BlockPos.ZERO, oldEntranceSize);
+            IntBox newInnerOffsets = IntBox.fromBasePointAndSize(BlockPos.ZERO, newEntranceSize);
             boolean hasRemainingBlocks = oldInnerOffsets.stream().anyMatch(offset -> {
                 if (newInnerOffsets.contains(offset)) {return false;}
                 IntBox innerUnitBox = entry.getInnerUnitBox(offset);
                 
-                ServerWorld voidWorld = VoidDimension.getVoidWorld();
+                ServerLevel voidWorld = VoidDimension.getVoidWorld();
                 
                 return !innerUnitBox.stream().allMatch(blockPos -> {
                     BlockState blockState = voidWorld.getBlockState(blockPos);
@@ -243,11 +243,11 @@ public class ScaleBoxManipulation {
                 });
             });
             if (hasRemainingBlocks) {
-                player.sendMessage(
-                    Text.translatable("mini_scaled.cannot_shrink_has_blocks"),
+                player.displayClientMessage(
+                    Component.translatable("mini_scaled.cannot_shrink_has_blocks"),
                     false
                 );
-                return ActionResult.FAIL;
+                return InteractionResult.FAIL;
             }
             
             entry.currentEntranceSize = newEntranceSize;
@@ -255,7 +255,7 @@ public class ScaleBoxManipulation {
             
             ScaleBoxGeneration.putScaleBoxIntoWorld(
                 entry,
-                ((ServerWorld) world),
+                ((ServerLevel) world),
                 entry.currentEntrancePos,
                 entry.getEntranceRotation()
             );
@@ -266,16 +266,16 @@ public class ScaleBoxManipulation {
             
             if (!player.isCreative()) {
                 int compensateNetheriteNum = getVolume(oldEntranceSize) - getVolume(newEntranceSize);
-                player.giveItemStack(new ItemStack(
+                player.addItem(new ItemStack(
                     ScaleBoxEntranceCreation.creationItem,
                     compensateNetheriteNum
                 ));
             }
             
-            return ActionResult.SUCCESS;
+            return InteractionResult.SUCCESS;
         }
         else {
-            return ActionResult.PASS;
+            return InteractionResult.PASS;
         }
     }
     
@@ -283,8 +283,8 @@ public class ScaleBoxManipulation {
         return entranceSize.getX() * entranceSize.getY() * entranceSize.getZ();
     }
     
-    private static ActionResult tryToExpandScaleBox(
-        PlayerEntity player, ServerWorld world, ItemStack stack,
+    private static InteractionResult tryToExpandScaleBox(
+        Player player, ServerLevel world, ItemStack stack,
         ScaleBoxRecord.Entry entry, Direction outerSide, Direction innerSide
     ) {
         // expand existing scale box
@@ -307,29 +307,29 @@ public class ScaleBoxManipulation {
             });
         
         if (!areaClear) {
-            return ActionResult.FAIL;
+            return InteractionResult.FAIL;
         }
         
         int requiredEntranceItemNum = getVolume(newEntranceSize) - getVolume(oldEntranceSize);
         
         if ((!player.isCreative()) && (stack.getCount() < requiredEntranceItemNum)) {
-            player.sendMessage(
-                Text.translatable("mini_scaled.cannot_expand_not_enough", requiredEntranceItemNum),
+            player.displayClientMessage(
+                Component.translatable("mini_scaled.cannot_expand_not_enough", requiredEntranceItemNum),
                 false
             );
-            return ActionResult.FAIL;
+            return InteractionResult.FAIL;
         }
         
         if ((lenOnDirection + 1) * entry.scale > 64) {
-            player.sendMessage(
-                Text.translatable("mini_scaled.cannot_expand_size_limit"),
+            player.displayClientMessage(
+                Component.translatable("mini_scaled.cannot_expand_size_limit"),
                 false
             );
-            return ActionResult.FAIL;
+            return InteractionResult.FAIL;
         }
         
         if (!player.isCreative()) {
-            stack.decrement(requiredEntranceItemNum);
+            stack.shrink(requiredEntranceItemNum);
         }
         
         entry.currentEntranceSize = newEntranceSize;
@@ -346,6 +346,6 @@ public class ScaleBoxManipulation {
             oldEntranceSize, entry
         );
         
-        return ActionResult.SUCCESS;
+        return InteractionResult.SUCCESS;
     }
 }

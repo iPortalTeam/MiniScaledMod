@@ -8,23 +8,23 @@ import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.event.player.UseBlockCallback;
 import net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents;
 import net.fabricmc.fabric.impl.itemgroup.MinecraftItemGroups;
-import net.minecraft.block.Block;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.item.Item;
-import net.minecraft.item.Items;
-import net.minecraft.registry.Registries;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.text.Text;
-import net.minecraft.util.ActionResult;
-import net.minecraft.util.Hand;
-import net.minecraft.util.Identifier;
-import net.minecraft.util.hit.BlockHitResult;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Vec3d;
-import net.minecraft.world.World;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.Vec3;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import qouteall.imm_ptl.core.IPGlobal;
@@ -64,13 +64,13 @@ public class MiniScaledModInitializer implements ModInitializer {
         
         ServerTickEvents.END_SERVER_TICK.register(MiniScaledModInitializer::teleportFallenEntities);
         
-        UseBlockCallback.EVENT.register((PlayerEntity player, World world, Hand hand, BlockHitResult hitResult) -> {
+        UseBlockCallback.EVENT.register((Player player, Level world, InteractionHand hand, BlockHitResult hitResult) -> {
             Block block = world.getBlockState(hitResult.getBlockPos()).getBlock();
             if (block == ScaleBoxPlaceholderBlock.instance) {
                 return ScaleBoxManipulation.onHandRightClickEntrance(player, world, hand, hitResult);
             }
             
-            return ActionResult.PASS;
+            return InteractionResult.PASS;
         });
         
         // config
@@ -83,11 +83,11 @@ public class MiniScaledModInitializer implements ModInitializer {
             if (MiscHelper.getServer() != null) {
                 applyConfigServerSide(config);
             }
-            return ActionResult.PASS;
+            return InteractionResult.PASS;
         });
         
         ItemGroupEvents.modifyEntriesEvent(MinecraftItemGroups.TOOLS_ID)
-            .register(entries -> ScaleBoxEntranceItem.registerCreativeInventory(entries::add));
+            .register(entries -> ScaleBoxEntranceItem.registerCreativeInventory(entries::accept));
         
         ClientScaleBoxInteractionControl.init();
         
@@ -97,9 +97,9 @@ public class MiniScaledModInitializer implements ModInitializer {
     private static void teleportFallenEntities(MinecraftServer server) {
         server.getProfiler().push("mini_scaled_tick");
         
-        ServerWorld voidWorld = server.getWorld(VoidDimension.dimensionId);
+        ServerLevel voidWorld = server.getLevel(VoidDimension.dimensionId);
         if (voidWorld != null) {
-            for (Entity entity : voidWorld.iterateEntities()) {
+            for (Entity entity : voidWorld.getAllEntities()) {
                 teleportFallenEntity(entity);
             }
         }
@@ -118,34 +118,34 @@ public class MiniScaledModInitializer implements ModInitializer {
                 LOGGER.info("Entity fallen from scale box " + entity);
             });
             
-            if (entity instanceof ServerPlayerEntity) {
-                ServerPlayerEntity player = (ServerPlayerEntity) entity;
+            if (entity instanceof ServerPlayer) {
+                ServerPlayer player = (ServerPlayer) entity;
                 
-                ServerWorld overworld = player.server.getWorld(World.OVERWORLD);
+                ServerLevel overworld = player.server.getLevel(Level.OVERWORLD);
                 
                 ServerTeleportationManager.teleportEntityGeneral(
-                    player, Vec3d.ofCenter(overworld.getSpawnPos()), overworld
+                    player, Vec3.atCenterOf(overworld.getSharedSpawnPos()), overworld
                 );
                 
                 IPGlobal.serverTaskList.addTask(() -> {
-                    player.sendMessage(
-                        Text.literal("You fell off the scale box. Returned to the spawn point"),
+                    player.displayClientMessage(
+                        Component.literal("You fell off the scale box. Returned to the spawn point"),
                         false
                     );
                     return true;
                 });
             }
             else {
-                BlockPos blockPos = entity.getBlockPos();
+                BlockPos blockPos = entity.blockPosition();
                 
                 BlockPos newPos = ScaleBoxGeneration.getNearestPosInScaleBoxToTeleportTo(blockPos);
                 
-                entity.setVelocity(Vec3d.ZERO);
+                entity.setDeltaMovement(Vec3.ZERO);
                 
                 ServerTeleportationManager.teleportEntityGeneral(
                     entity,
-                    Vec3d.ofCenter(newPos),
-                    ((ServerWorld) entity.world)
+                    Vec3.atCenterOf(newPos),
+                    ((ServerLevel) entity.level)
                 );
             }
         }
@@ -153,9 +153,9 @@ public class MiniScaledModInitializer implements ModInitializer {
     
     public static void applyConfigServerSide(MiniScaledConfig miniScaledConfig) {
         try {
-            Identifier identifier = new Identifier(miniScaledConfig.creationItem);
+            ResourceLocation identifier = new ResourceLocation(miniScaledConfig.creationItem);
             
-            Item creationItem = Registries.ITEM.get(identifier);
+            Item creationItem = BuiltInRegistries.ITEM.get(identifier);
             
             if (creationItem != Items.AIR) {
                 ScaleBoxEntranceCreation.creationItem = creationItem;

@@ -2,73 +2,73 @@ package qouteall.mini_scaled.block;
 
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
-import net.minecraft.block.AbstractBlock;
-import net.minecraft.block.BlockRenderType;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.BlockWithEntity;
-import net.minecraft.block.Material;
-import net.minecraft.block.ShapeContext;
-import net.minecraft.block.entity.BlockEntity;
-import net.minecraft.block.entity.BlockEntityTicker;
-import net.minecraft.block.entity.BlockEntityType;
-import net.minecraft.registry.Registries;
-import net.minecraft.registry.Registry;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.Identifier;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.shape.VoxelShape;
-import net.minecraft.util.shape.VoxelShapes;
-import net.minecraft.world.BlockView;
-import net.minecraft.world.World;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Registry;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.BlockGetter;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.BaseEntityBlock;
+import net.minecraft.world.level.block.RenderShape;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.BlockEntityTicker;
+import net.minecraft.world.level.block.entity.BlockEntityType;
+import net.minecraft.world.level.block.state.BlockBehaviour;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.material.Material;
+import net.minecraft.world.phys.shapes.CollisionContext;
+import net.minecraft.world.phys.shapes.Shapes;
+import net.minecraft.world.phys.shapes.VoxelShape;
 import org.jetbrains.annotations.Nullable;
 import qouteall.imm_ptl.core.IPGlobal;
 import qouteall.mini_scaled.ClientScaleBoxInteractionControl;
 import qouteall.mini_scaled.MiniScaledPortal;
 import qouteall.q_misc_util.my_util.MyTaskList;
 
-public class ScaleBoxPlaceholderBlock extends BlockWithEntity {
+public class ScaleBoxPlaceholderBlock extends BaseEntityBlock {
     public static final ScaleBoxPlaceholderBlock instance = new ScaleBoxPlaceholderBlock(
-        AbstractBlock.Settings.of(Material.BARRIER)
+        BlockBehaviour.Properties.of(Material.BARRIER)
             .strength(0.3F)
-            .dropsNothing().nonOpaque()
-            .noCollision()
+            .noLootTable().noOcclusion()
+            .noCollission()
     );
     
     public static void init() {
         Registry.register(
-            Registries.BLOCK,
-            new Identifier("mini_scaled", "scale_box_placeholder"),
+            BuiltInRegistries.BLOCK,
+            new ResourceLocation("mini_scaled", "scale_box_placeholder"),
             ScaleBoxPlaceholderBlock.instance
         );
     }
     
-    private ScaleBoxPlaceholderBlock(Settings settings) {
+    private ScaleBoxPlaceholderBlock(Properties settings) {
         super(settings);
     }
     
-    public boolean isTranslucent(BlockState state, BlockView world, BlockPos pos) {
+    public boolean propagatesSkylightDown(BlockState state, BlockGetter world, BlockPos pos) {
         return true;
     }
     
-    public BlockRenderType getRenderType(BlockState state) {
-        return BlockRenderType.INVISIBLE;
+    public RenderShape getRenderShape(BlockState state) {
+        return RenderShape.INVISIBLE;
     }
     
     @Environment(EnvType.CLIENT)
-    public float getAmbientOcclusionLightLevel(BlockState state, BlockView world, BlockPos pos) {
+    public float getShadeBrightness(BlockState state, BlockGetter world, BlockPos pos) {
         return 1.0F;
     }
     
     @Override
-    public void onStateReplaced(BlockState state, World world, BlockPos pos, BlockState newState, boolean moved) {
-        if (!world.isClient()) {
+    public void onRemove(BlockState state, Level world, BlockPos pos, BlockState newState, boolean moved) {
+        if (!world.isClientSide()) {
             if (newState.getBlock() != this) {
                 BlockEntity blockEntity = world.getBlockEntity(pos);
                 if (blockEntity != null) {
                     ScaleBoxPlaceholderBlockEntity be = (ScaleBoxPlaceholderBlockEntity) blockEntity;
                     int boxId = be.boxId;
                     IPGlobal.serverTaskList.addTask(MyTaskList.oneShotTask(() -> {
-                        ScaleBoxPlaceholderBlockEntity.checkShouldRemovePortals(boxId, ((ServerWorld) world), pos);
+                        ScaleBoxPlaceholderBlockEntity.checkShouldRemovePortals(boxId, ((ServerLevel) world), pos);
                     }));
                     be.dropItemIfNecessary();
                 }
@@ -76,34 +76,34 @@ public class ScaleBoxPlaceholderBlock extends BlockWithEntity {
         }
         
         
-        super.onStateReplaced(state, world, pos, newState, moved);
+        super.onRemove(state, world, pos, newState, moved);
     }
     
     @Nullable
     @Override
-    public BlockEntity createBlockEntity(BlockPos pos, BlockState state) {
+    public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
         return new ScaleBoxPlaceholderBlockEntity(pos, state);
     }
     
     @Nullable
-    public <T extends BlockEntity> BlockEntityTicker<T> getTicker(World world, BlockState state, BlockEntityType<T> type) {
-        return checkType(
+    public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level world, BlockState state, BlockEntityType<T> type) {
+        return createTickerHelper(
             type, ScaleBoxPlaceholderBlockEntity.blockEntityType,
             ScaleBoxPlaceholderBlockEntity::staticTick
         );
     }
     
     @Override
-    public VoxelShape getOutlineShape(BlockState state, BlockView world, BlockPos pos, ShapeContext context) {
-        if (world instanceof World world1) {
-            if (world1.isClient()) {
+    public VoxelShape getShape(BlockState state, BlockGetter world, BlockPos pos, CollisionContext context) {
+        if (world instanceof Level world1) {
+            if (world1.isClientSide()) {
                 if (ClientScaleBoxInteractionControl.canInteractInsideScaleBox()) {
-                    return VoxelShapes.empty();
+                    return Shapes.empty();
                 }
             }
         }
         
-        return VoxelShapes.fullCube();
+        return Shapes.block();
     }
     
 }
