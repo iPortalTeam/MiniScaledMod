@@ -65,7 +65,7 @@ public class MiniScaledModInitializer implements ModInitializer {
         UseBlockCallback.EVENT.register((PlayerEntity player, World world, Hand hand, BlockHitResult hitResult) -> {
             Block block = world.getBlockState(hitResult.getBlockPos()).getBlock();
             if (block == ScaleBoxPlaceholderBlock.instance) {
-                return ScaleBoxEntranceItem.onRightClickScaleBox(player, world, hand, hitResult);
+                return ScaleBoxManipulation.onHandRightClickEntrance(player, world, hand, hitResult);
             }
             
             return ActionResult.PASS;
