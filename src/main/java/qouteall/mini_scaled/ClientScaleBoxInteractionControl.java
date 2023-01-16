@@ -10,6 +10,7 @@ import net.minecraft.world.phys.Vec3;
 import qouteall.imm_ptl.core.commands.PortalCommand;
 import qouteall.imm_ptl.core.portal.Portal;
 import qouteall.mini_scaled.config.ScaleBoxInteractionMode;
+import qouteall.mini_scaled.item.ManipulationWandItem;
 
 @Environment(EnvType.CLIENT)
 public class ClientScaleBoxInteractionControl {
@@ -33,6 +34,10 @@ public class ClientScaleBoxInteractionControl {
         Minecraft client = Minecraft.getInstance();
         
         if (client.player == null) {
+            return;
+        }
+        
+        if (client.player.getMainHandItem().getItem() == ManipulationWandItem.instance) {
             return;
         }
         

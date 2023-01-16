@@ -1,4 +1,5 @@
 {
+  "modmenu.descriptionTranslation.mini_scaled": "Create scale boxes easily using Immersive Portals functionality.",
   "item.mini_scaled.scale_box_item": "Scale Box Entrance",
   "item.mini_scaled.manipulation_wand": "Scale Box Manipulation Wand",
   "mini_scaled.color": "Color: ",
@@ -17,15 +18,18 @@
   "mini_scaled.cannot_shrink_has_blocks": "Cannot shrink the scale box because the shrunk region has blocks remaining.",
   "mini_scaled.whatever": "whatever",
   "mini_scaled.cannot_break_barrier": "Cannot break the scale box barrier block. You can use commands to remove the block.",
-  "text.autoconfig.mini_scaled.option.creationItem": "Scale Box Creation Item",
+  "text.autoconfig.mini_scaled.option.creationItem": "Entrance Creation Item",
   "text.autoconfig.mini_scaled.option.interactionMode": "Interaction Mode",
-  "mini_scaled.manipulation_wand.mode_changed": "Mode Changed to: %1$s",
   "mini_scaled.manipulation_wand.mode.none": "None",
   "mini_scaled.manipulation_wand.mode.expand": "Expand",
   "mini_scaled.manipulation_wand.mode.shrink": "Shrink",
   "mini_scaled.manipulation_wand.mode.toggleScaleChange": "Toggle Scale Change",
   "mini_scaled.manipulation_wand.mode.toggleGravityChange": "Toggle Gravity Change",
   "mini_scaled.manipulation_wand.mode": "Mode: ",
-  "mini_scaled.manipulation_wand.tip": "Use this item on air to change mode"
-
+  "mini_scaled.manipulation_wand.gravity_change.enabled": "Gravity Transform Enabled",
+  "mini_scaled.manipulation_wand.gravity_change.disabled": "Gravity Transform Disabled",
+  "mini_scaled.manipulation_wand.scale_change.enabled": "Scale Transform Disabled",
+  "mini_scaled.manipulation_wand.scale_change.disabled": "Scale Transform Enabled",
+  "mini_scaled.manipulation_wand.tip": "Use this item on air to switch mode",
+  "mini_scaled.manipulation_wand.use_on_scale_box": "Use this item on a scale box"
 }

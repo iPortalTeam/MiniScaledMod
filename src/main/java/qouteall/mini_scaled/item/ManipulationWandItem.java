@@ -99,14 +99,6 @@ public class ManipulationWandItem extends Item {
         Mode nextMode = mode.next();
         itemStack.setTag(modeToNbt(nextMode));
         
-        player.displayClientMessage(
-            Component.translatable(
-                "mini_scaled.manipulation_wand.mode_changed",
-                nextMode.getText().withStyle(ChatFormatting.GOLD)
-            ),
-            true
-        );
-        
         return new InteractionResultHolder<>(InteractionResult.SUCCESS, itemStack);
     }
     
@@ -138,6 +130,7 @@ public class ManipulationWandItem extends Item {
         BlockPos clickedPos = context.getClickedPos();
         BlockState blockState = world.getBlockState(clickedPos);
         if (blockState.getBlock() != ScaleBoxPlaceholderBlock.instance) {
+            player.displayClientMessage(Component.translatable("mini_scaled.manipulation_wand.use_on_scale_box"), true);
             return InteractionResult.FAIL;
         }
         BlockEntity blockEntity = world.getBlockEntity(clickedPos);
@@ -197,11 +190,27 @@ public class ManipulationWandItem extends Item {
             }
             case toggleScaleChange -> {
                 entry.teleportChangesScale = !entry.teleportChangesScale;
+                player.displayClientMessage(
+                    Component.translatable(
+                        entry.teleportChangesScale ?
+                            "mini_scaled.manipulation_wand.scale_change.enabled" :
+                            "mini_scaled.manipulation_wand.scale_change.disabled"
+                    ),
+                    true
+                );
                 scaleBoxRecord.setDirty();
                 return InteractionResult.SUCCESS;
             }
             case toggleGravityChange -> {
                 entry.teleportChangesGravity = !entry.teleportChangesGravity;
+                player.displayClientMessage(
+                    Component.translatable(
+                        entry.teleportChangesGravity ?
+                            "mini_scaled.manipulation_wand.gravity_change.enabled" :
+                            "mini_scaled.manipulation_wand.gravity_change.disabled"
+                    ),
+                    true
+                );
                 scaleBoxRecord.setDirty();
                 return InteractionResult.SUCCESS;
             }
@@ -212,10 +221,25 @@ public class ManipulationWandItem extends Item {
     @Override
     public void appendHoverText(ItemStack stack, Level world, List<Component> tooltip, TooltipFlag context) {
         Mode mode = getModeFromNbt(stack.getTag());
-        tooltip.add(
-            Component.translatable("mini_scaled.manipulation_wand.mode")
-                .append(mode.getText().withStyle(ChatFormatting.GOLD))
-        );
+//        tooltip.add(
+//            Component.translatable("mini_scaled.manipulation_wand.mode")
+//                .append(mode.getText().withStyle(ChatFormatting.GOLD))
+//        );
         tooltip.add(Component.translatable("mini_scaled.manipulation_wand.tip"));
+    }
+    
+    @Override
+    public Component getName(ItemStack stack) {
+        Mode mode = getModeFromNbt(stack.getTag());
+        
+        MutableComponent baseText = Component.translatable("item.mini_scaled.manipulation_wand");
+        
+        if (mode == Mode.none) {
+            return baseText;
+        }
+        
+        return baseText
+            .append(Component.literal(" : "))
+            .append(mode.getText().withStyle(ChatFormatting.GOLD));
     }
 }
