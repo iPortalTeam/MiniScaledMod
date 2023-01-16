@@ -4,7 +4,6 @@ import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import qouteall.mini_scaled.util.MSUtil;
 import qouteall.q_misc_util.Helper;
 import qouteall.q_misc_util.MiscHelper;
 import qouteall.q_misc_util.my_util.AARotation;
@@ -135,7 +134,7 @@ public class ScaleBoxRecord extends SavedData {
         public IntBox getOuterAreaBox() {
             AARotation rot = getEntranceRotation();
             BlockPos actualEntranceSize = rot.transform(currentEntranceSize);
-            return MSUtil.getBoxByPosAndSignedSize(currentEntrancePos, actualEntranceSize);
+            return IntBox.getBoxByPosAndSignedSize(currentEntrancePos, actualEntranceSize);
         }
         
         public IntBox getInnerAreaBox() {

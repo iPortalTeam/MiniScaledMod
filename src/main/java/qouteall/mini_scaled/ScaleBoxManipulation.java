@@ -4,7 +4,6 @@ import org.apache.commons.lang3.Validate;
 import qouteall.mini_scaled.block.BoxBarrierBlock;
 import qouteall.mini_scaled.block.ScaleBoxPlaceholderBlock;
 import qouteall.mini_scaled.block.ScaleBoxPlaceholderBlockEntity;
-import qouteall.mini_scaled.util.MSUtil;
 import qouteall.q_misc_util.Helper;
 import qouteall.q_misc_util.my_util.AARotation;
 import qouteall.q_misc_util.my_util.IntBox;
@@ -13,6 +12,7 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Objects;
 import java.util.UUID;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
@@ -108,10 +108,10 @@ public class ScaleBoxManipulation {
         BlockPos entranceSize = entry.currentEntranceSize;
         BlockPos transformedEntranceSize = entranceRotation.transform(entranceSize);
         
-        BlockPos realPlacementPos = MSUtil.getBoxByPosAndSignedSize(BlockPos.ZERO, transformedEntranceSize)
+        BlockPos realPlacementPos = IntBox.getBoxByPosAndSignedSize(BlockPos.ZERO, transformedEntranceSize)
             .stream()
             .map(offsetFromBasePosToPlacementPos -> placementPos.subtract(offsetFromBasePosToPlacementPos))
-            .filter(basePosCandidate -> MSUtil.getBoxByPosAndSignedSize(basePosCandidate, transformedEntranceSize)
+            .filter(basePosCandidate -> IntBox.getBoxByPosAndSignedSize(basePosCandidate, transformedEntranceSize)
                 .stream().allMatch(
                     blockPos -> world.getBlockState(blockPos).isAir()
                         && !blockPos.equals(player.blockPosition()) // should not intersect with player
@@ -128,7 +128,7 @@ public class ScaleBoxManipulation {
             );
             
             stack.shrink(1);
-    
+            
             return InteractionResult.SUCCESS;
         }
         else {
@@ -300,7 +300,7 @@ public class ScaleBoxManipulation {
         
         BlockPos transformedNewEntranceSize = entry.getEntranceRotation().transform(newEntranceSize);
         
-        boolean areaClear = MSUtil.getBoxByPosAndSignedSize(entry.currentEntrancePos, transformedNewEntranceSize)
+        boolean areaClear = IntBox.getBoxByPosAndSignedSize(entry.currentEntrancePos, transformedNewEntranceSize)
             .fastStream().allMatch(blockPos -> {
                 BlockState blockState = world.getBlockState(blockPos);
                 return blockState.isAir() || blockState.getBlock() == ScaleBoxPlaceholderBlock.instance;
