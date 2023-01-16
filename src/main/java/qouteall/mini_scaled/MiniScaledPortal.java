@@ -135,26 +135,21 @@ public class MiniScaledPortal extends Portal {
     
     @Environment(EnvType.CLIENT)
     private void onCollidingWithEntityClientOnly(Entity entity) {
-        if (isOuterPortal() && (getNormal().y > 0.9)) {
+        if (isOuterPortal() && isFacingUp()) {
             if (entity instanceof LocalPlayer) {
                 showShiftDescendMessage();
                 
-                // not ClientPlayerEntity to avoid dedicated server crash
+                // not ClientPlayerEntity to avoid dedicated server crash as it's captured
                 Player player = (Player) entity;
                 if (player.getPose() == Pose.CROUCHING) {
                     IPGlobal.clientTaskList.addTask(() -> {
                         if (player.level == level) {
-                            // changing player pos immediately may cause ConcurrentModificationExcetpion
+                            // changing player pos immediately may cause ConcurrentModificationException
                             player.setPosRaw(player.getX(), player.getY() - 0.01, player.getZ());
                             McHelper.updateBoundingBox(player);
                         }
                         return true;
                     });
-                }
-                
-                Vec3 velocity = entity.getDeltaMovement();
-                if (velocity.y < 0 && player.getY() < getY()) {
-                    entity.setDeltaMovement(new Vec3(velocity.x, velocity.y * 0.4, velocity.z));
                 }
             }
         }
