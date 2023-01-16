@@ -7,6 +7,7 @@ import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.renderer.DimensionSpecialEffects;
 import net.minecraft.core.Holder;
+import net.minecraft.core.HolderSet;
 import net.minecraft.core.Registry;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.core.registries.Registries;
@@ -61,7 +62,11 @@ public class VoidDimension {
         Holder.Reference<Biome> plains = biomeRegistry.getHolder(Biomes.PLAINS).orElseThrow();
         
         FlatLevelGeneratorSettings flatChunkGeneratorConfig =
-            new FlatLevelGeneratorSettings(Optional.empty(), plains, new ArrayList<>());
+            new FlatLevelGeneratorSettings(
+                Optional.of(HolderSet.direct()), // disable structure generation
+                plains,
+                new ArrayList<>()
+            );
         flatChunkGeneratorConfig.getLayersInfo().add(new FlatLayerInfo(1, Blocks.AIR));
         flatChunkGeneratorConfig.updateLayers();
         
