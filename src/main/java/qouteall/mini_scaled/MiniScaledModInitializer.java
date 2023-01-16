@@ -74,7 +74,7 @@ public class MiniScaledModInitializer implements ModInitializer {
         });
         
         // config
-        AutoConfig.register(MiniScaledConfig.class, GsonConfigSerializer::new);
+        MSGlobal.config = AutoConfig.register(MiniScaledConfig.class, GsonConfigSerializer::new);
         ServerLifecycleEvents.SERVER_STARTED.register(s -> {
             MiniScaledConfig config = AutoConfig.getConfigHolder(MiniScaledConfig.class).getConfig();
             applyConfigServerSide(config);
@@ -83,6 +83,7 @@ public class MiniScaledModInitializer implements ModInitializer {
             if (MiscHelper.getServer() != null) {
                 applyConfigServerSide(config);
             }
+            applyConfigClientSide(config);
             return InteractionResult.PASS;
         });
         
@@ -168,5 +169,9 @@ public class MiniScaledModInitializer implements ModInitializer {
         catch (Exception e) {
             e.printStackTrace();
         }
+    }
+    
+    public static void applyConfigClientSide(MiniScaledConfig miniScaledConfig) {
+    
     }
 }

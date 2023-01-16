@@ -4,14 +4,12 @@ import com.mojang.datafixers.util.Pair;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
 import net.minecraft.client.Minecraft;
+import net.minecraft.world.entity.Pose;
 import net.minecraft.world.phys.Vec3;
-import qouteall.imm_ptl.core.IPMcHelper;
 import qouteall.imm_ptl.core.commands.PortalCommand;
 import qouteall.imm_ptl.core.portal.Portal;
-
-import java.util.Optional;
+import qouteall.mini_scaled.config.ScaleBoxInteractionMode;
 
 @Environment(EnvType.CLIENT)
 public class ClientScaleBoxInteractionControl {
@@ -38,6 +36,23 @@ public class ClientScaleBoxInteractionControl {
             return;
         }
         
+        ScaleBoxInteractionMode interactionMode = MSGlobal.config.getConfig().interactionMode;
+        
+        switch (interactionMode) {
+            case normal -> {
+                updateOnNormalMode(client);
+            }
+            case crouchForInside -> {
+                canInteractInsideScaleBox = client.player.getPose() == Pose.CROUCHING;
+            }
+            case crouchForOutside -> {
+                canInteractInsideScaleBox = client.player.getPose() != Pose.CROUCHING;
+            }
+        }
+    }
+    
+    private static void updateOnNormalMode(Minecraft client) {
+        assert client.player != null;
         Vec3 cameraPos = client.player.getEyePosition();
         Pair<Portal, Vec3> raytraceResult = PortalCommand.raytracePortals(
             client.player.level,
