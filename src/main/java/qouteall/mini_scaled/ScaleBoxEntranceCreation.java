@@ -14,6 +14,7 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.StainedGlassBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.Nullable;
+import qouteall.mini_scaled.item.ScaleBoxEntranceItem;
 import qouteall.q_misc_util.my_util.IntBox;
 
 import java.util.Arrays;

@@ -34,7 +34,7 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
 public class ScaleBoxGeneration {
-    static final int[] supportedScales = {4, 8, 16, 32};
+    public static final int[] supportedScales = {4, 8, 16, 32};
     
     public static void putScaleBoxIntoWorld(
         ScaleBoxRecord.Entry entry,

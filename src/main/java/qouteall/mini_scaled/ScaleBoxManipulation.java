@@ -4,6 +4,7 @@ import org.apache.commons.lang3.Validate;
 import qouteall.mini_scaled.block.BoxBarrierBlock;
 import qouteall.mini_scaled.block.ScaleBoxPlaceholderBlock;
 import qouteall.mini_scaled.block.ScaleBoxPlaceholderBlockEntity;
+import qouteall.mini_scaled.item.ScaleBoxEntranceItem;
 import qouteall.q_misc_util.Helper;
 import qouteall.q_misc_util.my_util.AARotation;
 import qouteall.q_misc_util.my_util.IntBox;
@@ -52,7 +53,7 @@ public class ScaleBoxManipulation {
         return AARotation.getAARotationFromYZ(placingSide, directionPointingToPlayer);
     }
     
-    static InteractionResult onRightClickUsingEntrance(UseOnContext context) {
+    public static InteractionResult onRightClickUsingEntrance(UseOnContext context) {
         Level world = context.getLevel();
         
         if (world.isClientSide()) {

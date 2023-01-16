@@ -1,4 +1,4 @@
-package qouteall.mini_scaled;
+package qouteall.mini_scaled.item;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -20,6 +20,9 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
+import qouteall.mini_scaled.ScaleBoxGeneration;
+import qouteall.mini_scaled.ScaleBoxManipulation;
+import qouteall.mini_scaled.ScaleBoxRecord;
 
 public class ScaleBoxEntranceItem extends Item {
     

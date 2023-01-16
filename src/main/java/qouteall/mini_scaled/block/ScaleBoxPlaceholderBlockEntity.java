@@ -15,7 +15,7 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import org.apache.commons.lang3.Validate;
-import qouteall.mini_scaled.ScaleBoxEntranceItem;
+import qouteall.mini_scaled.item.ScaleBoxEntranceItem;
 import qouteall.mini_scaled.ScaleBoxRecord;
 import qouteall.q_misc_util.MiscHelper;
 import qouteall.q_misc_util.my_util.IntBox;
