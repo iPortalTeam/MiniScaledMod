@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
@@ -126,6 +127,8 @@ public class ScaleBoxRecord extends SavedData {
         public int generation;
         @Nullable
         public AARotation entranceRotation; // the rotation from inner scale box to outer entrance
+        public boolean teleportChangesScale = false;
+        public boolean teleportChangesGravity = false;
         
         public Entry() {
         
@@ -203,6 +206,20 @@ public class ScaleBoxRecord extends SavedData {
             else {
                 entranceRotation = null;
             }
+            
+            if (tag.contains("teleportChangesScale")) {
+                teleportChangesScale = tag.getBoolean("teleportChangesScale");
+            }
+            else {
+                teleportChangesScale = false;
+            }
+            
+            if (tag.contains("teleportChangesGravity")) {
+                teleportChangesGravity = tag.getBoolean("teleportChangesGravity");
+            }
+            else {
+                teleportChangesGravity = false;
+            }
         }
         
         void writeToNbt(CompoundTag tag) {
@@ -221,6 +238,8 @@ public class ScaleBoxRecord extends SavedData {
             if (entranceRotation != null) {
                 tag.putInt("entranceRotation", entranceRotation.ordinal());
             }
+            tag.putBoolean("teleportChangesScale", teleportChangesScale);
+            tag.putBoolean("teleportChangesGravity", teleportChangesGravity);
         }
     }
 }

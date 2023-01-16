@@ -33,6 +33,7 @@ import qouteall.mini_scaled.block.BoxBarrierBlock;
 import qouteall.mini_scaled.block.ScaleBoxPlaceholderBlock;
 import qouteall.mini_scaled.block.ScaleBoxPlaceholderBlockEntity;
 import qouteall.mini_scaled.config.MiniScaledConfig;
+import qouteall.mini_scaled.item.ManipulationWandItem;
 import qouteall.mini_scaled.item.ScaleBoxEntranceItem;
 import qouteall.q_misc_util.LifecycleHack;
 import qouteall.q_misc_util.MiscHelper;
@@ -58,6 +59,8 @@ public class MiniScaledModInitializer implements ModInitializer {
         MiniScaledPortal.init();
         
         ScaleBoxEntranceItem.init();
+        
+        ManipulationWandItem.init();
         
         ScaleBoxEntranceCreation.init();
         
@@ -89,7 +92,10 @@ public class MiniScaledModInitializer implements ModInitializer {
         });
         
         ItemGroupEvents.modifyEntriesEvent(MinecraftItemGroups.TOOLS_ID)
-            .register(entries -> ScaleBoxEntranceItem.registerCreativeInventory(entries::accept));
+            .register(entries -> {
+                ManipulationWandItem.registerCreativeInventory(entries::accept);
+                ScaleBoxEntranceItem.registerCreativeInventory(entries::accept);
+            });
         
         ClientScaleBoxInteractionControl.init();
         

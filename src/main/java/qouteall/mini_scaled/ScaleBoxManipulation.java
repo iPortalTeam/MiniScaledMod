@@ -13,6 +13,7 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Objects;
 import java.util.UUID;
+import java.util.function.Function;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -173,19 +174,9 @@ public class ScaleBoxManipulation {
         }
         
         Direction outerSide = hitResult.getDirection();
-        Direction innerSide = entry.getRotationToInner().transformDirection(outerSide);
         
         if (item == ScaleBoxEntranceItem.instance) {
             // try to expand the scale box
-            
-            if (innerSide.getAxisDirection() != Direction.AxisDirection.POSITIVE) {
-                player.displayClientMessage(
-                    Component.translatable("mini_scaled.cannot_expand_direction"),
-                    false
-                );
-                return InteractionResult.FAIL;
-            }
-            
             ScaleBoxEntranceItem.ItemInfo itemInfo = new ScaleBoxEntranceItem.ItemInfo(stack.getOrCreateTag());
             
             UUID ownerId = itemInfo.ownerId;
@@ -204,91 +195,125 @@ public class ScaleBoxManipulation {
                 return InteractionResult.FAIL;
             }
             
-            return tryToExpandScaleBox(player, (ServerLevel) world, stack, entry, outerSide, innerSide);
+            return tryToExpandScaleBox(
+                player, (ServerLevel) world,
+                entry,
+                outerSide,
+                (requiredEntranceItemNum) -> {
+                    if (player.isCreative()) {
+                        return true;
+                    }
+                    
+                    if ((stack.getCount() < requiredEntranceItemNum)) {
+                        player.displayClientMessage(
+                            Component.translatable("mini_scaled.cannot_expand_not_enough", requiredEntranceItemNum),
+                            false
+                        );
+                        return false;
+                    }
+                    
+                    stack.shrink(requiredEntranceItemNum);
+                    return true;
+                }
+            );
         }
         else if (stack.isEmpty()) {
-            // try to shrink the scale box
-            
-            if (innerSide.getAxisDirection() != Direction.AxisDirection.POSITIVE) {
-                player.displayClientMessage(
-                    Component.translatable("mini_scaled.cannot_shrink_direction"),
-                    false
-                );
-                return InteractionResult.FAIL;
-            }
-            
-            BlockPos oldEntranceSize = entry.currentEntranceSize;
-            
-            int lenOnDirection = Helper.getCoordinate(oldEntranceSize, innerSide.getAxis());
-            
-            if (lenOnDirection == 1) {
-                return InteractionResult.FAIL;
-            }
-            
-            BlockPos newEntranceSize = Helper.putCoordinate(oldEntranceSize, innerSide.getAxis(), lenOnDirection - 1);
-            
-            IntBox oldInnerOffsets = IntBox.fromBasePointAndSize(BlockPos.ZERO, oldEntranceSize);
-            IntBox newInnerOffsets = IntBox.fromBasePointAndSize(BlockPos.ZERO, newEntranceSize);
-            boolean hasRemainingBlocks = oldInnerOffsets.stream().anyMatch(offset -> {
-                if (newInnerOffsets.contains(offset)) {return false;}
-                IntBox innerUnitBox = entry.getInnerUnitBox(offset);
-                
-                ServerLevel voidWorld = VoidDimension.getVoidWorld();
-                
-                return !innerUnitBox.stream().allMatch(blockPos -> {
-                    BlockState blockState = voidWorld.getBlockState(blockPos);
-                    return blockState.getBlock() == BoxBarrierBlock.instance ||
-                        blockState.isAir() ||
-                        (player.isCreative() && blockState.getBlock() instanceof StainedGlassBlock);
-                    // in creative mode, the glass is considered clear
-                });
-            });
-            if (hasRemainingBlocks) {
-                player.displayClientMessage(
-                    Component.translatable("mini_scaled.cannot_shrink_has_blocks"),
-                    false
-                );
-                return InteractionResult.FAIL;
-            }
-            
-            entry.currentEntranceSize = newEntranceSize;
-            ScaleBoxRecord.get().setDirty(true);
-            
-            ScaleBoxGeneration.putScaleBoxIntoWorld(
-                entry,
-                ((ServerLevel) world),
-                entry.currentEntrancePos,
-                entry.getEntranceRotation()
-            );
-            
-            ScaleBoxGeneration.initializeInnerBoxBlocks(
-                oldEntranceSize, entry
-            );
-            
-            if (!player.isCreative()) {
-                int compensateNetheriteNum = getVolume(oldEntranceSize) - getVolume(newEntranceSize);
-                player.addItem(new ItemStack(
-                    ScaleBoxEntranceCreation.creationItem,
-                    compensateNetheriteNum
-                ));
-            }
-            
-            return InteractionResult.SUCCESS;
+            return tryToShrinkScaleBox(player, (ServerLevel) world, entry, outerSide);
         }
         else {
             return InteractionResult.PASS;
         }
     }
     
+    public static InteractionResult tryToShrinkScaleBox(
+        Player player, ServerLevel world, ScaleBoxRecord.Entry entry, Direction outerSide
+    ) {
+        Direction innerSide = entry.getRotationToInner().transformDirection(outerSide);
+        if (innerSide.getAxisDirection() != Direction.AxisDirection.POSITIVE) {
+            player.displayClientMessage(
+                Component.translatable("mini_scaled.cannot_shrink_direction"),
+                false
+            );
+            return InteractionResult.FAIL;
+        }
+        
+        BlockPos oldEntranceSize = entry.currentEntranceSize;
+        
+        int lenOnDirection = Helper.getCoordinate(oldEntranceSize, innerSide.getAxis());
+        
+        if (lenOnDirection == 1) {
+            return InteractionResult.FAIL;
+        }
+        
+        BlockPos newEntranceSize = Helper.putCoordinate(oldEntranceSize, innerSide.getAxis(), lenOnDirection - 1);
+        
+        IntBox oldInnerOffsets = IntBox.fromBasePointAndSize(BlockPos.ZERO, oldEntranceSize);
+        IntBox newInnerOffsets = IntBox.fromBasePointAndSize(BlockPos.ZERO, newEntranceSize);
+        boolean hasRemainingBlocks = oldInnerOffsets.stream().anyMatch(offset -> {
+            if (newInnerOffsets.contains(offset)) {return false;}
+            IntBox innerUnitBox = entry.getInnerUnitBox(offset);
+            
+            ServerLevel voidWorld = VoidDimension.getVoidWorld();
+            
+            return !innerUnitBox.stream().allMatch(blockPos -> {
+                BlockState blockState = voidWorld.getBlockState(blockPos);
+                return blockState.getBlock() == BoxBarrierBlock.instance ||
+                    blockState.isAir() ||
+                    (player.isCreative() && blockState.getBlock() instanceof StainedGlassBlock);
+                // in creative mode, the glass is considered clear
+            });
+        });
+        if (hasRemainingBlocks) {
+            player.displayClientMessage(
+                Component.translatable("mini_scaled.cannot_shrink_has_blocks"),
+                false
+            );
+            return InteractionResult.FAIL;
+        }
+        
+        entry.currentEntranceSize = newEntranceSize;
+        ScaleBoxRecord.get().setDirty(true);
+        
+        ScaleBoxGeneration.putScaleBoxIntoWorld(
+            entry,
+            world,
+            entry.currentEntrancePos,
+            entry.getEntranceRotation()
+        );
+        
+        ScaleBoxGeneration.initializeInnerBoxBlocks(
+            oldEntranceSize, entry
+        );
+        
+        if (!player.isCreative()) {
+            int compensateNetheriteNum = getVolume(oldEntranceSize) - getVolume(newEntranceSize);
+            player.addItem(new ItemStack(
+                ScaleBoxEntranceCreation.creationItem,
+                compensateNetheriteNum
+            ));
+        }
+        
+        return InteractionResult.SUCCESS;
+    }
+    
     private static int getVolume(BlockPos entranceSize) {
         return entranceSize.getX() * entranceSize.getY() * entranceSize.getZ();
     }
     
-    private static InteractionResult tryToExpandScaleBox(
-        Player player, ServerLevel world, ItemStack stack,
-        ScaleBoxRecord.Entry entry, Direction outerSide, Direction innerSide
+    public static InteractionResult tryToExpandScaleBox(
+        Player player, ServerLevel world,
+        ScaleBoxRecord.Entry entry, Direction outerSide,
+        Function<Integer, Boolean> itemConsumptionFunc
     ) {
-        // expand existing scale box
+        Direction innerSide = entry.getRotationToInner().transformDirection(outerSide);
+        
+        if (innerSide.getAxisDirection() != Direction.AxisDirection.POSITIVE) {
+            player.displayClientMessage(
+                Component.translatable("mini_scaled.cannot_expand_direction"),
+                false
+            );
+            return InteractionResult.FAIL;
+        }
         
         BlockPos oldEntranceSize = entry.currentEntranceSize;
         int volume = getVolume(oldEntranceSize);
@@ -313,14 +338,6 @@ public class ScaleBoxManipulation {
         
         int requiredEntranceItemNum = getVolume(newEntranceSize) - getVolume(oldEntranceSize);
         
-        if ((!player.isCreative()) && (stack.getCount() < requiredEntranceItemNum)) {
-            player.displayClientMessage(
-                Component.translatable("mini_scaled.cannot_expand_not_enough", requiredEntranceItemNum),
-                false
-            );
-            return InteractionResult.FAIL;
-        }
-        
         if ((lenOnDirection + 1) * entry.scale > 64) {
             player.displayClientMessage(
                 Component.translatable("mini_scaled.cannot_expand_size_limit"),
@@ -329,8 +346,9 @@ public class ScaleBoxManipulation {
             return InteractionResult.FAIL;
         }
         
-        if (!player.isCreative()) {
-            stack.shrink(requiredEntranceItemNum);
+        boolean succ = itemConsumptionFunc.apply(requiredEntranceItemNum);
+        if (!succ) {
+            return InteractionResult.FAIL;
         }
         
         entry.currentEntranceSize = newEntranceSize;

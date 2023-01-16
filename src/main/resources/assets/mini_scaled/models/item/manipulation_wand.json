@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:item/handheld",
+  "textures": {
+    "layer0": "mini_scaled:item/manipulation_wand"
+  }
+}
