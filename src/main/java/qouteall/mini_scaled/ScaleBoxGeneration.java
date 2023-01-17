@@ -14,14 +14,16 @@ import org.apache.commons.lang3.Validate;
 import qouteall.mini_scaled.block.BoxBarrierBlock;
 import qouteall.mini_scaled.block.ScaleBoxPlaceholderBlock;
 import qouteall.mini_scaled.block.ScaleBoxPlaceholderBlockEntity;
-import qouteall.mini_scaled.item.ManipulationWandItem;
 import qouteall.q_misc_util.Helper;
 import qouteall.q_misc_util.my_util.AARotation;
 import qouteall.q_misc_util.my_util.DQuaternion;
 import qouteall.q_misc_util.my_util.IntBox;
 
 import java.util.Arrays;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -215,7 +217,6 @@ public class ScaleBoxGeneration {
             IntBox oldEntranceOffsets = oldEntranceSize != null ?
                 IntBox.fromBasePointAndSize(BlockPos.ZERO, oldEntranceSize) : null;
             
-            
             newEntranceOffsets.stream().forEach(offset -> {
                 if (oldEntranceOffsets != null) {
                     if (oldEntranceOffsets.contains(offset)) {
@@ -230,13 +231,6 @@ public class ScaleBoxGeneration {
                 innerUnitBox.fastStream().forEach(blockPos -> {
                     voidWorld.setBlockAndUpdate(blockPos, Blocks.AIR.defaultBlockState());
                 });
-                
-                // setup the frame blocks
-                for (IntBox edge : innerUnitBox.get12Edges()) {
-                    edge.fastStream().forEach(blockPos -> {
-                        voidWorld.setBlockAndUpdate(blockPos, frameBlock);
-                    });
-                }
             });
             
             if (oldEntranceOffsets != null) {
@@ -254,16 +248,60 @@ public class ScaleBoxGeneration {
                 });
             }
             
+            // put the new barrier blocks
             IntBox expanded = innerAreaBox.getAdjusted(-1, -1, -1, 1, 1, 1);
-            
             for (Direction direction : Direction.values()) {
                 expanded.getSurfaceLayer(direction).fastStream().forEach(blockPos -> {
                     voidWorld.setBlockAndUpdate(blockPos, BoxBarrierBlock.instance.defaultBlockState());
                 });
             }
             
+            // find the untouched unit regions
+            Set<BlockPos> untouchedRegionOffsets = newEntranceOffsets.stream().filter(
+                offset -> isUnitRegionUntouched(entry, offset, voidWorld, frameBlock)
+            ).map(BlockPos::immutable).collect(Collectors.toSet());
+            
+            // clear the untouched unit regions
+            untouchedRegionOffsets.forEach(offset -> {
+                IntBox innerUnitBox = entry.getInnerUnitBox(offset);
+                
+                innerUnitBox.fastStream().forEach(blockPos -> {
+                    voidWorld.setBlockAndUpdate(blockPos, Blocks.AIR.defaultBlockState());
+                });
+            });
+            
+            // regenerate the outer frame in the untouched unit regions
+            for (IntBox edge : entry.getInnerAreaLocalBox().get12Edges()) {
+                edge.fastStream().forEach(blockOffset -> {
+                    BlockPos unitRegionOffset = entry.blockOffsetToUnitRegionOffset(blockOffset);
+                    if (untouchedRegionOffsets.contains(unitRegionOffset)) {
+                        BlockPos blockPos = entry.innerBoxPos.offset(blockOffset);
+                        voidWorld.setBlockAndUpdate(blockPos, frameBlock);
+                    }
+                });
+            }
+            
         });
         
+    }
+    
+    // untouched means it's all air, except that on the edge it can have frame blocks
+    private static boolean isUnitRegionUntouched(
+        ScaleBoxRecord.Entry entry,
+        BlockPos regionOffset,
+        ServerLevel voidWorld,
+        BlockState frameBlock
+    ) {
+        IntBox innerUnitBox = entry.getInnerUnitBox(regionOffset);
+        return innerUnitBox.fastStream().allMatch(blockPos -> {
+            BlockState blockState = voidWorld.getBlockState(blockPos);
+            if (innerUnitBox.isOnEdge(blockPos)) {
+                return blockState.isAir() || blockState == frameBlock;
+            }
+            else {
+                return blockState.isAir();
+            }
+        });
     }
     
     private static Block getGlassBlock(DyeColor color) {

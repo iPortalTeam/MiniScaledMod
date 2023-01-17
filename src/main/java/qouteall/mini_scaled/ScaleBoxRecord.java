@@ -151,10 +151,33 @@ public class ScaleBoxRecord extends SavedData {
             );
         }
         
-        IntBox getInnerUnitBox(BlockPos outerOffset) {
+        public IntBox getInnerUnitBox(BlockPos outerOffset) {
             return IntBox.fromBasePointAndSize(
                 this.innerBoxPos.offset(outerOffset.multiply(this.scale)),
                 new BlockPos(this.scale, this.scale, this.scale)
+            );
+        }
+        
+        public BlockPos unitRegionOffsetToBlockOffset(BlockPos unitRegionOffset) {
+            return unitRegionOffset.multiply(this.scale);
+        }
+        
+        public BlockPos blockOffsetToUnitRegionOffset(BlockPos blockOffset) {
+            return new BlockPos(
+                Math.floorDiv(blockOffset.getX(), this.scale),
+                Math.floorDiv(blockOffset.getY(), this.scale),
+                Math.floorDiv(blockOffset.getZ(), this.scale)
+            );
+        }
+        
+        public IntBox getInnerAreaLocalBox() {
+            return IntBox.fromBasePointAndSize(
+                BlockPos.ZERO,
+                new BlockPos(
+                    this.scale * currentEntranceSize.getX(),
+                    this.scale * currentEntranceSize.getY(),
+                    this.scale * currentEntranceSize.getZ()
+                )
             );
         }
         
