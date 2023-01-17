@@ -105,7 +105,7 @@ public class MiniScaledPortal extends Portal {
         }
         
         if (generation != entry.generation) {
-            System.out.println("removing old portal " + this);
+//            System.out.println("removing old portal " + this);
             remove(RemovalReason.KILLED);
             return;
         }

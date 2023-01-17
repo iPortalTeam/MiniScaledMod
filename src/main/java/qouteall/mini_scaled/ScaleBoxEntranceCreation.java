@@ -14,6 +14,7 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.StainedGlassBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.Nullable;
+import qouteall.mini_scaled.item.ManipulationWandItem;
 import qouteall.mini_scaled.item.ScaleBoxEntranceItem;
 import qouteall.q_misc_util.my_util.IntBox;
 
@@ -103,12 +104,15 @@ public class ScaleBoxEntranceCreation {
         
         int boxLen = box.getSize().getX();
         
-        // give player the item
+        // give player the entrance
         DyeColor color = stainedGlassBlock.getColor();
         ItemStack itemStack = new ItemStack(ScaleBoxEntranceItem.instance);
         ScaleBoxEntranceItem.ItemInfo itemInfo = new ScaleBoxEntranceItem.ItemInfo(boxLen, color);
         itemInfo.writeToTag(itemStack.getOrCreateTag());
         player.addItem(itemStack);
+        
+        // give player a wand
+        player.addItem(new ItemStack(ManipulationWandItem.instance));
         
         // remove the frame
         for (IntBox edge : box.get12Edges()) {

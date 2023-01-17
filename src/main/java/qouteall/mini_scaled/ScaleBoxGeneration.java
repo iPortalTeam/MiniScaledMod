@@ -1,6 +1,10 @@
 package qouteall.mini_scaled;
 
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import qouteall.imm_ptl.core.McHelper;
 import qouteall.imm_ptl.core.chunk_loading.ChunkLoader;
 import qouteall.imm_ptl.core.chunk_loading.DimensionalChunkPos;
@@ -10,6 +14,7 @@ import org.apache.commons.lang3.Validate;
 import qouteall.mini_scaled.block.BoxBarrierBlock;
 import qouteall.mini_scaled.block.ScaleBoxPlaceholderBlock;
 import qouteall.mini_scaled.block.ScaleBoxPlaceholderBlockEntity;
+import qouteall.mini_scaled.item.ManipulationWandItem;
 import qouteall.q_misc_util.Helper;
 import qouteall.q_misc_util.my_util.AARotation;
 import qouteall.q_misc_util.my_util.DQuaternion;
@@ -34,6 +39,8 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
 public class ScaleBoxGeneration {
+    private static final Logger LOGGER = LoggerFactory.getLogger(ScaleBoxGeneration.class);
+    
     public static final int[] supportedScales = {4, 8, 16, 32};
     
     public static void putScaleBoxIntoWorld(
@@ -267,4 +274,18 @@ public class ScaleBoxGeneration {
         return Arrays.stream(supportedScales).anyMatch(s -> s == size);
     }
     
+    // will set dirty
+    public static void updateScaleBoxPortals(ScaleBoxRecord.Entry entry) {
+        ResourceKey<Level> currentEntranceDim = entry.currentEntranceDim;
+        if (currentEntranceDim == null) {
+            LOGGER.error("Updating a scale box that has no entrance");
+            return;
+        }
+        putScaleBoxIntoWorld(
+            entry,
+            McHelper.getServerWorld(currentEntranceDim),
+            entry.currentEntrancePos,
+            entry.getEntranceRotation()
+        );
+    }
 }

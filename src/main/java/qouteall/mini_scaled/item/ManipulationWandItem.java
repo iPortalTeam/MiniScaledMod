@@ -25,6 +25,7 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import qouteall.mini_scaled.ScaleBoxGeneration;
 import qouteall.mini_scaled.ScaleBoxManipulation;
 import qouteall.mini_scaled.ScaleBoxRecord;
 import qouteall.mini_scaled.block.ScaleBoxPlaceholderBlock;
@@ -163,7 +164,7 @@ public class ManipulationWandItem extends Item {
                         }
                         
                         Inventory inventory = player.getInventory();
-                        return MSUtil.removeIfHas(inventory,
+                        boolean has = MSUtil.removeIfHas(inventory,
                             s -> {
                                 Item item = s.getItem();
                                 if (item != ScaleBoxEntranceItem.instance) {
@@ -177,6 +178,13 @@ public class ManipulationWandItem extends Item {
                             },
                             requiredEntranceItemNum
                         );
+                        if (!has) {
+                            player.displayClientMessage(
+                                Component.translatable("mini_scaled.cannot_expand_not_enough", requiredEntranceItemNum),
+                                false
+                            );
+                        }
+                        return has;
                     }
                 );
             }
@@ -190,6 +198,7 @@ public class ManipulationWandItem extends Item {
             }
             case toggleScaleChange -> {
                 entry.teleportChangesScale = !entry.teleportChangesScale;
+                ScaleBoxGeneration.updateScaleBoxPortals(entry);
                 player.displayClientMessage(
                     Component.translatable(
                         entry.teleportChangesScale ?
@@ -198,11 +207,11 @@ public class ManipulationWandItem extends Item {
                     ),
                     true
                 );
-                scaleBoxRecord.setDirty();
                 return InteractionResult.SUCCESS;
             }
             case toggleGravityChange -> {
                 entry.teleportChangesGravity = !entry.teleportChangesGravity;
+                ScaleBoxGeneration.updateScaleBoxPortals(entry);
                 player.displayClientMessage(
                     Component.translatable(
                         entry.teleportChangesGravity ?
@@ -211,7 +220,6 @@ public class ManipulationWandItem extends Item {
                     ),
                     true
                 );
-                scaleBoxRecord.setDirty();
                 return InteractionResult.SUCCESS;
             }
         }
@@ -221,10 +229,6 @@ public class ManipulationWandItem extends Item {
     @Override
     public void appendHoverText(ItemStack stack, Level world, List<Component> tooltip, TooltipFlag context) {
         Mode mode = getModeFromNbt(stack.getTag());
-//        tooltip.add(
-//            Component.translatable("mini_scaled.manipulation_wand.mode")
-//                .append(mode.getText().withStyle(ChatFormatting.GOLD))
-//        );
         tooltip.add(Component.translatable("mini_scaled.manipulation_wand.tip"));
     }
     
