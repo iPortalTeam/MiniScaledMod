@@ -170,7 +170,7 @@ public class MiniScaledModInitializer implements ModInitializer {
             }
             else {
                 LOGGER.error("Invalid scale box creation item {}", identifier);
-                ScaleBoxEntranceCreation.creationItem = null;
+                ScaleBoxEntranceCreation.creationItem = Items.NETHERITE_INGOT;
             }
         }
         catch (Exception e) {

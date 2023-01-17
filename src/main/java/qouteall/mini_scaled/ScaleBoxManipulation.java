@@ -1,5 +1,6 @@
 package qouteall.mini_scaled;
 
+import net.minecraft.world.level.block.Block;
 import org.apache.commons.lang3.Validate;
 import qouteall.mini_scaled.block.BoxBarrierBlock;
 import qouteall.mini_scaled.block.ScaleBoxPlaceholderBlock;
@@ -249,6 +250,8 @@ public class ScaleBoxManipulation {
         
         IntBox oldInnerOffsets = IntBox.fromBasePointAndSize(BlockPos.ZERO, oldEntranceSize);
         IntBox newInnerOffsets = IntBox.fromBasePointAndSize(BlockPos.ZERO, newEntranceSize);
+        
+        Block glassBlock = ScaleBoxGeneration.getGlassBlock(entry.color);
         boolean hasRemainingBlocks = oldInnerOffsets.stream().anyMatch(offset -> {
             if (newInnerOffsets.contains(offset)) {return false;}
             IntBox innerUnitBox = entry.getInnerUnitBox(offset);
@@ -259,7 +262,7 @@ public class ScaleBoxManipulation {
                 BlockState blockState = voidWorld.getBlockState(blockPos);
                 return blockState.getBlock() == BoxBarrierBlock.instance ||
                     blockState.isAir() ||
-                    (player.isCreative() && blockState.getBlock() instanceof StainedGlassBlock);
+                    (player.isCreative() && blockState.getBlock() == glassBlock);
                 // in creative mode, the glass is considered clear
             });
         });
@@ -268,7 +271,7 @@ public class ScaleBoxManipulation {
                 Component.translatable("mini_scaled.cannot_shrink_has_blocks"),
                 false
             );
-            return InteractionResult.FAIL;
+//            return InteractionResult.FAIL;
         }
         
         entry.currentEntranceSize = newEntranceSize;

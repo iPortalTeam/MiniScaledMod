@@ -21,6 +21,7 @@ import net.minecraft.world.phys.Vec3;
 import qouteall.imm_ptl.core.IPGlobal;
 import qouteall.imm_ptl.core.McHelper;
 import qouteall.imm_ptl.core.portal.Portal;
+import qouteall.mini_scaled.util.MSUtil;
 
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -135,42 +136,46 @@ public class MiniScaledPortal extends Portal {
     
     @Environment(EnvType.CLIENT)
     private void onCollidingWithEntityClientOnly(Entity entity) {
-        if (isOuterPortal() && isFacingUp()) {
+        if (isOuterPortal()) {
             if (entity instanceof LocalPlayer) {
-                showShiftDescendMessage();
-                
-                // not ClientPlayerEntity to avoid dedicated server crash as it's captured
-                Player player = (Player) entity;
-                if (player.getPose() == Pose.CROUCHING) {
-                    IPGlobal.clientTaskList.addTask(() -> {
-                        if (player.level == level) {
-                            // changing player pos immediately may cause ConcurrentModificationException
-                            player.setPosRaw(player.getX(), player.getY() - 0.01, player.getZ());
-                            McHelper.updateBoundingBox(player);
-                        }
-                        return true;
-                    });
+                Vec3 gravityVec = MSUtil.getGravityVec(entity);
+                if (getNormal().dot(gravityVec) < -0.5) {
+                    showShiftDescendMessage();
+                    
+                    // not ClientPlayerEntity to avoid dedicated server crash as it's captured in lambda
+                    Player player = (Player) entity;
+                    if (player.getPose() == Pose.CROUCHING) {
+                        IPGlobal.clientTaskList.addTask(() -> {
+                            if (player.level == level) {
+                                Vec3 posDelta = gravityVec.scale(0.01);
+                                
+                                // changing player pos immediately may cause ConcurrentModificationException
+                                player.setPosRaw(
+                                    player.getX() + posDelta.x,
+                                    player.getY() + posDelta.y,
+                                    player.getZ() + posDelta.z
+                                );
+                                McHelper.updateBoundingBox(player);
+                            }
+                            return true;
+                        });
+                    }
                 }
             }
         }
         
     }
     
-    private boolean isFacingUp() {
-        return ((Portal) this).getNormal().y > 0.9;
-    }
-    
     @Override
     public void transformVelocity(Entity entity) {
         super.transformVelocity(entity);
         
-        if (isOuterPortal() && isFacingUp()) {
-            entity.setDeltaMovement(entity.getDeltaMovement().scale(0.5));
+        if (isOuterPortal()) {
+            Vec3 gravityVec = MSUtil.getGravityVec(entity);
+            if (getNormal().dot(gravityVec) < -0.5) {
+                entity.setDeltaMovement(entity.getDeltaMovement().scale(0.5));
+            }
         }
-
-//        if (!isOuterPortal() && getNormal().y < -0.9) {
-//            entity.setVelocity(entity.getVelocity().add(0, 0.2, 0));
-//        }
     }
     
     @Environment(EnvType.CLIENT)

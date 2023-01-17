@@ -1,8 +1,12 @@
 package qouteall.mini_scaled.util;
 
+import net.minecraft.core.Direction;
 import net.minecraft.world.Container;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.phys.Vec3;
+import qouteall.imm_ptl.core.compat.GravityChangerInterface;
 
 import java.util.function.Predicate;
 
@@ -60,5 +64,11 @@ public class MSUtil {
         else {
             return false;
         }
+    }
+    
+    public static Vec3 getGravityVec(Entity entity) {
+        Direction gravity = GravityChangerInterface.invoker.getGravityDirection(entity);
+        Vec3 gravityVec = Vec3.atLowerCornerOf(gravity.getNormal());
+        return gravityVec;
     }
 }

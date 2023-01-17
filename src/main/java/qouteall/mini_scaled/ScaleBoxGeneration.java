@@ -217,6 +217,7 @@ public class ScaleBoxGeneration {
             IntBox oldEntranceOffsets = oldEntranceSize != null ?
                 IntBox.fromBasePointAndSize(BlockPos.ZERO, oldEntranceSize) : null;
             
+            // clear the barrier blocks if the scale box expanded
             newEntranceOffsets.stream().forEach(offset -> {
                 if (oldEntranceOffsets != null) {
                     if (oldEntranceOffsets.contains(offset)) {
@@ -225,10 +226,7 @@ public class ScaleBoxGeneration {
                     }
                 }
                 
-                IntBox innerUnitBox = entry.getInnerUnitBox(offset);
-                
-                // clear the barrier blocks if the scale box expanded
-                innerUnitBox.fastStream().forEach(blockPos -> {
+                entry.getInnerUnitBox(offset).fastStream().forEach(blockPos -> {
                     voidWorld.setBlockAndUpdate(blockPos, Blocks.AIR.defaultBlockState());
                 });
             });
@@ -304,7 +302,7 @@ public class ScaleBoxGeneration {
         });
     }
     
-    private static Block getGlassBlock(DyeColor color) {
+    public static Block getGlassBlock(DyeColor color) {
         return BuiltInRegistries.BLOCK.get(new ResourceLocation("minecraft:" + color.getName() + "_stained_glass"));
     }
     

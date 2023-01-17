@@ -174,7 +174,10 @@ public class ManipulationWandItem extends Item {
                                     new ScaleBoxEntranceItem.ItemInfo(s.getOrCreateTag());
                                 return itemInfo.color == entry.color &&
                                     itemInfo.scale == entry.scale &&
-                                    Objects.equals(itemInfo.ownerId, entry.ownerId);
+                                    (
+                                        Objects.equals(itemInfo.ownerId, entry.ownerId) ||
+                                            itemInfo.ownerId == null
+                                    );
                             },
                             requiredEntranceItemNum
                         );
