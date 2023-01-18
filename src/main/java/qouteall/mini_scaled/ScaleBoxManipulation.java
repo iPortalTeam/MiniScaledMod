@@ -262,8 +262,8 @@ public class ScaleBoxManipulation {
                 BlockState blockState = voidWorld.getBlockState(blockPos);
                 return blockState.getBlock() == BoxBarrierBlock.instance ||
                     blockState.isAir() ||
-                    (player.isCreative() && blockState.getBlock() == glassBlock);
-                // in creative mode, the glass is considered clear
+                    (blockState.getBlock() == glassBlock);
+                // the glass is considered clear
             });
         });
         if (hasRemainingBlocks) {
@@ -271,7 +271,7 @@ public class ScaleBoxManipulation {
                 Component.translatable("mini_scaled.cannot_shrink_has_blocks"),
                 false
             );
-//            return InteractionResult.FAIL;
+            return InteractionResult.FAIL;
         }
         
         entry.currentEntranceSize = newEntranceSize;

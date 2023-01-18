@@ -10,6 +10,8 @@ public class MiniScaledModInitializerClient implements ClientModInitializer {
             MiniScaledPortal.entityType,
             (context) -> new PortalEntityRenderer(context)
         );
+    
+        ClientScaleBoxInteractionControl.init();
     }
     
     @Override

@@ -97,8 +97,6 @@ public class MiniScaledModInitializer implements ModInitializer {
                 ScaleBoxEntranceItem.registerCreativeInventory(entries::accept);
             });
         
-        ClientScaleBoxInteractionControl.init();
-        
         LOGGER.info("MiniScaled Mod Initializing");
     }
     
