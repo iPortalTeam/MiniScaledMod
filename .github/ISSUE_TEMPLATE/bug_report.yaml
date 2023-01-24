@@ -9,8 +9,8 @@ body:
     attributes:
       label: According to your testing, does the issue occur with ONLY MiniScaled mod and Immersive Portals mod and Farbic API?
       options:
-        - Yes
-        - No
+        - "Yes"
+        - "No"
     validations:
       required: true
   - type: textarea
