@@ -5,12 +5,12 @@ body:
     attributes:
       value: "To know whether it's a mod compatibility issue, please remove all other mods and keep only MiniScaled and Immersive Portals and Fabric API, backup your world, and then test again whether the issue occurs. Thanks for cooperation."
   - type: dropdown
-    id: only_immptl
+    id: only_immptl_and_miniscaled
     attributes:
       label: According to your testing, does the issue occur with ONLY MiniScaled mod and Immersive Portals mod and Farbic API?
       options:
-        - "Yes"
-        - "No"
+        - Yes
+        - No
     validations:
       required: true
   - type: textarea
