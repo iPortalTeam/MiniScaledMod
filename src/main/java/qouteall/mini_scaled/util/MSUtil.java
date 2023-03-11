@@ -1,10 +1,13 @@
 package qouteall.mini_scaled.util;
 
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.Container;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.phys.Vec3;
 import qouteall.imm_ptl.core.compat.GravityChangerInterface;
 
@@ -70,5 +73,9 @@ public class MSUtil {
         Direction gravity = GravityChangerInterface.invoker.getGravityDirection(entity);
         Vec3 gravityVec = Vec3.atLowerCornerOf(gravity.getNormal());
         return gravityVec;
+    }
+    
+    public static BlockPos getSpawnPos(Level world) {
+        return world.getHeightmapPos(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, world.getSharedSpawnPos());
     }
 }

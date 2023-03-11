@@ -324,4 +324,38 @@ public class ScaleBoxGeneration {
             entry.getEntranceRotation()
         );
     }
+    
+    public static void createInnerPortalsPointingToVoidUnderneath(
+        ScaleBoxRecord.Entry entry
+    ) {
+        ServerLevel voidWorld = VoidDimension.getVoidWorld();
+        AABB innerAreaBox = entry.getInnerAreaBox().toRealNumberBox();
+        Vec3 innerAreaBoxSize = Helper.getBoxSize(innerAreaBox);
+        int boxId = entry.id;
+        int generation = entry.generation;
+        for (Direction innerDirection : Direction.values()) {
+            MiniScaledPortal portal = MiniScaledPortal.entityType.create(voidWorld);
+            Validate.notNull(portal);
+            
+            portal.setOriginPos(Helper.getBoxSurface(innerAreaBox, innerDirection).getCenter());
+            portal.setDestination(portal.getOriginPos().add(0, -1000, 0));
+            portal.setDestinationDimension(voidWorld.dimension());
+            
+            Tuple<Direction, Direction> perpendicularDirections =
+                Helper.getPerpendicularDirections(innerDirection.getOpposite());
+            Direction pd1 = perpendicularDirections.getA();
+            Direction pd2 = perpendicularDirections.getB();
+            
+            portal.setOrientation(Vec3.atLowerCornerOf(pd1.getNormal()), Vec3.atLowerCornerOf(pd2.getNormal()));
+            portal.setWidth(Helper.getCoordinate(innerAreaBoxSize, pd1.getAxis()));
+            portal.setHeight(Helper.getCoordinate(innerAreaBoxSize, pd2.getAxis()));
+            
+            portal.renderingMergable = true;
+            portal.portalTag = "mini_scaled:scaled_box_inner_wrapping";
+            portal.boxId = boxId;
+            portal.generation = generation;
+            
+            McHelper.spawnServerEntity(portal);
+        }
+    }
 }

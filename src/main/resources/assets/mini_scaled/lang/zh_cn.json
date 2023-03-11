@@ -1,4 +1,5 @@
-{  "modmenu.descriptionTranslation.mini_scaled": "轻松创建缩放盒（使用沉浸传送门功能）。",
+{
+  "modmenu.descriptionTranslation.mini_scaled": "轻松创建缩放盒（使用沉浸传送门功能）。",
   "item.mini_scaled.scale_box_item": "缩放盒接入点",
   "item.mini_scaled.manipulation_wand": "缩放盒控制杖",
   "mini_scaled.color": "颜色: ",
@@ -30,6 +31,6 @@
   "mini_scaled.manipulation_wand.scale_change.enabled": "比例变换启用",
   "mini_scaled.manipulation_wand.scale_change.disabled": "比例变换禁用",
   "mini_scaled.manipulation_wand.tip": "对空气使用本物品以切换模式",
-  "mini_scaled.manipulation_wand.use_on_scale_box": "请对缩放盒使用本物品"
-
+  "mini_scaled.manipulation_wand.use_on_scale_box": "请对缩放盒使用本物品",
+  "mini_scaled.return_to_spawn": "你掉下了缩放盒，将传送回出生点。"
 }

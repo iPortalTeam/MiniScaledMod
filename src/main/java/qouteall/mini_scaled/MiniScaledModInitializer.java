@@ -8,13 +8,8 @@ import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.event.player.UseBlockCallback;
 import net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents;
 import net.fabricmc.fabric.impl.itemgroup.MinecraftItemGroups;
-import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.level.ServerLevel;
-import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.Entity;
@@ -24,11 +19,9 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.phys.BlockHitResult;
-import net.minecraft.world.phys.Vec3;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import qouteall.imm_ptl.core.IPGlobal;
-import qouteall.imm_ptl.core.teleportation.ServerTeleportationManager;
 import qouteall.mini_scaled.block.BoxBarrierBlock;
 import qouteall.mini_scaled.block.ScaleBoxPlaceholderBlock;
 import qouteall.mini_scaled.block.ScaleBoxPlaceholderBlockEntity;
@@ -66,7 +59,7 @@ public class MiniScaledModInitializer implements ModInitializer {
         
         IPGlobal.enableDepthClampForPortalRendering = true;
         
-        ServerTickEvents.END_SERVER_TICK.register(MiniScaledModInitializer::teleportFallenEntities);
+        ServerTickEvents.END_SERVER_TICK.register(FallenEntityTeleportaion::teleportFallenEntities);
         
         UseBlockCallback.EVENT.register((Player player, Level world, InteractionHand hand, BlockHitResult hitResult) -> {
             Block block = world.getBlockState(hitResult.getBlockPos()).getBlock();
@@ -98,63 +91,6 @@ public class MiniScaledModInitializer implements ModInitializer {
             });
         
         LOGGER.info("MiniScaled Mod Initializing");
-    }
-    
-    private static void teleportFallenEntities(MinecraftServer server) {
-        server.getProfiler().push("mini_scaled_tick");
-        
-        ServerLevel voidWorld = server.getLevel(VoidDimension.dimensionId);
-        if (voidWorld != null) {
-            for (Entity entity : voidWorld.getAllEntities()) {
-                teleportFallenEntity(entity);
-            }
-        }
-        
-        server.getProfiler().pop();
-    }
-    
-    private static void teleportFallenEntity(Entity entity) {
-        if (entity == null) {
-            // cannot reproduce the crash stably
-            return;
-        }
-        
-        if (entity.getY() < 32) {
-            LIMITED_LOGGER.invoke(() -> {
-                LOGGER.info("Entity fallen from scale box " + entity);
-            });
-            
-            if (entity instanceof ServerPlayer) {
-                ServerPlayer player = (ServerPlayer) entity;
-                
-                ServerLevel overworld = player.server.getLevel(Level.OVERWORLD);
-                
-                ServerTeleportationManager.teleportEntityGeneral(
-                    player, Vec3.atCenterOf(overworld.getSharedSpawnPos()), overworld
-                );
-                
-                IPGlobal.serverTaskList.addTask(() -> {
-                    player.displayClientMessage(
-                        Component.literal("You fell off the scale box. Returned to the spawn point"),
-                        false
-                    );
-                    return true;
-                });
-            }
-            else {
-                BlockPos blockPos = entity.blockPosition();
-                
-                BlockPos newPos = ScaleBoxGeneration.getNearestPosInScaleBoxToTeleportTo(blockPos);
-                
-                entity.setDeltaMovement(Vec3.ZERO);
-                
-                ServerTeleportationManager.teleportEntityGeneral(
-                    entity,
-                    Vec3.atCenterOf(newPos),
-                    ((ServerLevel) entity.level)
-                );
-            }
-        }
     }
     
     public static void applyConfigServerSide(MiniScaledConfig miniScaledConfig) {

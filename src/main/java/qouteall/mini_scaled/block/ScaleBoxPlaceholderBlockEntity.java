@@ -15,12 +15,17 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import org.apache.commons.lang3.Validate;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import qouteall.mini_scaled.ScaleBoxGeneration;
 import qouteall.mini_scaled.item.ScaleBoxEntranceItem;
 import qouteall.mini_scaled.ScaleBoxRecord;
 import qouteall.q_misc_util.MiscHelper;
 import qouteall.q_misc_util.my_util.IntBox;
 
 public class ScaleBoxPlaceholderBlockEntity extends BlockEntity {
+    private static Logger LOGGER = LogManager.getLogger(ScaleBoxPlaceholderBlockEntity.class);
+    
     public static BlockEntityType<ScaleBoxPlaceholderBlockEntity> blockEntityType;
     
     public static void init() {
@@ -140,11 +145,13 @@ public class ScaleBoxPlaceholderBlockEntity extends BlockEntity {
      * the generation counter was already incremented and the old portals will break.
      * in {@link ScaleBoxPlaceholderBlockEntity#checkValidity()} it will break the blocks.
      * don't {@link ScaleBoxPlaceholderBlockEntity#notifyPortalBreak(int)} as it will break the new portals
-     * <p>
+     * <br>
      * 2. break the old entrance
      * in this case this integrity check will fail.
      * the generation counter will increment and the portal will break.
      * in {@link ScaleBoxPlaceholderBlockEntity#checkValidity()} it will break the blocks.
+     * <br>
+     * Now, the outer portal breaks but the inner portal turns to point to the void underneath.
      */
     public static void checkShouldRemovePortals(
         int boxId,
@@ -185,6 +192,10 @@ public class ScaleBoxPlaceholderBlockEntity extends BlockEntity {
             record.setDirty(true);
             
             notifyPortalBreak(boxId);
+    
+            ScaleBoxGeneration.createInnerPortalsPointingToVoidUnderneath(
+                entry
+            );
         }
     }
     
