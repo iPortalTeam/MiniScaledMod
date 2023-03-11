@@ -176,7 +176,7 @@ public class ScaleBoxGeneration {
     }
     
     private static BlockPos allocateInnerBoxPos(int boxId) {
-        int xIndex = boxId % 265;
+        int xIndex = boxId % 256;
         int zIndex = Mth.intFloorDiv(boxId, 256);
         
         return new BlockPos(xIndex * 16 * 32, 64, zIndex * 16 * 32);
