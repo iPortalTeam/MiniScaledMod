@@ -43,10 +43,13 @@ public class FallenEntityTeleportaion {
         if (entity instanceof ServerPlayer player) {
             BlockPos blockPos = player.blockPosition();
             BlockPos scaleBoxPos = ScaleBoxGeneration.getNearestPosInScaleBoxToTeleportTo(blockPos);
-            double horizontalDistanceSq = (blockPos.getX() - scaleBoxPos.getX()) * (blockPos.getX() - scaleBoxPos.getX()) +
-                (blockPos.getZ() - scaleBoxPos.getZ()) * (blockPos.getZ() - scaleBoxPos.getZ());
+            
+            int horizontalDistance = Math.max(
+                Math.abs(blockPos.getX() - scaleBoxPos.getX()),
+                Math.abs(blockPos.getZ() - scaleBoxPos.getZ())
+            );
             // too far from the nearest scale box position
-            if (horizontalDistanceSq > (64 * 2) * (64 * 2)) {
+            if (horizontalDistance > 64 + 10) {
                 ServerTeleportationManager.teleportEntityGeneral(
                     entity,
                     Vec3.atCenterOf(scaleBoxPos),
