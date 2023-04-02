@@ -166,16 +166,20 @@ public class MiniScaledPortal extends Portal {
         
     }
     
+    
+    
     @Override
-    public void transformVelocity(Entity entity) {
-        super.transformVelocity(entity);
-        
+    public Vec3 transformVelocityRelativeToPortal(Vec3 v, Entity entity) {
+        Vec3 velocity = super.transformVelocityRelativeToPortal(v, entity);
+    
         if (isOuterPortal()) {
             Vec3 gravityVec = MSUtil.getGravityVec(entity);
             if (getNormal().dot(gravityVec) < -0.5) {
-                entity.setDeltaMovement(entity.getDeltaMovement().scale(0.5));
+                return velocity.scale(0.5);
             }
         }
+        
+        return velocity;
     }
     
     @Environment(EnvType.CLIENT)

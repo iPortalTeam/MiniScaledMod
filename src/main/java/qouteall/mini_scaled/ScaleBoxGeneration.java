@@ -177,14 +177,14 @@ public class ScaleBoxGeneration {
     
     private static BlockPos allocateInnerBoxPos(int boxId) {
         int xIndex = boxId % 256;
-        int zIndex = Mth.intFloorDiv(boxId, 256);
+        int zIndex = Mth.floorDiv(boxId, 256);
         
         return new BlockPos(xIndex * 16 * 32, 64, zIndex * 16 * 32);
     }
     
     public static BlockPos getNearestPosInScaleBoxToTeleportTo(BlockPos pos) {
         double gridLen = 16.0 * 32;
-        return new BlockPos(
+        return BlockPos.containing(
             Math.round(pos.getX() / gridLen) * gridLen + 2,
             64 + 2,
             Math.round(pos.getZ() / gridLen) * gridLen + 2
