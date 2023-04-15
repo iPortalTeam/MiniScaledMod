@@ -129,6 +129,7 @@ public class ScaleBoxRecord extends SavedData {
         public AARotation entranceRotation; // the rotation from inner scale box to outer entrance
         public boolean teleportChangesScale = false;
         public boolean teleportChangesGravity = false;
+        public boolean accessControl = false;
         
         public Entry() {
         
@@ -243,6 +244,13 @@ public class ScaleBoxRecord extends SavedData {
             else {
                 teleportChangesGravity = false;
             }
+            
+            if (tag.contains("accessControl")) {
+                accessControl = tag.getBoolean("accessControl");
+            }
+            else {
+                accessControl = false;
+            }
         }
         
         void writeToNbt(CompoundTag tag) {
@@ -263,6 +271,7 @@ public class ScaleBoxRecord extends SavedData {
             }
             tag.putBoolean("teleportChangesScale", teleportChangesScale);
             tag.putBoolean("teleportChangesGravity", teleportChangesGravity);
+            tag.putBoolean("accessControl", accessControl);
         }
     }
 }

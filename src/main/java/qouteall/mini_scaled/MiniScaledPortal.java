@@ -1,5 +1,6 @@
 package qouteall.mini_scaled;
 
+import com.mojang.logging.LogUtils;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.object.builder.v1.entity.FabricEntityTypeBuilder;
@@ -18,19 +19,31 @@ import net.minecraft.world.entity.Pose;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
+import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
 import qouteall.imm_ptl.core.IPGlobal;
 import qouteall.imm_ptl.core.McHelper;
 import qouteall.imm_ptl.core.portal.Portal;
 import qouteall.mini_scaled.util.MSUtil;
 
+import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 public class MiniScaledPortal extends Portal {
+    private static final Logger LOGGER = LogUtils.getLogger();
+    
     public static EntityType<MiniScaledPortal> entityType;
     
     public int boxId = 0;
     public int generation = 0;
+    
+    /**
+     * This field is added in newer versions of MiniScaled.
+     * The boxId and generation is still used to check if the portal is valid.
+     */
+    @Nullable
+    public ScaleBoxRecord.Entry recordEntry;
     
     public MiniScaledPortal(EntityType<?> entityType, Level world) {
         super(entityType, world);
@@ -44,9 +57,24 @@ public class MiniScaledPortal extends Portal {
             tickClient();
         }
         else {
+            if (recordEntry == null) {
+                recordEntry = ScaleBoxRecord.get().getEntryById(boxId);
+                if (recordEntry == null) {
+                    kill();
+                    return;
+                }
+            }
+            
             if (level.getGameTime() % 2 == 0) {
-                level.getProfiler().push("validate");
-                checkValidity();
+                level.getProfiler().push("scale_box_portal_update");
+                ScaleBoxRecord.Entry entry = ScaleBoxRecord.get().getEntryById(boxId);
+                if (entry == null) {
+                    LOGGER.error("no scale box record {} {}", boxId, this);
+                    kill();
+                }
+                else if (generation != entry.generation) {
+                    kill();
+                }
                 level.getProfiler().pop();
             }
         }
@@ -57,6 +85,23 @@ public class MiniScaledPortal extends Portal {
         super.readAdditionalSaveData(compoundTag);
         generation = compoundTag.getInt("generation");
         boxId = compoundTag.getInt("boxId");
+        
+        if (compoundTag.contains("recordEntry")) {
+            ScaleBoxRecord.Entry entry = new ScaleBoxRecord.Entry();
+            entry.readFromNbt(compoundTag.getCompound("recordEntry"));
+            recordEntry = entry;
+        }
+        else {
+            // the recordEntry field is added in newer versions of MiniScaled
+            // so the old portals don't have that.
+            if (level.isClientSide()) {
+                recordEntry = null;
+                LOGGER.error("Deserialized MiniScaledPortal without recordEntry {}", compoundTag);
+            }
+            else {
+                recordEntry = ScaleBoxRecord.get().getEntryById(boxId);
+            }
+        }
     }
     
     @Override
@@ -64,6 +109,11 @@ public class MiniScaledPortal extends Portal {
         super.addAdditionalSaveData(compoundTag);
         compoundTag.putInt("generation", generation);
         compoundTag.putInt("boxId", boxId);
+        if (recordEntry != null) {
+            CompoundTag recordEntryTag = new CompoundTag();
+            recordEntry.writeToNbt(recordEntryTag);
+            compoundTag.put("recordEntry", recordEntryTag);
+        }
     }
     
     private static <T extends Entity> void registerEntity(
@@ -95,21 +145,6 @@ public class MiniScaledPortal extends Portal {
             MiniScaledPortal::new,
             BuiltInRegistries.ENTITY_TYPE
         );
-    }
-    
-    private void checkValidity() {
-        ScaleBoxRecord.Entry entry = ScaleBoxRecord.get().getEntryById(boxId);
-        if (entry == null) {
-            System.err.println("no scale box record " + boxId + this);
-            remove(RemovalReason.KILLED);
-            return;
-        }
-        
-        if (generation != entry.generation) {
-//            System.out.println("removing old portal " + this);
-            remove(RemovalReason.KILLED);
-            return;
-        }
     }
     
     public boolean isOuterPortal() {
@@ -167,11 +202,10 @@ public class MiniScaledPortal extends Portal {
     }
     
     
-    
     @Override
     public Vec3 transformVelocityRelativeToPortal(Vec3 v, Entity entity) {
         Vec3 velocity = super.transformVelocityRelativeToPortal(v, entity);
-    
+        
         if (isOuterPortal()) {
             Vec3 gravityVec = MSUtil.getGravityVec(entity);
             if (getNormal().dot(gravityVec) < -0.5) {
@@ -208,12 +242,36 @@ public class MiniScaledPortal extends Portal {
     }
     
     @Override
-    public boolean isInteractable() {
+    public boolean isInteractableBy(Player player) {
         if (level.isClientSide()) {
             return ClientScaleBoxInteractionControl.canInteractInsideScaleBox();
         }
-        else {
-            return true;
+        
+        if (recordEntry != null) {
+            if (recordEntry.accessControl) {
+                boolean idMatches = Objects.equals(recordEntry.ownerId, player.getUUID());
+                if (!idMatches) {
+                    return false;
+                }
+            }
         }
+        
+        return super.isInteractableBy(player);
+    }
+    
+    // TODO override canCollideWithEntity in the next version of ImmPtl
+    
+    @Override
+    public boolean canTeleportEntity(Entity entity) {
+        if (recordEntry != null) {
+            if (recordEntry.accessControl) {
+                boolean idMatches = Objects.equals(recordEntry.ownerId, entity.getUUID());
+                if (!idMatches) {
+                    return false;
+                }
+            }
+        }
+        
+        return super.canTeleportEntity(entity);
     }
 }

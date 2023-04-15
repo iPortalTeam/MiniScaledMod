@@ -25,12 +25,16 @@
   "mini_scaled.manipulation_wand.mode.shrink": "Shrink",
   "mini_scaled.manipulation_wand.mode.toggleScaleChange": "Toggle Scale Change",
   "mini_scaled.manipulation_wand.mode.toggleGravityChange": "Toggle Gravity Change",
+  "mini_scaled.manipulation_wand.mode.toggleAccessControl": "Toggle Access Control",
   "mini_scaled.manipulation_wand.mode": "Mode: ",
   "mini_scaled.manipulation_wand.gravity_change.enabled": "Gravity Transform Enabled",
   "mini_scaled.manipulation_wand.gravity_change.disabled": "Gravity Transform Disabled",
   "mini_scaled.manipulation_wand.scale_change.enabled": "Scale Transform Enabled",
   "mini_scaled.manipulation_wand.scale_change.disabled": "Scale Transform Disabled",
+  "mini_scaled.manipulation_wand.access_control.enabled": "Access Control Enabled. Only you can enter the scale box.",
+  "mini_scaled.manipulation_wand.access_control.disabled": "Access Control Disabled. Every player can enter the scale box.",
   "mini_scaled.manipulation_wand.tip": "Use this item on air to switch mode",
   "mini_scaled.manipulation_wand.use_on_scale_box": "Use this item on a scale box",
-  "mini_scaled.return_to_spawn": "You fell off the scale box. Teleporting to the spawnpoint."
+  "mini_scaled.return_to_spawn": "You fell off the scale box. Teleporting to the spawnpoint.",
+  "mini_scaled.manipulation_wand.access_denied": "You cannot manipulate the scale box because of access control."
 }

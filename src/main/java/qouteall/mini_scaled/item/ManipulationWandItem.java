@@ -51,7 +51,7 @@ public class ManipulationWandItem extends Item {
     }
     
     public static enum Mode {
-        none, expand, shrink, toggleScaleChange, toggleGravityChange;
+        none, expand, shrink, toggleScaleChange, toggleGravityChange, toggleAccessControl;
         
         public Mode next() {
             Mode[] values = values();
@@ -149,6 +149,16 @@ public class ManipulationWandItem extends Item {
             return InteractionResult.FAIL;
         }
         
+        if (entry.accessControl) {
+            if (!Objects.equals(entry.ownerId, player.getUUID())) {
+                player.displayClientMessage(
+                    Component.translatable("mini_scaled.manipulation_wand.access_denied"),
+                    true
+                );
+                return InteractionResult.FAIL;
+            }
+        }
+        
         Direction outerSide = context.getClickedFace();
         
         switch (mode) {
@@ -220,6 +230,27 @@ public class ManipulationWandItem extends Item {
                         entry.teleportChangesGravity ?
                             "mini_scaled.manipulation_wand.gravity_change.enabled" :
                             "mini_scaled.manipulation_wand.gravity_change.disabled"
+                    ),
+                    true
+                );
+                return InteractionResult.SUCCESS;
+            }
+            case toggleAccessControl -> {
+                if (!Objects.equals(entry.ownerId, player.getUUID())) {
+                    player.displayClientMessage(
+                        Component.translatable("mini_scaled.manipulation_wand.access_denied"),
+                        true
+                    );
+                    return InteractionResult.FAIL;
+                }
+                
+                entry.accessControl = !entry.accessControl;
+                ScaleBoxGeneration.updateScaleBoxPortals(entry);
+                player.displayClientMessage(
+                    Component.translatable(
+                        entry.accessControl ?
+                            "mini_scaled.manipulation_wand.access_control.enabled" :
+                            "mini_scaled.manipulation_wand.access_control.disabled"
                     ),
                     true
                 );

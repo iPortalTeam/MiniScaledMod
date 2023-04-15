@@ -122,6 +122,7 @@ public class ScaleBoxGeneration {
             portal.setInteractable(false);
             portal.boxId = boxId;
             portal.generation = generation;
+            portal.recordEntry = entry;
             
             McHelper.spawnServerEntity(portal);
             
@@ -134,6 +135,7 @@ public class ScaleBoxGeneration {
             reversePortal.setInteractable(false);
             reversePortal.boxId = boxId;
             reversePortal.generation = generation;
+            reversePortal.recordEntry = entry;
             
             McHelper.spawnServerEntity(reversePortal);
         }
