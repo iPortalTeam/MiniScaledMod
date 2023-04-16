@@ -127,7 +127,8 @@ public class ScaleBoxManipulation {
                 entry,
                 ((ServerLevel) world),
                 realPlacementPos,
-                entranceRotation
+                entranceRotation,
+                ((ServerPlayer) player)
             );
             
             stack.shrink(1);
@@ -229,6 +230,13 @@ public class ScaleBoxManipulation {
     public static InteractionResult tryToShrinkScaleBox(
         Player player, ServerLevel world, ScaleBoxRecord.Entry entry, Direction outerSide
     ) {
+        if (entry.accessControl) {
+            if (!Objects.equals(entry.ownerId, player.getUUID())) {
+                showScaleBoxAccessDeniedMessage(player);
+                return InteractionResult.FAIL;
+            }
+        }
+        
         Direction innerSide = entry.getRotationToInner().transformDirection(outerSide);
         if (innerSide.getAxisDirection() != Direction.AxisDirection.POSITIVE) {
             player.displayClientMessage(
@@ -281,7 +289,8 @@ public class ScaleBoxManipulation {
             entry,
             world,
             entry.currentEntrancePos,
-            entry.getEntranceRotation()
+            entry.getEntranceRotation(),
+            ((ServerPlayer) player)
         );
         
         ScaleBoxGeneration.initializeInnerBoxBlocks(
@@ -308,6 +317,13 @@ public class ScaleBoxManipulation {
         ScaleBoxRecord.Entry entry, Direction outerSide,
         Function<Integer, Boolean> itemConsumptionFunc
     ) {
+        if (entry.accessControl) {
+            if (!Objects.equals(entry.ownerId, player.getUUID())) {
+                showScaleBoxAccessDeniedMessage(player);
+                return InteractionResult.FAIL;
+            }
+        }
+        
         Direction innerSide = entry.getRotationToInner().transformDirection(outerSide);
         
         if (innerSide.getAxisDirection() != Direction.AxisDirection.POSITIVE) {
@@ -361,7 +377,8 @@ public class ScaleBoxManipulation {
             entry,
             world,
             entry.currentEntrancePos,
-            entry.getEntranceRotation()
+            entry.getEntranceRotation(),
+            ((ServerPlayer) player)
         );
         
         ScaleBoxGeneration.initializeInnerBoxBlocks(
@@ -369,5 +386,11 @@ public class ScaleBoxManipulation {
         );
         
         return InteractionResult.SUCCESS;
+    }
+    
+    public static void showScaleBoxAccessDeniedMessage(Player player) {
+        player.displayClientMessage(
+            Component.translatable("mini_scaled.access_denied"), false
+        );
     }
 }

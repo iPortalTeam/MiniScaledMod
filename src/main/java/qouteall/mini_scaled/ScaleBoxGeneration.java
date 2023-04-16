@@ -1,6 +1,8 @@
 package qouteall.mini_scaled;
 
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -20,6 +22,7 @@ import qouteall.q_misc_util.my_util.DQuaternion;
 import qouteall.q_misc_util.my_util.IntBox;
 
 import java.util.Arrays;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -48,8 +51,16 @@ public class ScaleBoxGeneration {
     public static void putScaleBoxIntoWorld(
         ScaleBoxRecord.Entry entry,
         ServerLevel world, BlockPos outerBoxBasePos,
-        AARotation rotation
+        AARotation rotation,
+        ServerPlayer player
     ) {
+        if (entry.accessControl) {
+            if (!Objects.equals(entry.ownerId, player.getUUID())) {
+                ScaleBoxManipulation.showScaleBoxAccessDeniedMessage(player);
+                return;
+            }
+        }
+        
         entry.currentEntranceDim = world.dimension();
         entry.currentEntrancePos = outerBoxBasePos;
         entry.entranceRotation = rotation;
@@ -313,7 +324,10 @@ public class ScaleBoxGeneration {
     }
     
     // will set dirty
-    public static void updateScaleBoxPortals(ScaleBoxRecord.Entry entry) {
+    public static void updateScaleBoxPortals(
+        ScaleBoxRecord.Entry entry,
+        ServerPlayer player
+    ) {
         ResourceKey<Level> currentEntranceDim = entry.currentEntranceDim;
         if (currentEntranceDim == null) {
             LOGGER.error("Updating a scale box that has no entrance");
@@ -323,7 +337,8 @@ public class ScaleBoxGeneration {
             entry,
             McHelper.getServerWorld(currentEntranceDim),
             entry.currentEntrancePos,
-            entry.getEntranceRotation()
+            entry.getEntranceRotation(),
+            player
         );
     }
     

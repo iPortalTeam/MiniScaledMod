@@ -11,6 +11,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.InteractionResultHolder;
@@ -23,6 +24,7 @@ import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import qouteall.mini_scaled.ScaleBoxGeneration;
@@ -32,7 +34,6 @@ import qouteall.mini_scaled.block.ScaleBoxPlaceholderBlock;
 import qouteall.mini_scaled.block.ScaleBoxPlaceholderBlockEntity;
 import qouteall.mini_scaled.util.MSUtil;
 
-import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Consumer;
@@ -151,10 +152,7 @@ public class ManipulationWandItem extends Item {
         
         if (entry.accessControl) {
             if (!Objects.equals(entry.ownerId, player.getUUID())) {
-                player.displayClientMessage(
-                    Component.translatable("mini_scaled.manipulation_wand.access_denied"),
-                    true
-                );
+                ScaleBoxManipulation.showScaleBoxAccessDeniedMessage(player);
                 return InteractionResult.FAIL;
             }
         }
@@ -211,7 +209,7 @@ public class ManipulationWandItem extends Item {
             }
             case toggleScaleChange -> {
                 entry.teleportChangesScale = !entry.teleportChangesScale;
-                ScaleBoxGeneration.updateScaleBoxPortals(entry);
+                ScaleBoxGeneration.updateScaleBoxPortals(entry, ((ServerPlayer) player));
                 player.displayClientMessage(
                     Component.translatable(
                         entry.teleportChangesScale ?
@@ -224,7 +222,7 @@ public class ManipulationWandItem extends Item {
             }
             case toggleGravityChange -> {
                 entry.teleportChangesGravity = !entry.teleportChangesGravity;
-                ScaleBoxGeneration.updateScaleBoxPortals(entry);
+                ScaleBoxGeneration.updateScaleBoxPortals(entry, ((ServerPlayer) player));
                 player.displayClientMessage(
                     Component.translatable(
                         entry.teleportChangesGravity ?
@@ -238,14 +236,14 @@ public class ManipulationWandItem extends Item {
             case toggleAccessControl -> {
                 if (!Objects.equals(entry.ownerId, player.getUUID())) {
                     player.displayClientMessage(
-                        Component.translatable("mini_scaled.manipulation_wand.access_denied"),
+                        Component.translatable("mini_scaled.access_denied"),
                         true
                     );
                     return InteractionResult.FAIL;
                 }
                 
                 entry.accessControl = !entry.accessControl;
-                ScaleBoxGeneration.updateScaleBoxPortals(entry);
+                ScaleBoxGeneration.updateScaleBoxPortals(entry, ((ServerPlayer) player));
                 player.displayClientMessage(
                     Component.translatable(
                         entry.accessControl ?

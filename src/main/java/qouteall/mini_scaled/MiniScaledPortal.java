@@ -259,7 +259,12 @@ public class MiniScaledPortal extends Portal {
         return super.isInteractableBy(player);
     }
     
-    // TODO override canCollideWithEntity in the next version of ImmPtl
+    public boolean canCollideWithEntity(Entity entity) {
+        // if access control is enabled and the entity is not the owner
+        // it will not be teleportable
+        // but we want it to still have cross portal collision
+        return true;
+    }
     
     @Override
     public boolean canTeleportEntity(Entity entity) {

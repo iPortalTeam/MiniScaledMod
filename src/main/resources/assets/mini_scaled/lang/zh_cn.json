@@ -32,5 +32,9 @@
   "mini_scaled.manipulation_wand.scale_change.disabled": "比例变换禁用",
   "mini_scaled.manipulation_wand.tip": "对空气使用本物品以切换模式",
   "mini_scaled.manipulation_wand.use_on_scale_box": "请对缩放盒使用本物品",
-  "mini_scaled.return_to_spawn": "你掉下了缩放盒，将传送回出生点。"
+  "mini_scaled.return_to_spawn": "你掉下了缩放盒，将传送回出生点。",
+  "mini_scaled.manipulation_wand.mode.toggleAccessControl": "切换访问控制",
+  "mini_scaled.manipulation_wand.access_control.enabled": "访问控制已启用。只有你能使用该缩放盒。",
+  "mini_scaled.manipulation_wand.access_control.disabled": "访问控制已禁用。所有玩家都能使用该缩放盒。",
+  "mini_scaled.access_denied": "由于访问控制，无法进行该操作"
 }
