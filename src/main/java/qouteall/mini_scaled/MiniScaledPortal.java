@@ -53,6 +53,10 @@ public class MiniScaledPortal extends Portal {
     public void tick() {
         super.tick();
         
+        // in old versions it set interactable to false.
+        // change it to true
+        setInteractable(true);
+        
         if (level.isClientSide()) {
             tickClient();
         }
