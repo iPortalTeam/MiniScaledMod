@@ -27,8 +27,20 @@ jobs:
         gradle-version: 7.3
         arguments: build
 
-    - name: Upload assets to GitHub
-      uses: AButler/upload-release-assets@v2.0
+    - uses: Kir-Antipov/mc-publish@v3.2
       with:
-        files: 'build/libs/*'
-        repo-token: ${{ secrets.GITHUB_TOKEN }}
+        version-type: alpha
+        dependencies: ""
+        changelog: ""
+
+        files-primary: build/libs/!(*-@(dev|sources|javadoc)).jar
+        files-secondary: ""
+
+        modrinth-id: wrwoMwak
+        modrinth-token: ${{ secrets.MODRINTH_TOKEN }}
+        modrinth-featured: false
+
+        curseforge-id: 532473
+        curseforge-token: ${{ secrets.CURSEFORGE_TOKEN }}
+
+        github-token: ${{ secrets.GITHUB_TOKEN }}
