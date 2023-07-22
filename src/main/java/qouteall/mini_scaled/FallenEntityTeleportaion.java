@@ -53,7 +53,7 @@ public class FallenEntityTeleportaion {
                 ServerTeleportationManager.teleportEntityGeneral(
                     entity,
                     Vec3.atCenterOf(scaleBoxPos),
-                    ((ServerLevel) entity.level)
+                    ((ServerLevel) entity.level())
                 );
                 
                 LOGGER.info("Player {} tries to go to another scale box's region directly", player.getName().getString());
@@ -93,7 +93,7 @@ public class FallenEntityTeleportaion {
             ServerTeleportationManager.teleportEntityGeneral(
                 entity,
                 Vec3.atCenterOf(newPos),
-                ((ServerLevel) entity.level)
+                ((ServerLevel) entity.level())
             );
         }
     }

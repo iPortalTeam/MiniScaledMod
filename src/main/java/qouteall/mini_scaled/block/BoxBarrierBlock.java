@@ -14,7 +14,6 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.material.Material;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
@@ -26,7 +25,7 @@ import qouteall.q_misc_util.my_util.MyTaskList;
 
 public class BoxBarrierBlock extends Block {
     public static final BoxBarrierBlock instance = new BoxBarrierBlock(
-        BlockBehaviour.Properties.of(Material.BARRIER)
+        BlockBehaviour.Properties.of()
             .strength(-1.0F, 3600000.0F)
             .noLootTable().noOcclusion()
             .noCollission()
@@ -74,7 +73,7 @@ public class BoxBarrierBlock extends Block {
     @Override
     public void playerWillDestroy(Level world, BlockPos pos, BlockState state, Player player){
         super.playerWillDestroy(world, pos, state, player);
-        if (!player.level.isClientSide()) {
+        if (!player.level().isClientSide()) {
             IPGlobal.serverTaskList.addTask(MyTaskList.oneShotTask(() -> {
                 world.setBlockAndUpdate(pos, state);
                 player.displayClientMessage(Component.translatable("mini_scaled.cannot_break_barrier"), true);

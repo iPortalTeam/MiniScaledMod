@@ -60,7 +60,7 @@ public class ClientScaleBoxInteractionControl {
         assert client.player != null;
         Vec3 cameraPos = client.player.getEyePosition();
         Pair<Portal, Vec3> raytraceResult = PortalCommand.raytracePortals(
-            client.player.level,
+            client.player.level(),
             cameraPos,
             cameraPos.add(client.player.getViewVector(1).scale(10)),
             false

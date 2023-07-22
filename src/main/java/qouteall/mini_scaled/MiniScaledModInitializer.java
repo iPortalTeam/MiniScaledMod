@@ -7,13 +7,13 @@ import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.event.player.UseBlockCallback;
 import net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents;
-import net.fabricmc.fabric.impl.itemgroup.MinecraftItemGroups;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
@@ -85,7 +85,7 @@ public class MiniScaledModInitializer implements ModInitializer {
             return InteractionResult.PASS;
         });
         
-        ItemGroupEvents.modifyEntriesEvent(MinecraftItemGroups.TOOLS_ID)
+        ItemGroupEvents.modifyEntriesEvent(CreativeModeTabs.TOOLS_AND_UTILITIES)
             .register(entries -> {
                 ManipulationWandItem.registerCreativeInventory(entries::accept);
                 ScaleBoxEntranceItem.registerCreativeInventory(entries::accept);

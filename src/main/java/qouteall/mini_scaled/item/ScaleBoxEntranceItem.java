@@ -173,6 +173,6 @@ public class ScaleBoxEntranceItem extends Item {
         // not using ItemInfo to improve performance
         String colorText = nbt.getString("color");
         DyeColor dyeColor = DyeColor.byName(colorText, DyeColor.BLACK);
-        return dyeColor.getMaterialColor().col;
+        return dyeColor.getFireworkColor();
     }
 }

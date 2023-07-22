@@ -57,7 +57,7 @@ public class MiniScaledPortal extends Portal {
         // change it to true
         setInteractable(true);
         
-        if (level.isClientSide()) {
+        if (level().isClientSide()) {
             tickClient();
         }
         else {
@@ -69,8 +69,8 @@ public class MiniScaledPortal extends Portal {
                 }
             }
             
-            if (level.getGameTime() % 2 == 0) {
-                level.getProfiler().push("scale_box_portal_update");
+            if (level().getGameTime() % 2 == 0) {
+                level().getProfiler().push("scale_box_portal_update");
                 ScaleBoxRecord.Entry entry = ScaleBoxRecord.get().getEntryById(boxId);
                 if (entry == null) {
                     LOGGER.error("no scale box record {} {}", boxId, this);
@@ -79,7 +79,7 @@ public class MiniScaledPortal extends Portal {
                 else if (generation != entry.generation) {
                     kill();
                 }
-                level.getProfiler().pop();
+                level().getProfiler().pop();
             }
         }
     }
@@ -98,7 +98,7 @@ public class MiniScaledPortal extends Portal {
         else {
             // the recordEntry field is added in newer versions of MiniScaled
             // so the old portals don't have that.
-            if (level.isClientSide()) {
+            if (level().isClientSide()) {
                 recordEntry = null;
                 LOGGER.error("Deserialized MiniScaledPortal without recordEntry {}", compoundTag);
             }
@@ -167,7 +167,7 @@ public class MiniScaledPortal extends Portal {
     
     @Override
     public void onCollidingWithEntity(Entity entity) {
-        if (level.isClientSide()) {
+        if (level().isClientSide()) {
             onCollidingWithEntityClientOnly(entity);
         }
         
@@ -185,7 +185,7 @@ public class MiniScaledPortal extends Portal {
                     Player player = (Player) entity;
                     if (player.getPose() == Pose.CROUCHING) {
                         IPGlobal.clientTaskList.addTask(() -> {
-                            if (player.level == level) {
+                            if (player.level() == level()) {
                                 Vec3 posDelta = gravityVec.scale(0.01);
                                 
                                 // changing player pos immediately may cause ConcurrentModificationException
@@ -247,7 +247,7 @@ public class MiniScaledPortal extends Portal {
     
     @Override
     public boolean isInteractableBy(Player player) {
-        if (level.isClientSide()) {
+        if (level().isClientSide()) {
             return ClientScaleBoxInteractionControl.canInteractInsideScaleBox();
         }
         

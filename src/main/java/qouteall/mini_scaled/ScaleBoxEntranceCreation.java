@@ -64,7 +64,7 @@ public class ScaleBoxEntranceCreation {
         ServerPlayer player,
         BlockPos pos
     ) {
-        ServerLevel world = (ServerLevel) player.level;
+        ServerLevel world = (ServerLevel) player.level();
         
         BlockState originBlockState = world.getBlockState(pos);
         if (!(originBlockState.getBlock() instanceof StainedGlassBlock stainedGlassBlock)) {

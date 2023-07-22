@@ -16,7 +16,6 @@ import net.minecraft.world.level.block.entity.BlockEntityTicker;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.material.Material;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
@@ -28,7 +27,7 @@ import qouteall.q_misc_util.my_util.MyTaskList;
 
 public class ScaleBoxPlaceholderBlock extends BaseEntityBlock {
     public static final ScaleBoxPlaceholderBlock instance = new ScaleBoxPlaceholderBlock(
-        BlockBehaviour.Properties.of(Material.BARRIER)
+        BlockBehaviour.Properties.of()
             .strength(0.3F)
             .noLootTable().noOcclusion()
             .noCollission()

@@ -14,7 +14,7 @@ public class MixinLivingEntity {
     @Inject(method = "causeFallDamage", at = @At("HEAD"), cancellable = true)
     private void onHandleFallDamage(float fallDistance, float damageMultiplier, DamageSource damageSource, CallbackInfoReturnable<Boolean> cir) {
         LivingEntity this_ = (LivingEntity) ((Object) this);
-        if (this_.level.dimension() == VoidDimension.dimensionId) {
+        if (this_.level().dimension() == VoidDimension.dimensionId) {
             cir.cancel();
         }
     }
