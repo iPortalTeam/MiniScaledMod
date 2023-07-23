@@ -18,13 +18,13 @@ import org.apache.commons.lang3.Validate;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import qouteall.mini_scaled.ScaleBoxGeneration;
-import qouteall.mini_scaled.item.ScaleBoxEntranceItem;
 import qouteall.mini_scaled.ScaleBoxRecord;
+import qouteall.mini_scaled.item.ScaleBoxEntranceItem;
 import qouteall.q_misc_util.MiscHelper;
 import qouteall.q_misc_util.my_util.IntBox;
 
 public class ScaleBoxPlaceholderBlockEntity extends BlockEntity {
-    private static Logger LOGGER = LogManager.getLogger(ScaleBoxPlaceholderBlockEntity.class);
+    private static final Logger LOGGER = LogManager.getLogger(ScaleBoxPlaceholderBlockEntity.class);
     
     public static BlockEntityType<ScaleBoxPlaceholderBlockEntity> blockEntityType;
     
@@ -82,23 +82,23 @@ public class ScaleBoxPlaceholderBlockEntity extends BlockEntity {
         ScaleBoxRecord.Entry entry = ScaleBoxRecord.get().getEntryById(boxId);
         
         if (entry == null) {
-            System.out.println("invalid box with id " + boxId);
+            LOGGER.info("invalid box with id {}", boxId);
             destroyBlockAndBlockEntity();
             return;
         }
-    
+        
         IntBox scaleBoxOuterArea = entry.getOuterAreaBox();
         
         boolean posEquals = scaleBoxOuterArea.contains(getBlockPos());
         if (!posEquals) {
-            System.out.println("invalid box entrance position " + boxId + getBlockPos() + entry.currentEntrancePos);
+            LOGGER.info("invalid box entrance position {} {} {}", boxId, getBlockPos(), entry.currentEntrancePos);
             destroyBlockAndBlockEntity();
             return;
         }
         
         boolean dimEquals = entry.currentEntranceDim == level.dimension();
         if (!dimEquals) {
-            System.out.println("invalid box dim " + boxId + level.dimension() + entry.currentEntranceDim);
+            LOGGER.info("invalid box dim {} {} {}", boxId, level.dimension(), entry.currentEntranceDim);
             destroyBlockAndBlockEntity();
             return;
         }
@@ -106,7 +106,7 @@ public class ScaleBoxPlaceholderBlockEntity extends BlockEntity {
     
     private void destroyBlockAndBlockEntity() {
         Validate.isTrue(!level.isClientSide());
-        System.out.println("destroy scale box " + boxId);
+        LOGGER.info("destroy scale box {}", boxId);
         level.setBlockAndUpdate(getBlockPos(), Blocks.AIR.defaultBlockState());
         setRemoved();
         
@@ -173,7 +173,7 @@ public class ScaleBoxPlaceholderBlockEntity extends BlockEntity {
         
         ServerLevel entranceWorld = MiscHelper.getServer().getLevel(currentEntranceDim);
         if (entranceWorld == null) {
-            System.err.println("invalid entrance dim " + currentEntranceDim);
+            LOGGER.info("invalid entrance dim {}", currentEntranceDim);
             entry.currentEntranceDim = Level.OVERWORLD;
             return;
         }
@@ -192,7 +192,7 @@ public class ScaleBoxPlaceholderBlockEntity extends BlockEntity {
             record.setDirty(true);
             
             notifyPortalBreak(boxId);
-    
+            
             ScaleBoxGeneration.createInnerPortalsPointingToVoidUnderneath(
                 entry
             );

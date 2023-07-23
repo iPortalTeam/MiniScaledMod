@@ -17,10 +17,8 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
-import org.jetbrains.annotations.Nullable;
 import qouteall.imm_ptl.core.IPGlobal;
 import qouteall.mini_scaled.ClientScaleBoxInteractionControl;
-import qouteall.mini_scaled.MiniScaledPortal;
 import qouteall.q_misc_util.my_util.MyTaskList;
 
 public class BoxBarrierBlock extends Block {

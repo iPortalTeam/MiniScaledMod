@@ -11,6 +11,8 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityDimensions;
 import net.minecraft.world.entity.EntityType;
@@ -19,11 +21,13 @@ import net.minecraft.world.entity.Pose;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
+import org.apache.commons.lang3.Validate;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import qouteall.imm_ptl.core.IPGlobal;
 import qouteall.imm_ptl.core.McHelper;
 import qouteall.imm_ptl.core.portal.Portal;
+import qouteall.mini_scaled.block.ScaleBoxPlaceholderBlock;
 import qouteall.mini_scaled.util.MSUtil;
 
 import java.util.Objects;
@@ -61,9 +65,11 @@ public class MiniScaledPortal extends Portal {
             tickClient();
         }
         else {
+            ScaleBoxRecord scaleBoxRecord = ScaleBoxRecord.get();
             if (recordEntry == null) {
-                recordEntry = ScaleBoxRecord.get().getEntryById(boxId);
+                recordEntry = scaleBoxRecord.getEntryById(boxId);
                 if (recordEntry == null) {
+                    LOGGER.error("Missing record for boxId {}. Deleting {}", boxId, this);
                     kill();
                     return;
                 }
@@ -71,7 +77,7 @@ public class MiniScaledPortal extends Portal {
             
             if (level().getGameTime() % 2 == 0) {
                 level().getProfiler().push("scale_box_portal_update");
-                ScaleBoxRecord.Entry entry = ScaleBoxRecord.get().getEntryById(boxId);
+                ScaleBoxRecord.Entry entry = scaleBoxRecord.getEntryById(boxId);
                 if (entry == null) {
                     LOGGER.error("no scale box record {} {}", boxId, this);
                     kill();
@@ -79,7 +85,35 @@ public class MiniScaledPortal extends Portal {
                 else if (generation != entry.generation) {
                     kill();
                 }
+                else {
+                    checkStatus(entry);
+                }
                 level().getProfiler().pop();
+            }
+        }
+    }
+    
+    private void checkStatus(ScaleBoxRecord.Entry entry) {
+        Validate.isTrue(!level().isClientSide());
+        if (isOuterPortal()) {
+            if (entry.currentEntranceDim == null || entry.currentEntrancePos == null) {
+                LOGGER.error("Invalid record entry {}. Removing portal {}", entry, this);
+                kill();
+            }
+            else {
+                MinecraftServer server = getServer();
+                Validate.notNull(server);
+                ServerLevel entranceDim = server.getLevel(entry.currentEntranceDim);
+                if (entranceDim == null) {
+                    LOGGER.error("Cannot find entrance dim {}. Removing portal {}.", entry.currentEntranceDim, this);
+                    kill();
+                }
+                else {
+                    if (entranceDim.getBlockState(entry.currentEntrancePos).getBlock() != ScaleBoxPlaceholderBlock.instance) {
+                        LOGGER.error("Entrance block invalid. {}. Removing portal {}", entry, this);
+                        kill();
+                    }
+                }
             }
         }
     }
@@ -100,7 +134,8 @@ public class MiniScaledPortal extends Portal {
             // so the old portals don't have that.
             if (level().isClientSide()) {
                 recordEntry = null;
-                LOGGER.error("Deserialized MiniScaledPortal without recordEntry {}", compoundTag);
+                // it could be the void-pointing portal
+                // see ScaleBoxRecord.createInnerPortalsPointingToVoidUnderneath
             }
             else {
                 recordEntry = ScaleBoxRecord.get().getEntryById(boxId);

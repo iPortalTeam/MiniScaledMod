@@ -22,7 +22,6 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 import org.jetbrains.annotations.Nullable;
 import qouteall.imm_ptl.core.IPGlobal;
 import qouteall.mini_scaled.ClientScaleBoxInteractionControl;
-import qouteall.mini_scaled.MiniScaledPortal;
 import qouteall.q_misc_util.my_util.MyTaskList;
 
 public class ScaleBoxPlaceholderBlock extends BaseEntityBlock {

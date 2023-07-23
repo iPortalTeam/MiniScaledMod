@@ -1,11 +1,5 @@
 package qouteall.mini_scaled.item;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
-import java.util.List;
-import java.util.UUID;
-import java.util.function.Consumer;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -20,11 +14,21 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import qouteall.mini_scaled.ScaleBoxGeneration;
 import qouteall.mini_scaled.ScaleBoxManipulation;
 import qouteall.mini_scaled.ScaleBoxRecord;
 
+import java.util.List;
+import java.util.UUID;
+import java.util.function.Consumer;
+
 public class ScaleBoxEntranceItem extends Item {
+    
+    private static final Logger LOGGER = LoggerFactory.getLogger(ScaleBoxEntranceItem.class);
     
     public static final ScaleBoxEntranceItem instance = new ScaleBoxEntranceItem(new Item.Properties());
     
@@ -153,7 +157,7 @@ public class ScaleBoxEntranceItem extends Item {
     public static ItemStack boxIdToItem(int boxId) {
         ScaleBoxRecord.Entry entry = ScaleBoxRecord.get().getEntryById(boxId);
         if (entry == null) {
-            System.err.println("invalid boxId for item " + boxId);
+            LOGGER.info("invalid boxId for item {}", boxId);
             return null;
         }
         
