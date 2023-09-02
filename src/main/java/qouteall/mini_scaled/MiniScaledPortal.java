@@ -210,30 +210,28 @@ public class MiniScaledPortal extends Portal {
     
     @Environment(EnvType.CLIENT)
     private void onCollidingWithEntityClientOnly(Entity entity) {
-        if (isOuterPortal()) {
-            if (entity instanceof LocalPlayer) {
-                Vec3 gravityVec = MSUtil.getGravityVec(entity);
-                if (getNormal().dot(gravityVec) < -0.5) {
-                    showShiftDescendMessage();
-                    
-                    // not ClientPlayerEntity to avoid dedicated server crash as it's captured in lambda
-                    Player player = (Player) entity;
-                    if (player.getPose() == Pose.CROUCHING) {
-                        IPGlobal.clientTaskList.addTask(() -> {
-                            if (player.level() == level()) {
-                                Vec3 posDelta = gravityVec.scale(0.01);
-                                
-                                // changing player pos immediately may cause ConcurrentModificationException
-                                player.setPosRaw(
-                                    player.getX() + posDelta.x,
-                                    player.getY() + posDelta.y,
-                                    player.getZ() + posDelta.z
-                                );
-                                McHelper.updateBoundingBox(player);
-                            }
-                            return true;
-                        });
-                    }
+        if (isOuterPortal() && teleportChangesScale && entity instanceof LocalPlayer) {
+            Vec3 gravityVec = MSUtil.getGravityVec(entity);
+            if (getNormal().dot(gravityVec) < -0.5) {
+                showShiftDescendMessage();
+                
+                // not ClientPlayerEntity to avoid dedicated server crash as it's captured in lambda
+                Player player = (Player) entity;
+                if (player.getPose() == Pose.CROUCHING) {
+                    IPGlobal.clientTaskList.addTask(() -> {
+                        if (player.level() == level()) {
+                            Vec3 posDelta = gravityVec.scale(0.01);
+                            
+                            // changing player pos immediately may cause ConcurrentModificationException
+                            player.setPosRaw(
+                                player.getX() + posDelta.x,
+                                player.getY() + posDelta.y,
+                                player.getZ() + posDelta.z
+                            );
+                            McHelper.updateBoundingBox(player);
+                        }
+                        return true;
+                    });
                 }
             }
         }
