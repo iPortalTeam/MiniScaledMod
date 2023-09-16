@@ -210,7 +210,7 @@ public class MiniScaledPortal extends Portal {
     
     @Environment(EnvType.CLIENT)
     private void onCollidingWithEntityClientOnly(Entity entity) {
-        if (isOuterPortal() && teleportChangesScale && entity instanceof LocalPlayer) {
+        if (isOuterPortal() && !teleportChangesScale && entity instanceof LocalPlayer) {
             Vec3 gravityVec = MSUtil.getGravityVec(entity);
             if (getNormal().dot(gravityVec) < -0.5) {
                 showShiftDescendMessage();

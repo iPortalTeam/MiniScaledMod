@@ -78,9 +78,6 @@ dependencies {
 	modImplementation "maven.modrinth:modmenu:${modmenu_version}"
 
 	include "me.shedaniel.cloth:cloth-config-fabric:${cloth_config_version}"
-
-//	api("com.github.LlamaLad7:MixinExtras:${mixin_extras_version}")
-//	annotationProcessor("com.github.LlamaLad7:MixinExtras:${mixin_extras_version}")
 }
 
 processResources {

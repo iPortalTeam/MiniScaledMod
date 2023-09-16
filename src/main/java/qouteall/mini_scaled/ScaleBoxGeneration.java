@@ -146,6 +146,11 @@ public class ScaleBoxGeneration {
             reversePortal.generation = generation;
             reversePortal.recordEntry = entry;
             
+            // When used with Iris, it renders normal portal instead of fuse view,
+            // then when the player touches the portal, it wrongly renders the player.
+            // It's a workaround to avoid this.
+            reversePortal.doRenderPlayer = false;
+            
             McHelper.spawnServerEntity(reversePortal);
         }
     }
