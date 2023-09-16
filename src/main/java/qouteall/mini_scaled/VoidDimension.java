@@ -71,7 +71,7 @@ public class VoidDimension {
         );
     }
     
-    public static ServerLevel getVoidWorld() {
+    public static ServerLevel getVoidServerWorld() {
         return McHelper.getServerWorld(dimensionId);
     }
     

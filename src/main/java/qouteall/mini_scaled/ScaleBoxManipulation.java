@@ -262,7 +262,7 @@ public class ScaleBoxManipulation {
             if (newInnerOffsets.contains(offset)) {return false;}
             IntBox innerUnitBox = entry.getInnerUnitBox(offset);
             
-            ServerLevel voidWorld = VoidDimension.getVoidWorld();
+            ServerLevel voidWorld = VoidDimension.getVoidServerWorld();
             
             return !innerUnitBox.stream().allMatch(blockPos -> {
                 BlockState blockState = voidWorld.getBlockState(blockPos);

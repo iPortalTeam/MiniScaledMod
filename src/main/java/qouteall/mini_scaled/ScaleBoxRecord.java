@@ -1,6 +1,9 @@
 package qouteall.mini_scaled;
 
+import it.unimi.dsi.fastutil.ints.Int2ObjectAVLTreeMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
+import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
+import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
@@ -9,18 +12,23 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.item.DyeColor;
+import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.saveddata.SavedData;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import qouteall.imm_ptl.core.chunk_loading.ChunkLoader;
+import qouteall.imm_ptl.core.chunk_loading.DimensionalChunkPos;
 import qouteall.q_misc_util.Helper;
 import qouteall.q_misc_util.MiscHelper;
 import qouteall.q_misc_util.my_util.AARotation;
 import qouteall.q_misc_util.my_util.IntBox;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -28,10 +36,11 @@ import java.util.stream.Collectors;
 public class ScaleBoxRecord extends SavedData {
     private static final Logger LOGGER = LoggerFactory.getLogger(ScaleBoxRecord.class);
     
-    private List<Entry> entries = new ArrayList<>();
+    private final List<Entry> entries = new ArrayList<>();
     
-    @Nullable
-    private Int2ObjectOpenHashMap<Entry> cache;
+    private final Int2ObjectAVLTreeMap<Entry> byId = new Int2ObjectAVLTreeMap<>();
+    
+    private final Map<UUID, List<Entry>> byOwner = new Object2ObjectOpenHashMap<>();
     
     public ScaleBoxRecord() {
         super();
@@ -56,14 +65,7 @@ public class ScaleBoxRecord extends SavedData {
     
     @Nullable
     public Entry getEntryById(int boxId) {
-        if (cache == null) {
-            cache = new Int2ObjectOpenHashMap<>();
-            for (Entry entry : entries) {
-                cache.put(entry.id, entry);
-            }
-        }
-        
-        return cache.get(boxId);
+        return byId.get(boxId);
     }
     
     @Nullable
@@ -71,25 +73,41 @@ public class ScaleBoxRecord extends SavedData {
         return entries.stream().filter(predicate).findFirst().orElse(null);
     }
     
+    /**
+     * Note: should not modify the returned list
+     */
+    public List<Entry> getEntriesByOwner(UUID uuid) {
+        return byOwner.getOrDefault(uuid, Collections.emptyList());
+    }
+    
     public void addEntry(Entry entry) {
         entries.add(entry);
-        cache = null;
+        byId.put(entry.id, entry);
+        byOwner.computeIfAbsent(entry.ownerId, k -> new ObjectArrayList<>()).add(entry);
     }
     
     // does not allow removing entry
     
     public int allocateId() {
-        return entries.stream().mapToInt(e -> e.id).max().orElse(0) + 1;
+        if (byId.isEmpty()) {
+            return 1;
+        }
+        
+        return byId.lastIntKey() + 1;
     }
     
     private void readFromNbt(CompoundTag compoundTag) {
+        entries.clear();
+        byId.clear();
+        byOwner.clear();
+        
         ListTag list = compoundTag.getList("entries", compoundTag.getId());
-        entries = list.stream().map(tag -> {
+        
+        list.forEach(tag -> {
             Entry entry = new Entry();
             entry.readFromNbt(((CompoundTag) tag));
-            return entry;
-        }).collect(Collectors.toList());
-        cache = null;
+            addEntry(entry);
+        });
     }
     
     private void writeToNbt(CompoundTag compoundTag) {
@@ -260,7 +278,7 @@ public class ScaleBoxRecord extends SavedData {
             tag.putUUID("ownerId", ownerId);
             tag.putString("ownerNameCache", ownerNameCache);
             if (currentEntranceDim != null) {
-                tag.putString("currentEntranceDim", currentEntranceDim.location().getPath());
+                tag.putString("currentEntranceDim", currentEntranceDim.location().toString());
             }
             Helper.putVec3i(tag, "currentEntrancePos", currentEntrancePos);
             Helper.putVec3i(tag, "currentEntranceSize", currentEntranceSize);
@@ -271,6 +289,18 @@ public class ScaleBoxRecord extends SavedData {
             tag.putBoolean("teleportChangesScale", teleportChangesScale);
             tag.putBoolean("teleportChangesGravity", teleportChangesGravity);
             tag.putBoolean("accessControl", accessControl);
+        }
+        
+        public ChunkLoader createChunkLoader() {
+            IntBox innerAreaBox = getInnerAreaBox();
+            BlockPos size = innerAreaBox.getSize();
+            return new ChunkLoader(
+                new DimensionalChunkPos(
+                    VoidDimension.dimensionId,
+                    new ChunkPos(innerAreaBox.getCenter())
+                ),
+                Math.max(size.getX(), size.getZ()) / (16 * 2) + 1
+            );
         }
     }
 }

@@ -3,6 +3,7 @@ package qouteall.mini_scaled;
 import me.shedaniel.autoconfig.AutoConfig;
 import me.shedaniel.autoconfig.serializer.GsonConfigSerializer;
 import net.fabricmc.api.ModInitializer;
+import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.event.player.UseBlockCallback;
@@ -21,6 +22,7 @@ import net.minecraft.world.phys.BlockHitResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import qouteall.imm_ptl.core.IPGlobal;
+import qouteall.imm_ptl.core.commands.PortalCommand;
 import qouteall.mini_scaled.block.BoxBarrierBlock;
 import qouteall.mini_scaled.block.ScaleBoxPlaceholderBlock;
 import qouteall.mini_scaled.block.ScaleBoxPlaceholderBlockEntity;
@@ -88,6 +90,10 @@ public class MiniScaledModInitializer implements ModInitializer {
                 ManipulationWandItem.registerCreativeInventory(entries::accept);
                 ScaleBoxEntranceItem.registerCreativeInventory(entries::accept);
             });
+        
+        CommandRegistrationCallback.EVENT.register(
+            (dispatcher, registryAccess, environment) -> MiniScaledCommand.register(dispatcher)
+        );
         
         LOGGER.info("MiniScaled Mod Initializing");
     }

@@ -66,7 +66,7 @@ public class ScaleBoxGeneration {
         
         ScaleBoxRecord.get().setDirty(true);
         
-        ServerLevel voidWorld = VoidDimension.getVoidWorld();
+        ServerLevel voidWorld = VoidDimension.getVoidServerWorld();
         createScaleBoxPortals(voidWorld, world, entry);
         
         entry.getOuterAreaBox().stream().forEach(outerPos -> {
@@ -161,13 +161,12 @@ public class ScaleBoxGeneration {
     ) {
         Validate.notNull(playerId);
         
-        ScaleBoxRecord.Entry entry = record.getEntryByPredicate(e -> {
-            return e.ownerId.equals(playerId) && e.color == color &&
-                e.scale == scale;
-        });
+        ScaleBoxRecord.Entry entry = record.getEntriesByOwner(playerId).stream().filter(
+            e -> e.color == color && e.scale == scale
+        ).findFirst().orElse(null);
         
         if (entry == null) {
-            int newId = allocateId(record);
+            int newId = record.allocateId();
             ScaleBoxRecord.Entry newEntry = new ScaleBoxRecord.Entry();
             newEntry.id = newId;
             newEntry.color = color;
@@ -185,10 +184,6 @@ public class ScaleBoxGeneration {
             entry = newEntry;
         }
         return entry;
-    }
-    
-    private static int allocateId(ScaleBoxRecord record) {
-        return record.allocateId();
     }
     
     private static BlockPos allocateInnerBoxPos(int boxId) {
@@ -213,7 +208,7 @@ public class ScaleBoxGeneration {
     ) {
         IntBox innerAreaBox = entry.getInnerAreaBox();
         
-        ServerLevel voidWorld = VoidDimension.getVoidWorld();
+        ServerLevel voidWorld = VoidDimension.getVoidServerWorld();
         
         ChunkLoader chunkLoader = new ChunkLoader(
             new DimensionalChunkPos(
@@ -348,7 +343,7 @@ public class ScaleBoxGeneration {
     public static void createInnerPortalsPointingToVoidUnderneath(
         ScaleBoxRecord.Entry entry
     ) {
-        ServerLevel voidWorld = VoidDimension.getVoidWorld();
+        ServerLevel voidWorld = VoidDimension.getVoidServerWorld();
         AABB innerAreaBox = entry.getInnerAreaBox().toRealNumberBox();
         Vec3 innerAreaBoxSize = Helper.getBoxSize(innerAreaBox);
         int boxId = entry.id;

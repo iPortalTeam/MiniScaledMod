@@ -4,7 +4,8 @@
   "package": "qouteall.mini_scaled.mixin",
   "compatibilityLevel": "JAVA_8",
   "mixins": [
-    "common.MixinLivingEntity"
+    "common.MixinLivingEntity",
+    "common.MixinMinecraftServer"
   ],
   "client": [
     "client.MixinItemColors",
