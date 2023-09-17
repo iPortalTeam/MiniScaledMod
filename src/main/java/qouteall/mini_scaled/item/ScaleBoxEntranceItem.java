@@ -21,6 +21,7 @@ import org.slf4j.LoggerFactory;
 import qouteall.mini_scaled.ScaleBoxGeneration;
 import qouteall.mini_scaled.ScaleBoxManipulation;
 import qouteall.mini_scaled.ScaleBoxRecord;
+import qouteall.mini_scaled.util.MSUtil;
 
 import java.util.List;
 import java.util.UUID;
@@ -96,7 +97,7 @@ public class ScaleBoxEntranceItem extends Item {
         super.appendHoverText(stack, world, tooltip, context);
         ItemInfo itemInfo = new ItemInfo(stack.getOrCreateTag());
         tooltip.add(Component.translatable("mini_scaled.color")
-            .append(getColorText(itemInfo.color).withStyle(ChatFormatting.GOLD))
+            .append(MSUtil.getColorText(itemInfo.color).withStyle(ChatFormatting.GOLD))
         );
         tooltip.add(Component.translatable("mini_scaled.scale")
             .append(Component.literal(Integer.toString(itemInfo.scale)).withStyle(ChatFormatting.AQUA))
@@ -147,10 +148,6 @@ public class ScaleBoxEntranceItem extends Item {
                 .append(Component.literal(itemInfo.ownerNameCache));
         }
         return result;
-    }
-    
-    public static MutableComponent getColorText(DyeColor color) {
-        return Component.translatable("color.minecraft." + color.getName());
     }
     
     @Nullable

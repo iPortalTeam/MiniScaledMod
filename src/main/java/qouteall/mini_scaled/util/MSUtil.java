@@ -2,8 +2,11 @@ package qouteall.mini_scaled.util;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.world.Container;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.levelgen.Heightmap;
@@ -76,5 +79,9 @@ public class MSUtil {
     
     public static BlockPos getSpawnPos(Level world) {
         return world.getHeightmapPos(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, world.getSharedSpawnPos());
+    }
+    
+    public static MutableComponent getColorText(DyeColor color) {
+        return Component.translatable("color.minecraft." + color.getName());
     }
 }
