@@ -18,8 +18,10 @@ import qouteall.imm_ptl.core.ClientWorldLoader;
 import qouteall.imm_ptl.core.portal.animation.TimingFunction;
 import qouteall.imm_ptl.core.render.GuiPortalRendering;
 import qouteall.imm_ptl.core.render.MyRenderHelper;
+import qouteall.imm_ptl.core.render.PortalRenderer;
 import qouteall.imm_ptl.core.render.context_management.RenderStates;
 import qouteall.imm_ptl.core.render.context_management.WorldRenderInfo;
+import qouteall.mini_scaled.MiniScaledPortal;
 import qouteall.mini_scaled.ScaleBoxRecord;
 import qouteall.mini_scaled.VoidDimension;
 import qouteall.q_misc_util.Helper;
@@ -28,12 +30,15 @@ import qouteall.q_misc_util.my_util.DQuaternion;
 import qouteall.q_misc_util.my_util.animation.Animated;
 
 import java.util.List;
+import java.util.UUID;
 
 @Environment(EnvType.CLIENT)
 public class ScaleBoxManagementScreen extends Screen {
     private static final Logger LOGGER = LogUtils.getLogger();
     
-    public static final double VIEW_RATIO = 0.7;
+    private static final UUID RENDERING_DESC = UUID.randomUUID();
+    
+    public static final float VIEW_RATIO = 0.8f;
     
     private static RenderTarget frameBuffer;
     
@@ -65,6 +70,22 @@ public class ScaleBoxManagementScreen extends Screen {
         20.0
     );
     
+    public static void init_() {
+        // don't render MiniScaled portal when rendering the view in scale box gui
+        PortalRenderer.PORTAL_RENDERING_PREDICATE.register(portal -> {
+            if (portal instanceof MiniScaledPortal) {
+                List<UUID> renderingDescription = WorldRenderInfo.getRenderingDescription();
+                if (!renderingDescription.isEmpty() &&
+                    renderingDescription.get(0).equals(RENDERING_DESC)
+                ) {
+                    return false;
+                }
+            }
+            
+            return true;
+        });
+    }
+    
     public static void openGui(ScaleBoxGuiManager.GuiData guiData) {
         ScaleBoxManagementScreen screen = new ScaleBoxManagementScreen(guiData);
         
@@ -85,7 +106,11 @@ public class ScaleBoxManagementScreen extends Screen {
         List<ScaleBoxRecord.Entry> entriesForPlayer = guiData.entriesForPlayer();
         for (int i = 0; i < entriesForPlayer.size(); i++) {
             ScaleBoxRecord.Entry entry = entriesForPlayer.get(i);
-            listWidget.children().add(new ScaleBoxEntryWidget(listWidget, i, entry));
+            ScaleBoxEntryWidget widget = new ScaleBoxEntryWidget(
+                listWidget, i, entry,
+                this::onEntrySelected
+            );
+            listWidget.children().add(widget);
         }
         
         // initialize the global singleton framebuffer
@@ -96,17 +121,29 @@ public class ScaleBoxManagementScreen extends Screen {
         }
     }
     
+    private void onEntrySelected(ScaleBoxEntryWidget w) {
+        selected = w.entry;
+        listWidget.setSelected(w);
+        McRemoteProcedureCall.tellServerToInvoke(
+            "qouteall.mini_scaled.gui.ScaleBoxGuiManager.RemoteCallables.requestChunkLoading",
+            w.entry.id
+        );
+    }
+    
     @Override
     protected void init() {
         super.init();
         
+        int scrollBarWidth = 6;
+        int listWidth = width - (int) (width * VIEW_RATIO) - scrollBarWidth;
         listWidget.updateSize(
-            width - (int) (width * VIEW_RATIO), // width
+            listWidth, // width
             height, // height
             0, // start y
             height // end y
         );
         listWidget.setLeftPos(0); // left x
+        listWidget.rowWidth = listWidth;
         
         addWidget(listWidget);
     }
@@ -114,6 +151,8 @@ public class ScaleBoxManagementScreen extends Screen {
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
         super.render(guiGraphics, mouseX, mouseY, partialTick);
+        
+        renderBackground(guiGraphics);
         
         listWidget.render(guiGraphics, mouseX, mouseY, partialTick);
         
@@ -147,7 +186,7 @@ public class ScaleBoxManagementScreen extends Screen {
             cameraPosition,
             cameraTransformation,
             true,
-            null,
+            RENDERING_DESC,
             minecraft.options.getEffectiveRenderDistance(),
             false,
             false
@@ -160,8 +199,8 @@ public class ScaleBoxManagementScreen extends Screen {
         MyRenderHelper.drawFramebuffer(
             frameBuffer,
             false, false,
-            w * 0.2f, w * 0.8f,
-            h * 0.2f, h * 0.8f
+            w * (1 - VIEW_RATIO), w,
+            0, h * VIEW_RATIO
         );
     }
     
@@ -189,7 +228,11 @@ public class ScaleBoxManagementScreen extends Screen {
     
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
-        LOGGER.info("mouse scrolled {} {} {}", mouseX, mouseY, delta);
+//        LOGGER.info("mouse scrolled {} {} {}", mouseX, mouseY, delta);
+        
+        if (mouseX < listWidget.rowWidth) {
+            return super.mouseScrolled(mouseX, mouseY, delta);
+        }
         
         Double target = distanceAnim.getTarget();
         assert target != null;

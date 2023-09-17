@@ -5,9 +5,9 @@ import net.minecraft.client.gui.components.AbstractSelectionList;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
 
 public class ScaleBoxListWidget extends AbstractSelectionList<ScaleBoxEntryWidget> {
-    public static final int ROW_WIDTH = 300;
-    
     private final ScaleBoxManagementScreen parent;
+    
+    public int rowWidth = 300;
     
     public ScaleBoxListWidget(
         ScaleBoxManagementScreen parent, int width, int height, int top, int bottom, int itemHeight
@@ -23,5 +23,15 @@ public class ScaleBoxListWidget extends AbstractSelectionList<ScaleBoxEntryWidge
     @Override
     public void updateNarration(NarrationElementOutput narrationElementOutput) {
     
+    }
+    
+    @Override
+    public int getRowWidth() {
+        return rowWidth;
+    }
+    
+    @Override
+    protected int getScrollbarPosition() {
+        return (width - rowWidth) / 2 + rowWidth;
     }
 }

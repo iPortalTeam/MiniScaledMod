@@ -10,6 +10,7 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
+import qouteall.imm_ptl.core.McHelper;
 import qouteall.imm_ptl.core.api.PortalAPI;
 import qouteall.imm_ptl.core.chunk_loading.ChunkLoader;
 import qouteall.mini_scaled.ScaleBoxRecord;
@@ -81,7 +82,8 @@ public class ScaleBoxGuiManager {
         
         StateForPlayer state = this.stateMap.computeIfAbsent(player, k -> new StateForPlayer());
         
-        state.updateChunkLoader(player, entry.createChunkLoader());
+        int renderDistance = McHelper.getRenderDistanceOnServer();
+        state.updateChunkLoader(player, entry.createChunkLoader(renderDistance));
     }
     
     public void onCloseGui(ServerPlayer player) {

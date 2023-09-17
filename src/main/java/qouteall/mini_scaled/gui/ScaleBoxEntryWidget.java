@@ -10,20 +10,26 @@ import qouteall.mini_scaled.ScaleBoxRecord;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
 
 public class ScaleBoxEntryWidget extends ContainerObjectSelectionList.Entry<ScaleBoxEntryWidget> {
     public final static int WIDGET_HEIGHT = 50;
     
-    private final ScaleBoxListWidget parent;
-    private final int index;
-    private final ScaleBoxRecord.Entry entry;
+    public final ScaleBoxListWidget parent;
+    public final int index;
+    public final ScaleBoxRecord.Entry entry;
+    public final Consumer<ScaleBoxEntryWidget> selectCallback;
     
     private final List<GuiEventListener> children = new ArrayList<>();
     
-    public ScaleBoxEntryWidget(ScaleBoxListWidget parent, int index, ScaleBoxRecord.Entry entry) {
+    public ScaleBoxEntryWidget(
+        ScaleBoxListWidget parent, int index, ScaleBoxRecord.Entry entry,
+        Consumer<ScaleBoxEntryWidget> selectCallback
+    ) {
         this.parent = parent;
         this.index = index;
         this.entry = entry;
+        this.selectCallback = selectCallback;
     }
     
     @Override
@@ -48,7 +54,7 @@ public class ScaleBoxEntryWidget extends ContainerObjectSelectionList.Entry<Scal
         
         guiGraphics.drawString(
             client.font, "aaa",
-            x + WIDGET_HEIGHT + 3, (int) (y),
+            x + 3, (int) (y),
             0xFFFFFFFF
         );
     }
@@ -56,5 +62,12 @@ public class ScaleBoxEntryWidget extends ContainerObjectSelectionList.Entry<Scal
     @Override
     public List<? extends GuiEventListener> children() {
         return children;
+    }
+    
+    @Override
+    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        selectCallback.accept(this);
+        super.mouseClicked(mouseX, mouseY, button);
+        return true;//allow outer dragging
     }
 }
