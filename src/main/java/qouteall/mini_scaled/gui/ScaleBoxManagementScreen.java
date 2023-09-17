@@ -5,16 +5,21 @@ import com.mojang.blaze3d.pipeline.TextureTarget;
 import com.mojang.logging.LogUtils;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.components.MultiLineLabel;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.network.chat.Style;
 import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
 import org.slf4j.Logger;
 import qouteall.imm_ptl.core.ClientWorldLoader;
+import qouteall.imm_ptl.core.McHelper;
 import qouteall.imm_ptl.core.portal.animation.TimingFunction;
 import qouteall.imm_ptl.core.render.GuiPortalRendering;
 import qouteall.imm_ptl.core.render.MyRenderHelper;
@@ -24,6 +29,7 @@ import qouteall.imm_ptl.core.render.context_management.WorldRenderInfo;
 import qouteall.mini_scaled.MiniScaledPortal;
 import qouteall.mini_scaled.ScaleBoxRecord;
 import qouteall.mini_scaled.VoidDimension;
+import qouteall.mini_scaled.util.MSUtil;
 import qouteall.q_misc_util.Helper;
 import qouteall.q_misc_util.api.McRemoteProcedureCall;
 import qouteall.q_misc_util.my_util.DQuaternion;
@@ -69,6 +75,8 @@ public class ScaleBoxManagementScreen extends Screen {
         TimingFunction.sine::mapProgress,
         20.0
     );
+    
+    private @Nullable MultiLineLabel labelCache;
     
     public static void init_() {
         // don't render MiniScaled portal when rendering the view in scale box gui
@@ -134,6 +142,7 @@ public class ScaleBoxManagementScreen extends Screen {
     private void onEntrySelected(ScaleBoxEntryWidget w) {
         selected = w.entry;
         listWidget.setSelected(w);
+        labelCache = null;
         McRemoteProcedureCall.tellServerToInvoke(
             "qouteall.mini_scaled.gui.ScaleBoxGuiManager.RemoteCallables.requestChunkLoading",
             w.entry.id
@@ -170,7 +179,52 @@ public class ScaleBoxManagementScreen extends Screen {
             return;
         }
         
-        Vec3 viewingCenter = selected.getInnerAreaBox().getCenterVec();
+        renderView(selected);
+        
+        if (labelCache == null) {
+            labelCache = MultiLineLabel.create(
+                font,
+                getLabel(selected),
+                (int) (width * VIEW_RATIO) - 20
+            );
+        }
+        
+        labelCache.renderLeftAligned(
+            guiGraphics,
+            ((int) (width * (1 - VIEW_RATIO))) + 10,
+            ((int) (height * VIEW_RATIO)) + 10,
+            10, 0xFFFFFFFF
+        );
+    }
+    
+    private static Component getLabel(ScaleBoxRecord.Entry entry) {
+        MutableComponent component = Component.literal("");
+        
+        component.append(Component.translatable("mini_scaled.color"));
+        component.append(MSUtil.getColorText(entry.color)
+            .withStyle(Style.EMPTY.withColor(entry.color.getTextColor()))
+        );
+        component.append("     ");
+        
+        component.append(Component.translatable("mini_scaled.scale"));
+        component.append(Component.literal(Integer.toString(entry.scale)).withStyle(ChatFormatting.AQUA));
+        component.append("\n");
+        
+        if (entry.currentEntranceDim != null && entry.currentEntrancePos != null) {
+            component.append(Component.translatable("mini_scaled.in"));
+            component.append(McHelper.getDimensionName(entry.currentEntranceDim));
+            component.append(Component.literal("   %d  %d  %d".formatted(
+                entry.currentEntrancePos.getX(),
+                entry.currentEntrancePos.getY(),
+                entry.currentEntrancePos.getZ()
+            )).withStyle(ChatFormatting.AQUA));
+        }
+        
+        return component;
+    }
+    
+    private void renderView(ScaleBoxRecord.Entry e) {
+        Vec3 viewingCenter = e.getInnerAreaBox().getCenterVec();
         
         Double pitch = pitchAnim.getCurrent();
         Double yaw = yawAnim.getCurrent();

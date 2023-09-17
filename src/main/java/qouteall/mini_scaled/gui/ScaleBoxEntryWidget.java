@@ -76,12 +76,6 @@ public class ScaleBoxEntryWidget extends ContainerObjectSelectionList.Entry<Scal
             guiGraphics,
             x + 3, y + 3, 10, 0xFFFFFFFF
         );
-        
-//        guiGraphics.drawString(
-//            client.font, String.valueOf(entry.scale),
-//            x + 3, (int) (y),
-//            0xFFFFFFFF
-//        );
     }
     
     @Override

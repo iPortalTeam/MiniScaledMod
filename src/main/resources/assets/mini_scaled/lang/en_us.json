@@ -36,5 +36,6 @@
   "mini_scaled.manipulation_wand.tip": "Use this item on air to switch mode",
   "mini_scaled.manipulation_wand.use_on_scale_box": "Use this item on a scale box",
   "mini_scaled.return_to_spawn": "You fell off the scale box. Teleporting to the spawnpoint.",
-  "mini_scaled.access_denied": "Scale box access control disallows this operation."
+  "mini_scaled.access_denied": "Scale box access control disallows this operation.",
+  "mini_scaled.in": "In: "
 }
