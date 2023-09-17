@@ -37,6 +37,7 @@ import qouteall.q_misc_util.my_util.DQuaternion;
 import qouteall.q_misc_util.my_util.animation.Animated;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 
 @Environment(EnvType.CLIENT)
@@ -87,7 +88,7 @@ public class ScaleBoxManagementScreen extends Screen {
             if (portal instanceof MiniScaledPortal) {
                 List<UUID> renderingDescription = WorldRenderInfo.getRenderingDescription();
                 if (!renderingDescription.isEmpty() &&
-                    renderingDescription.get(0).equals(RENDERING_DESC)
+                    Objects.equals(renderingDescription.get(0), RENDERING_DESC)
                 ) {
                     return false;
                 }
@@ -124,6 +125,18 @@ public class ScaleBoxManagementScreen extends Screen {
             listWidget.children().add(widget);
         }
         
+        optionsButton = Button.builder(
+            Component.translatable("mini_scaled.options"),
+            button -> {
+                if (selected != null) {
+                    ScaleBoxOptionsScreen optionsScreen = new ScaleBoxOptionsScreen(this, selected);
+                    assert minecraft != null;
+                    minecraft.setScreen(optionsScreen);
+                }
+            }
+        ).build();
+        optionsButton.visible = false;
+        
         if (guiData.boxId() != null) {
             ScaleBoxEntryWidget widget = listWidget.children().stream()
                 .filter(e -> e.entry.id == guiData.boxId())
@@ -133,16 +146,6 @@ public class ScaleBoxManagementScreen extends Screen {
                 onEntrySelected(widget);
             }
         }
-        
-        optionsButton = Button.builder(
-            Component.translatable("mini_scaled.options"),
-            button -> {
-                ScaleBoxOptionsScreen optionsScreen = new ScaleBoxOptionsScreen(this, entry);
-                assert minecraft != null;
-                minecraft.setScreen(optionsScreen);
-            }
-        ).build();
-        optionsButton.visible = false;
         
         // initialize the global singleton framebuffer
         if (frameBuffer == null) {
