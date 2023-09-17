@@ -14,6 +14,7 @@ import qouteall.imm_ptl.core.McHelper;
 import qouteall.imm_ptl.core.api.PortalAPI;
 import qouteall.imm_ptl.core.chunk_loading.ChunkLoader;
 import qouteall.imm_ptl.core.chunk_loading.NewChunkTrackingGraph;
+import qouteall.mini_scaled.ScaleBoxGeneration;
 import qouteall.mini_scaled.ScaleBoxRecord;
 import qouteall.mini_scaled.ducks.MiniScaled_MinecraftServerAccessor;
 import qouteall.q_misc_util.api.McRemoteProcedureCall;
@@ -21,6 +22,7 @@ import qouteall.q_misc_util.api.McRemoteProcedureCall;
 import java.util.List;
 import java.util.Objects;
 import java.util.WeakHashMap;
+import java.util.function.Consumer;
 
 public class ScaleBoxGuiManager {
     private static final Logger LOGGER = LogUtils.getLogger();
@@ -95,6 +97,27 @@ public class ScaleBoxGuiManager {
         stateMap.remove(player);
     }
     
+    public static void handleScaleBoxPropertyChange(
+        ServerPlayer player, int boxId, Consumer<ScaleBoxRecord.Entry> func
+    ) {
+        ScaleBoxRecord rec = ScaleBoxRecord.get();
+        
+        ScaleBoxRecord.Entry entry = rec.getEntryById(boxId);
+        
+        if (entry == null) {
+            LOGGER.warn("Invalid scale box id for property change {} {}", boxId, player);
+            return;
+        }
+        
+        if (!Objects.equals(entry.ownerId, player.getUUID())) {
+            LOGGER.warn("Player {} is not the owner of scale box {}", player, boxId);
+            return;
+        }
+        
+        func.accept(entry);
+        ScaleBoxGeneration.updateScaleBoxPortals(entry, ((ServerPlayer) player));
+    }
+    
     public static record GuiData(
         List<ScaleBoxRecord.Entry> entriesForPlayer,
         @Nullable Integer boxId
@@ -143,6 +166,20 @@ public class ScaleBoxGuiManager {
         
         public static void onGuiClose(ServerPlayer player) {
             ScaleBoxGuiManager.get(player.server).onCloseGui(player);
+        }
+        
+        public static void updateScaleBoxOption(
+            ServerPlayer player, int boxId,
+            boolean scaleTransform, boolean gravityTransform, boolean accessControl
+        ) {
+            ScaleBoxGuiManager.handleScaleBoxPropertyChange(
+                player, boxId,
+                entry -> {
+                    entry.teleportChangesScale = scaleTransform;
+                    entry.teleportChangesGravity = gravityTransform;
+                    entry.accessControl = accessControl;
+                }
+            );
         }
     }
 }

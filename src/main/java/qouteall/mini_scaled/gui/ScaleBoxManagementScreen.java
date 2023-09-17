@@ -8,6 +8,7 @@ import net.fabricmc.api.Environment;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.MultiLineLabel;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
@@ -78,6 +79,8 @@ public class ScaleBoxManagementScreen extends Screen {
     
     private @Nullable MultiLineLabel labelCache;
     
+    private final Button optionsButton;
+    
     public static void init_() {
         // don't render MiniScaled portal when rendering the view in scale box gui
         PortalRenderer.PORTAL_RENDERING_PREDICATE.register(portal -> {
@@ -131,6 +134,16 @@ public class ScaleBoxManagementScreen extends Screen {
             }
         }
         
+        optionsButton = Button.builder(
+            Component.translatable("mini_scaled.options"),
+            button -> {
+                ScaleBoxOptionsScreen optionsScreen = new ScaleBoxOptionsScreen(this, entry);
+                assert minecraft != null;
+                minecraft.setScreen(optionsScreen);
+            }
+        ).build();
+        optionsButton.visible = false;
+        
         // initialize the global singleton framebuffer
         if (frameBuffer == null) {
             // the framebuffer size doesn't matter here
@@ -143,6 +156,7 @@ public class ScaleBoxManagementScreen extends Screen {
         selected = w.entry;
         listWidget.setSelected(w);
         labelCache = null;
+        optionsButton.visible = true;
         McRemoteProcedureCall.tellServerToInvoke(
             "qouteall.mini_scaled.gui.ScaleBoxGuiManager.RemoteCallables.requestChunkLoading",
             w.entry.id
@@ -164,18 +178,29 @@ public class ScaleBoxManagementScreen extends Screen {
         listWidget.setLeftPos(0); // left x
         listWidget.rowWidth = listWidth;
         
-        addWidget(listWidget);
+        addRenderableWidget(listWidget);
+        
+        optionsButton.setWidth(100);
+        optionsButton.setX(width - 10 - optionsButton.getWidth());
+        optionsButton.setY(height - 10 - optionsButton.getHeight());
+        
+        addRenderableWidget(optionsButton);
     }
     
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        super.render(guiGraphics, mouseX, mouseY, partialTick);
-        
         renderBackground(guiGraphics);
         
-        listWidget.render(guiGraphics, mouseX, mouseY, partialTick);
+        super.render(guiGraphics, mouseX, mouseY, partialTick);
         
         if (selected == null) {
+            guiGraphics.drawCenteredString(
+                font,
+                Component.translatable("mini_scaled.select_a_scale_box"),
+                (int) (width * (1 - VIEW_RATIO)) + (int) (width * VIEW_RATIO) / 2,
+                (int) (height * VIEW_RATIO) / 2,
+                0xFFFFFFFF
+            );
             return;
         }
         
