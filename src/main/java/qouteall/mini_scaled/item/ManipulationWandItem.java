@@ -31,6 +31,7 @@ import qouteall.mini_scaled.ScaleBoxManipulation;
 import qouteall.mini_scaled.ScaleBoxRecord;
 import qouteall.mini_scaled.block.ScaleBoxPlaceholderBlock;
 import qouteall.mini_scaled.block.ScaleBoxPlaceholderBlockEntity;
+import qouteall.mini_scaled.gui.ScaleBoxGuiManager;
 import qouteall.mini_scaled.util.MSUtil;
 
 import java.util.List;
@@ -50,41 +51,12 @@ public class ManipulationWandItem extends Item {
         );
     }
     
-    public static enum Mode {
-        none, expand, shrink, toggleScaleChange, toggleGravityChange, toggleAccessControl;
-        
-        public Mode next() {
-            Mode[] values = values();
-            return values[(ordinal() + 1) % values.length];
-        }
-        
-        public MutableComponent getText() {
-            return Component.translatable("mini_scaled.manipulation_wand.mode." + name());
-        }
-    }
-    
     public ManipulationWandItem(Properties properties) {
         super(properties);
     }
     
-    public static Mode getModeFromNbt(@Nullable CompoundTag tag) {
-        if (tag == null) {
-            return Mode.none;
-        }
-        else {
-            return Mode.valueOf(tag.getString("mode"));
-        }
-    }
-    
-    public static CompoundTag modeToNbt(Mode mode) {
-        CompoundTag tag = new CompoundTag();
-        tag.putString("mode", mode.name());
-        return tag;
-    }
-    
     public static void registerCreativeInventory(Consumer<ItemStack> func) {
         ItemStack itemStack = new ItemStack(instance);
-        itemStack.setTag(modeToNbt(Mode.none));
         func.accept(itemStack);
     }
     
@@ -96,9 +68,7 @@ public class ManipulationWandItem extends Item {
             return new InteractionResultHolder<>(InteractionResult.SUCCESS, itemStack);
         }
         
-        Mode mode = getModeFromNbt(itemStack.getTag());
-        Mode nextMode = mode.next();
-        itemStack.setTag(modeToNbt(nextMode));
+        ScaleBoxGuiManager.get(player.getServer()).openGui(((ServerPlayer) player));
         
         return new InteractionResultHolder<>(InteractionResult.SUCCESS, itemStack);
     }
@@ -115,166 +85,13 @@ public class ManipulationWandItem extends Item {
             return InteractionResult.FAIL;
         }
         
-        ServerLevel world = (ServerLevel) context.getLevel();
+        ScaleBoxGuiManager.get(player.getServer()).openGui(((ServerPlayer) player));
         
-        ItemStack itemInHand = context.getItemInHand();
-        Mode mode = getModeFromNbt(itemInHand.getTag());
-        
-        if (mode == Mode.none) {
-            player.displayClientMessage(
-                Component.translatable("mini_scaled.manipulation_wand.tip"),
-                true
-            );
-            return InteractionResult.SUCCESS;
-        }
-        
-        BlockPos clickedPos = context.getClickedPos();
-        BlockState blockState = world.getBlockState(clickedPos);
-        if (blockState.getBlock() != ScaleBoxPlaceholderBlock.instance) {
-            player.displayClientMessage(Component.translatable("mini_scaled.manipulation_wand.use_on_scale_box"), true);
-            return InteractionResult.FAIL;
-        }
-        BlockEntity blockEntity = world.getBlockEntity(clickedPos);
-        if (!(blockEntity instanceof ScaleBoxPlaceholderBlockEntity placeholderBlockEntity)) {
-            LOGGER.error("Scale box block entity not found");
-            return InteractionResult.FAIL;
-        }
-        
-        int boxId = placeholderBlockEntity.boxId;
-        ScaleBoxRecord scaleBoxRecord = ScaleBoxRecord.get();
-        ScaleBoxRecord.Entry entry = scaleBoxRecord.getEntryById(boxId);
-        
-        if (entry == null) {
-            LOGGER.error("Cannot find scale box record entry {}", boxId);
-            return InteractionResult.FAIL;
-        }
-        
-        if (entry.accessControl) {
-            if (!Objects.equals(entry.ownerId, player.getUUID())) {
-                ScaleBoxManipulation.showScaleBoxAccessDeniedMessage(player);
-                return InteractionResult.FAIL;
-            }
-        }
-        
-        Direction outerSide = context.getClickedFace();
-        
-        switch (mode) {
-            case expand -> {
-                return ScaleBoxManipulation.tryToExpandScaleBox(
-                    player,
-                    world,
-                    entry,
-                    outerSide,
-                    (requiredEntranceItemNum) -> {
-                        if (player.isCreative()) {
-                            return true;
-                        }
-                        
-                        Inventory inventory = player.getInventory();
-                        boolean has = MSUtil.removeIfHas(inventory,
-                            s -> {
-                                Item item = s.getItem();
-                                if (item != ScaleBoxEntranceItem.instance) {
-                                    return false;
-                                }
-                                ScaleBoxEntranceItem.ItemInfo itemInfo =
-                                    new ScaleBoxEntranceItem.ItemInfo(s.getOrCreateTag());
-                                return itemInfo.color == entry.color &&
-                                    itemInfo.scale == entry.scale &&
-                                    (
-                                        Objects.equals(itemInfo.ownerId, entry.ownerId) ||
-                                            itemInfo.ownerId == null
-                                    );
-                            },
-                            requiredEntranceItemNum
-                        );
-                        if (!has) {
-                            player.displayClientMessage(
-                                Component.translatable("mini_scaled.cannot_expand_not_enough", requiredEntranceItemNum),
-                                false
-                            );
-                        }
-                        return has;
-                    }
-                );
-            }
-            case shrink -> {
-                return ScaleBoxManipulation.tryToShrinkScaleBox(
-                    player,
-                    world,
-                    entry,
-                    outerSide
-                );
-            }
-            case toggleScaleChange -> {
-                entry.teleportChangesScale = !entry.teleportChangesScale;
-                ScaleBoxGeneration.updateScaleBoxPortals(entry, ((ServerPlayer) player));
-                player.displayClientMessage(
-                    Component.translatable(
-                        entry.teleportChangesScale ?
-                            "mini_scaled.manipulation_wand.scale_change.enabled" :
-                            "mini_scaled.manipulation_wand.scale_change.disabled"
-                    ),
-                    true
-                );
-                return InteractionResult.SUCCESS;
-            }
-            case toggleGravityChange -> {
-                entry.teleportChangesGravity = !entry.teleportChangesGravity;
-                ScaleBoxGeneration.updateScaleBoxPortals(entry, ((ServerPlayer) player));
-                player.displayClientMessage(
-                    Component.translatable(
-                        entry.teleportChangesGravity ?
-                            "mini_scaled.manipulation_wand.gravity_change.enabled" :
-                            "mini_scaled.manipulation_wand.gravity_change.disabled"
-                    ),
-                    true
-                );
-                return InteractionResult.SUCCESS;
-            }
-            case toggleAccessControl -> {
-                if (!Objects.equals(entry.ownerId, player.getUUID())) {
-                    player.displayClientMessage(
-                        Component.translatable("mini_scaled.access_denied"),
-                        true
-                    );
-                    return InteractionResult.FAIL;
-                }
-                
-                entry.accessControl = !entry.accessControl;
-                ScaleBoxGeneration.updateScaleBoxPortals(entry, ((ServerPlayer) player));
-                player.displayClientMessage(
-                    Component.translatable(
-                        entry.accessControl ?
-                            "mini_scaled.manipulation_wand.access_control.enabled" :
-                            "mini_scaled.manipulation_wand.access_control.disabled"
-                    ),
-                    true
-                );
-                return InteractionResult.SUCCESS;
-            }
-        }
         return InteractionResult.FAIL;
     }
     
     @Override
-    public void appendHoverText(ItemStack stack, Level world, List<Component> tooltip, TooltipFlag context) {
-        Mode mode = getModeFromNbt(stack.getTag());
-        tooltip.add(Component.translatable("mini_scaled.manipulation_wand.tip"));
-    }
-    
-    @Override
     public Component getName(ItemStack stack) {
-        Mode mode = getModeFromNbt(stack.getTag());
-        
-        MutableComponent baseText = Component.translatable("item.mini_scaled.manipulation_wand");
-        
-        if (mode == Mode.none) {
-            return baseText;
-        }
-        
-        return baseText
-            .append(Component.literal(" : "))
-            .append(mode.getText().withStyle(ChatFormatting.GOLD));
+        return Component.translatable("item.mini_scaled.manipulation_wand");
     }
 }

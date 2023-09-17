@@ -1,7 +1,6 @@
 package qouteall.mini_scaled;
 
 import com.mojang.brigadier.CommandDispatcher;
-import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
@@ -21,7 +20,7 @@ public class MiniScaledCommand {
                 ServerPlayer player = context.getSource().getPlayer();
                 Validate.notNull(player);
                 
-                ScaleBoxGuiManager.get(server).onOpenGui(player);
+                ScaleBoxGuiManager.get(server).openGui(player);
                 
                 return 0;
             })

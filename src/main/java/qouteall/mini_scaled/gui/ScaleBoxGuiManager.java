@@ -51,7 +51,7 @@ public class ScaleBoxGuiManager {
     
     public ScaleBoxGuiManager(MinecraftServer server) {this.server = server;}
     
-    public void onOpenGui(ServerPlayer player) {
+    public void openGui(ServerPlayer player) {
         ScaleBoxRecord scaleBoxRecord = ScaleBoxRecord.get();
         
         List<ScaleBoxRecord.Entry> entries = scaleBoxRecord.getEntriesByOwner(player.getUUID());
