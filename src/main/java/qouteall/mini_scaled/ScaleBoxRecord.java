@@ -104,18 +104,17 @@ public class ScaleBoxRecord extends SavedData {
         ListTag list = compoundTag.getList("entries", compoundTag.getId());
         
         list.forEach(tag -> {
-            Entry entry = new Entry();
-            entry.readFromNbt(((CompoundTag) tag));
-            addEntry(entry);
+            if (tag instanceof CompoundTag c) {
+                Entry entry = Entry.fromTag(c);
+                addEntry(entry);
+            }
         });
     }
     
     private void writeToNbt(CompoundTag compoundTag) {
         ListTag listTag = new ListTag();
         for (Entry entry : entries) {
-            CompoundTag tag = new CompoundTag();
-            entry.writeToNbt(tag);
-            listTag.add(tag);
+            listTag.add(entry.toTag());
         }
         compoundTag.put("entries", listTag);
     }
@@ -289,6 +288,18 @@ public class ScaleBoxRecord extends SavedData {
             tag.putBoolean("teleportChangesScale", teleportChangesScale);
             tag.putBoolean("teleportChangesGravity", teleportChangesGravity);
             tag.putBoolean("accessControl", accessControl);
+        }
+        
+        public static Entry fromTag(CompoundTag tag) {
+            Entry entry = new Entry();
+            entry.readFromNbt(tag);
+            return entry;
+        }
+        
+        public CompoundTag toTag() {
+            CompoundTag tag = new CompoundTag();
+            writeToNbt(tag);
+            return tag;
         }
         
         public ChunkLoader createChunkLoader() {

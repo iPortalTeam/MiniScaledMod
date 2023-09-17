@@ -11,6 +11,7 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
+import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
 import org.slf4j.Logger;
 import qouteall.imm_ptl.core.ClientWorldLoader;
@@ -19,21 +20,28 @@ import qouteall.imm_ptl.core.render.GuiPortalRendering;
 import qouteall.imm_ptl.core.render.MyRenderHelper;
 import qouteall.imm_ptl.core.render.context_management.RenderStates;
 import qouteall.imm_ptl.core.render.context_management.WorldRenderInfo;
+import qouteall.mini_scaled.ScaleBoxRecord;
 import qouteall.mini_scaled.VoidDimension;
 import qouteall.q_misc_util.Helper;
 import qouteall.q_misc_util.api.McRemoteProcedureCall;
 import qouteall.q_misc_util.my_util.DQuaternion;
 import qouteall.q_misc_util.my_util.animation.Animated;
-import qouteall.q_misc_util.my_util.animation.RenderedPoint;
+
+import java.util.List;
 
 @Environment(EnvType.CLIENT)
 public class ScaleBoxManagementScreen extends Screen {
     private static final Logger LOGGER = LogUtils.getLogger();
     
+    public static final double VIEW_RATIO = 0.7;
+    
     private static RenderTarget frameBuffer;
     
-    public int boxId = -1;
-    public Vec3 viewingCenter;
+    private ScaleBoxListWidget listWidget;
+    
+    private final ScaleBoxGuiManager.GuiData data;
+    
+    private @Nullable ScaleBoxRecord.Entry selected;
     
     private double mouseX;
     private double mouseY;
@@ -57,9 +65,30 @@ public class ScaleBoxManagementScreen extends Screen {
         20.0
     );
     
-    public ScaleBoxManagementScreen() {
+    public static void openGui(ScaleBoxGuiManager.GuiData guiData) {
+        ScaleBoxManagementScreen screen = new ScaleBoxManagementScreen(guiData);
+        
+        Minecraft.getInstance().setScreen(screen);
+    }
+    
+    public ScaleBoxManagementScreen(ScaleBoxGuiManager.GuiData guiData) {
         super(Component.literal("Scale box management"));
         
+        this.data = guiData;
+        
+        this.listWidget = new ScaleBoxListWidget(
+            this, width, height,
+            100, 200,
+            ScaleBoxEntryWidget.WIDGET_HEIGHT
+        );
+        
+        List<ScaleBoxRecord.Entry> entriesForPlayer = guiData.entriesForPlayer();
+        for (int i = 0; i < entriesForPlayer.size(); i++) {
+            ScaleBoxRecord.Entry entry = entriesForPlayer.get(i);
+            listWidget.children().add(new ScaleBoxEntryWidget(listWidget, i, entry));
+        }
+        
+        // initialize the global singleton framebuffer
         if (frameBuffer == null) {
             // the framebuffer size doesn't matter here
             // because it will be automatically resized when rendering
@@ -67,17 +96,32 @@ public class ScaleBoxManagementScreen extends Screen {
         }
     }
     
-    public static void openGui(int boxId, Vec3 pos) {
-        ScaleBoxManagementScreen screen = new ScaleBoxManagementScreen();
-        screen.boxId = boxId;
-        screen.viewingCenter = pos;
+    @Override
+    protected void init() {
+        super.init();
         
-        Minecraft.getInstance().setScreen(screen);
+        listWidget.updateSize(
+            width - (int) (width * VIEW_RATIO), // width
+            height, // height
+            0, // start y
+            height // end y
+        );
+        listWidget.setLeftPos(0); // left x
+        
+        addWidget(listWidget);
     }
     
     @Override
-    public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float delta) {
-        super.render(guiGraphics, mouseX, mouseY, delta);
+    public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
+        super.render(guiGraphics, mouseX, mouseY, partialTick);
+        
+        listWidget.render(guiGraphics, mouseX, mouseY, partialTick);
+        
+        if (selected == null) {
+            return;
+        }
+        
+        Vec3 viewingCenter = selected.getInnerAreaBox().getCenterVec();
         
         Double pitch = pitchAnim.getCurrent();
         Double yaw = yawAnim.getCurrent();
@@ -86,6 +130,7 @@ public class ScaleBoxManagementScreen extends Screen {
         assert pitch != null;
         assert yaw != null;
         assert distance != null;
+        assert minecraft != null;
         
         DQuaternion rot = DQuaternion.getCameraRotation(pitch, yaw);
         
@@ -131,7 +176,7 @@ public class ScaleBoxManagementScreen extends Screen {
         
         this.mouseX = mouseX;
         this.mouseY = mouseY;
-        
+
 //        LOGGER.info("mouse moved {} {}", mouseX, mouseY);
         
         double pitch = (mouseY / ((double) height) - 0.5) * 180;

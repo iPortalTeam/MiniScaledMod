@@ -3,10 +3,11 @@ package qouteall.mini_scaled.gui;
 import com.mojang.logging.LogUtils;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
-import net.minecraft.client.server.IntegratedServer;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.Tag;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import qouteall.imm_ptl.core.api.PortalAPI;
@@ -15,6 +16,7 @@ import qouteall.mini_scaled.ScaleBoxRecord;
 import qouteall.mini_scaled.ducks.MiniScaled_MinecraftServerAccessor;
 import qouteall.q_misc_util.api.McRemoteProcedureCall;
 
+import java.util.List;
 import java.util.Objects;
 import java.util.WeakHashMap;
 
@@ -48,33 +50,38 @@ public class ScaleBoxGuiManager {
     
     public ScaleBoxGuiManager(MinecraftServer server) {this.server = server;}
     
-    public void onUpdateGui(ServerPlayer player, int boxId) {
+    public void onOpenGui(ServerPlayer player) {
+        ScaleBoxRecord scaleBoxRecord = ScaleBoxRecord.get();
+        
+        List<ScaleBoxRecord.Entry> entries = scaleBoxRecord.getEntriesByOwner(player.getUUID());
+        
+        GuiData guiData = new GuiData(entries);
+        
+        McRemoteProcedureCall.tellClientToInvoke(
+            player,
+            "qouteall.mini_scaled.gui.ScaleBoxGuiManager.RemoteCallables.tellClientToOpenGui",
+            guiData.toTag()
+        );
+    }
+    
+    public void onRequestChunkLoading(ServerPlayer player, int boxId) {
         ScaleBoxRecord scaleBoxRecord = ScaleBoxRecord.get();
         
         ScaleBoxRecord.Entry entry = scaleBoxRecord.getEntryById(boxId);
         
         if (entry == null) {
-            LOGGER.warn("Scale box not found {}", boxId);
+            LOGGER.warn("Invalid scale box id for chunk loading {} {}", boxId, player);
             return;
         }
         
-        if (!Objects.equals(player.getUUID(), entry.ownerId)) {
-            LOGGER.warn("Scale box not owned by {}", player);
+        if (!Objects.equals(entry.ownerId, player.getUUID())) {
+            LOGGER.warn("Player {} is not the owner of scale box {}", player, boxId);
             return;
         }
-        
-        ChunkLoader chunkLoader = entry.createChunkLoader();
         
         StateForPlayer state = this.stateMap.computeIfAbsent(player, k -> new StateForPlayer());
         
-        state.updateChunkLoader(player, chunkLoader);
-        
-        McRemoteProcedureCall.tellClientToInvoke(
-            player,
-            "qouteall.mini_scaled.gui.ScaleBoxGuiManager.RemoteCallables.tellClientToOpenGui",
-            boxId,
-            entry.getInnerAreaBox().getCenterVec()
-        );
+        state.updateChunkLoader(player, entry.createChunkLoader());
     }
     
     public void onCloseGui(ServerPlayer player) {
@@ -85,10 +92,43 @@ public class ScaleBoxGuiManager {
         stateMap.remove(player);
     }
     
+    public static record GuiData(
+        List<ScaleBoxRecord.Entry> entriesForPlayer
+    ) {
+        public CompoundTag toTag() {
+            CompoundTag tag = new CompoundTag();
+            
+            ListTag listTag = new ListTag();
+            for (ScaleBoxRecord.Entry entry : entriesForPlayer) {
+                listTag.add(entry.toTag());
+            }
+            
+            tag.put("entries", listTag);
+            
+            return tag;
+        }
+        
+        public static GuiData fromTag(CompoundTag tag) {
+            ListTag listTag = tag.getList("entries", Tag.TAG_COMPOUND);
+            
+            List<ScaleBoxRecord.Entry> entries = listTag.stream()
+                .map(t -> ScaleBoxRecord.Entry.fromTag((CompoundTag) t))
+                .toList();
+            
+            return new GuiData(entries);
+        }
+    }
+    
     public static class RemoteCallables {
         @Environment(EnvType.CLIENT)
-        public static void tellClientToOpenGui(int boxId, Vec3 pos) {
-            ScaleBoxManagementScreen.openGui(boxId, pos);
+        public static void tellClientToOpenGui(CompoundTag tag) {
+            ScaleBoxManagementScreen.openGui(GuiData.fromTag(tag));
+        }
+        
+        public static void requestChunkLoading(ServerPlayer player, int boxId) {
+            ScaleBoxGuiManager scaleBoxGuiManager = ScaleBoxGuiManager.get(player.server);
+            
+            scaleBoxGuiManager.onRequestChunkLoading(player, boxId);
         }
         
         public static void onGuiClose(ServerPlayer player) {

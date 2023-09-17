@@ -125,9 +125,8 @@ public class MiniScaledPortal extends Portal {
         boxId = compoundTag.getInt("boxId");
         
         if (compoundTag.contains("recordEntry")) {
-            ScaleBoxRecord.Entry entry = new ScaleBoxRecord.Entry();
-            entry.readFromNbt(compoundTag.getCompound("recordEntry"));
-            recordEntry = entry;
+            CompoundTag t = compoundTag.getCompound("recordEntry");
+            recordEntry = ScaleBoxRecord.Entry.fromTag(t);
         }
         else {
             // the recordEntry field is added in newer versions of MiniScaled
@@ -149,8 +148,7 @@ public class MiniScaledPortal extends Portal {
         compoundTag.putInt("generation", generation);
         compoundTag.putInt("boxId", boxId);
         if (recordEntry != null) {
-            CompoundTag recordEntryTag = new CompoundTag();
-            recordEntry.writeToNbt(recordEntryTag);
+            CompoundTag recordEntryTag = recordEntry.toTag();
             compoundTag.put("recordEntry", recordEntryTag);
         }
     }

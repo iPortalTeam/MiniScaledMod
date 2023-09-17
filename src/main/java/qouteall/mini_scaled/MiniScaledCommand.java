@@ -7,6 +7,7 @@ import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
+import org.apache.commons.lang3.Validate;
 import qouteall.mini_scaled.gui.ScaleBoxGuiManager;
 
 public class MiniScaledCommand {
@@ -15,18 +16,15 @@ public class MiniScaledCommand {
         LiteralArgumentBuilder<CommandSourceStack> builder = Commands.literal("miniscaled");
         
         builder.then(Commands.literal("open_gui")
-            .then(Commands.argument("boxId", IntegerArgumentType.integer())
-                .executes(context -> {
-                    int boxId = IntegerArgumentType.getInteger(context, "boxId");
-                    
-                    MinecraftServer server = context.getSource().getServer();
-                    ServerPlayer player = context.getSource().getPlayer();
-                    
-                    ScaleBoxGuiManager.get(server).onUpdateGui(player, boxId);
-                    
-                    return 0;
-                })
-            )
+            .executes(context -> {
+                MinecraftServer server = context.getSource().getServer();
+                ServerPlayer player = context.getSource().getPlayer();
+                Validate.notNull(player);
+                
+                ScaleBoxGuiManager.get(server).onOpenGui(player);
+                
+                return 0;
+            })
         );
         
         dispatcher.register(builder);
