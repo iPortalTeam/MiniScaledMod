@@ -13,6 +13,7 @@ import org.slf4j.Logger;
 import qouteall.imm_ptl.core.McHelper;
 import qouteall.imm_ptl.core.api.PortalAPI;
 import qouteall.imm_ptl.core.chunk_loading.ChunkLoader;
+import qouteall.imm_ptl.core.chunk_loading.NewChunkTrackingGraph;
 import qouteall.mini_scaled.ScaleBoxRecord;
 import qouteall.mini_scaled.ducks.MiniScaled_MinecraftServerAccessor;
 import qouteall.q_misc_util.api.McRemoteProcedureCall;
@@ -51,12 +52,12 @@ public class ScaleBoxGuiManager {
     
     public ScaleBoxGuiManager(MinecraftServer server) {this.server = server;}
     
-    public void openGui(ServerPlayer player) {
+    public void openGui(ServerPlayer player, @Nullable Integer targetBoxId) {
         ScaleBoxRecord scaleBoxRecord = ScaleBoxRecord.get();
         
         List<ScaleBoxRecord.Entry> entries = scaleBoxRecord.getEntriesByOwner(player.getUUID());
         
-        GuiData guiData = new GuiData(entries);
+        GuiData guiData = new GuiData(entries, targetBoxId);
         
         McRemoteProcedureCall.tellClientToInvoke(
             player,
@@ -95,7 +96,8 @@ public class ScaleBoxGuiManager {
     }
     
     public static record GuiData(
-        List<ScaleBoxRecord.Entry> entriesForPlayer
+        List<ScaleBoxRecord.Entry> entriesForPlayer,
+        @Nullable Integer boxId
     ) {
         public CompoundTag toTag() {
             CompoundTag tag = new CompoundTag();
@@ -107,6 +109,10 @@ public class ScaleBoxGuiManager {
             
             tag.put("entries", listTag);
             
+            if (boxId != null) {
+                tag.putInt("targetBoxId", boxId);
+            }
+            
             return tag;
         }
         
@@ -117,7 +123,9 @@ public class ScaleBoxGuiManager {
                 .map(t -> ScaleBoxRecord.Entry.fromTag((CompoundTag) t))
                 .toList();
             
-            return new GuiData(entries);
+            Integer boxId = tag.contains("targetBoxId") ? tag.getInt("targetBoxId") : null;
+            
+            return new GuiData(entries, boxId);
         }
     }
     

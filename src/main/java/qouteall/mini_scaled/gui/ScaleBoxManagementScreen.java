@@ -113,6 +113,16 @@ public class ScaleBoxManagementScreen extends Screen {
             listWidget.children().add(widget);
         }
         
+        if (guiData.boxId() != null) {
+            ScaleBoxEntryWidget widget = listWidget.children().stream()
+                .filter(e -> e.entry.id == guiData.boxId())
+                .findFirst().orElse(null);
+            
+            if (widget != null) {
+                onEntrySelected(widget);
+            }
+        }
+        
         // initialize the global singleton framebuffer
         if (frameBuffer == null) {
             // the framebuffer size doesn't matter here

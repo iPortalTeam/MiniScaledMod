@@ -68,14 +68,15 @@ public class ManipulationWandItem extends Item {
             return new InteractionResultHolder<>(InteractionResult.SUCCESS, itemStack);
         }
         
-        ScaleBoxGuiManager.get(player.getServer()).openGui(((ServerPlayer) player));
+        ScaleBoxGuiManager.get(player.getServer()).openGui(((ServerPlayer) player), null);
         
         return new InteractionResultHolder<>(InteractionResult.SUCCESS, itemStack);
     }
     
     @Override
     public InteractionResult useOn(UseOnContext context) {
-        if (context.getLevel().isClientSide()) {
+        Level world = context.getLevel();
+        if (world.isClientSide()) {
             return InteractionResult.SUCCESS;
         }
         
@@ -85,7 +86,27 @@ public class ManipulationWandItem extends Item {
             return InteractionResult.FAIL;
         }
         
-        ScaleBoxGuiManager.get(player.getServer()).openGui(((ServerPlayer) player));
+        @Nullable ScaleBoxRecord.Entry entry = null;
+        
+        BlockPos clickedPos = context.getClickedPos();
+        BlockState blockState = world.getBlockState(clickedPos);
+        if (blockState.getBlock() == ScaleBoxPlaceholderBlock.instance) {
+            BlockEntity blockEntity = world.getBlockEntity(clickedPos);
+            
+            if (blockEntity instanceof ScaleBoxPlaceholderBlockEntity placeholderBlockEntity) {
+                int boxId = placeholderBlockEntity.boxId;
+                ScaleBoxRecord scaleBoxRecord = ScaleBoxRecord.get();
+                ScaleBoxRecord.Entry theEntry = scaleBoxRecord.getEntryById(boxId);
+                if (theEntry != null && Objects.equals(theEntry.ownerId, player.getUUID())) {
+                    entry = theEntry;
+                }
+            }
+        }
+        
+        ScaleBoxGuiManager.get(player.getServer()).openGui(
+            ((ServerPlayer) player),
+            entry == null ? null : entry.id
+        );
         
         return InteractionResult.FAIL;
     }
