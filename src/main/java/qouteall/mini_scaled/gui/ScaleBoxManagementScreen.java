@@ -273,16 +273,17 @@ public class ScaleBoxManagementScreen extends Screen {
         Vec3 cameraPosition = viewingCenter.add(offset);
         
         // Create the world render info
-        WorldRenderInfo worldRenderInfo = new WorldRenderInfo(
-            ClientWorldLoader.getWorld(VoidDimension.dimensionId),
-            cameraPosition,
-            cameraTransformation,
-            true,
-            RENDERING_DESC,
-            minecraft.options.getEffectiveRenderDistance(),
-            false,
-            false
-        );
+        WorldRenderInfo worldRenderInfo =
+            new WorldRenderInfo.Builder()
+                .setWorld(ClientWorldLoader.getWorld(VoidDimension.dimensionId))
+                .setCameraPos(cameraPosition)
+                .setCameraTransformation(cameraTransformation)
+                .setOverwriteCameraTransformation(true)
+                .setDescription(RENDERING_DESC)
+                .setDoRenderHand(false)
+                .setEnableViewBobbing(false)
+                .setDoRenderSky(false)
+                .build();
         
         GuiPortalRendering.submitNextFrameRendering(worldRenderInfo, frameBuffer);
         
@@ -290,7 +291,7 @@ public class ScaleBoxManagementScreen extends Screen {
         int w = minecraft.getWindow().getWidth();
         MyRenderHelper.drawFramebuffer(
             frameBuffer,
-            false, false,
+            true, false,
             w * (1 - VIEW_RATIO), w,
             0, h * VIEW_RATIO
         );
