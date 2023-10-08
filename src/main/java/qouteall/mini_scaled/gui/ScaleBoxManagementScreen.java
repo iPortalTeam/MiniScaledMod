@@ -60,19 +60,19 @@ public class ScaleBoxManagementScreen extends Screen {
     private double mouseY;
     
     private Animated<Double> pitchAnim = new Animated<>(
-        Animated.DOUBLE_TYPE_INFO,
+        Animated.DOUBLE_DEFAULT_ZERO_TYPE_INFO,
         () -> RenderStates.renderStartNanoTime,
         TimingFunction.sine::mapProgress,
         0.0
     );
     private Animated<Double> yawAnim = new Animated<>(
-        Animated.DOUBLE_TYPE_INFO,
+        Animated.DOUBLE_DEFAULT_ZERO_TYPE_INFO,
         () -> RenderStates.renderStartNanoTime,
         TimingFunction.sine::mapProgress,
         0.0
     );
     private Animated<Double> distanceAnim = new Animated<>(
-        Animated.DOUBLE_TYPE_INFO,
+        Animated.DOUBLE_DEFAULT_ZERO_TYPE_INFO,
         () -> RenderStates.renderStartNanoTime,
         TimingFunction.sine::mapProgress,
         20.0
@@ -192,7 +192,7 @@ public class ScaleBoxManagementScreen extends Screen {
     
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        renderBackground(guiGraphics);
+        renderBackground(guiGraphics, mouseX, mouseY, partialTick);
         
         super.render(guiGraphics, mouseX, mouseY, partialTick);
         
@@ -320,17 +320,15 @@ public class ScaleBoxManagementScreen extends Screen {
     }
     
     @Override
-    public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
-//        LOGGER.info("mouse scrolled {} {} {}", mouseX, mouseY, delta);
-        
+    public boolean mouseScrolled(double mouseX, double mouseY, double deltaX, double deltaY) {
         if (mouseX < listWidget.rowWidth) {
-            return super.mouseScrolled(mouseX, mouseY, delta);
+            return super.mouseScrolled(mouseX, mouseY, deltaX, deltaY);
         }
         
         Double target = distanceAnim.getTarget();
         assert target != null;
         
-        double newTarget = target + delta * -1.0;
+        double newTarget = target + deltaY * -1.0;
         newTarget = Mth.clamp(newTarget, 5, 100);
         long duration = Helper.secondToNano(0.2);
         distanceAnim.setTarget(newTarget, duration);

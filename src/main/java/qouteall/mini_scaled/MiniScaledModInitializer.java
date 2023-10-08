@@ -40,8 +40,8 @@ public class MiniScaledModInitializer implements ModInitializer {
     
     @Override
     public void onInitialize() {
+        VoidDimension.init();
         
-        DimensionAPI.serverDimensionsLoadEvent.register(VoidDimension::initializeVoidDimension);
         LifecycleHack.markNamespaceStable("mini_scaled");
         
         ScaleBoxPlaceholderBlock.init();

@@ -17,7 +17,6 @@ public class ScaleBoxListWidget extends AbstractSelectionList<ScaleBoxEntryWidge
         this.parent = parent;
         
         setRenderBackground(false);
-        setRenderTopAndBottom(false);
     }
     
     @Override

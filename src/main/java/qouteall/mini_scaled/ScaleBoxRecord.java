@@ -50,15 +50,18 @@ public class ScaleBoxRecord extends SavedData {
         ServerLevel overworld = MiscHelper.getServer().overworld();
         
         return overworld.getDataStorage().computeIfAbsent(
-            (nbt) -> {
-                ScaleBoxRecord record = new ScaleBoxRecord();
-                record.readFromNbt(nbt);
-                return record;
-            },
-            () -> {
-                Helper.log("Scale box record initialized ");
-                return new ScaleBoxRecord();
-            },
+            new Factory<ScaleBoxRecord>(
+                () -> {
+                    Helper.log("Scale box record initialized ");
+                    return new ScaleBoxRecord();
+                },
+                (nbt) -> {
+                    ScaleBoxRecord record = new ScaleBoxRecord();
+                    record.readFromNbt(nbt);
+                    return record;
+                },
+                null
+            ),
             "scale_box_record"
         );
     }
