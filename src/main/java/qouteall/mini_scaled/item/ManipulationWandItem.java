@@ -21,6 +21,8 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.StainedGlassBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.Nullable;
@@ -50,6 +52,41 @@ public class ManipulationWandItem extends Item {
             instance
         );
     }
+//
+//    public static enum Mode {
+//        none, expand, shrink, toggleScaleChange, toggleGravityChange, toggleAccessControl;
+//
+//        public Mode next() {
+//            Mode[] values = values();
+//            return values[(ordinal() + 1) % values.length];
+//        }
+//
+//        public MutableComponent getText() {
+//            return Component.translatable("mini_scaled.manipulation_wand.mode." + name());
+//        }
+//
+//        public String toStr() {
+//            return switch (this) {
+//                case expand -> "expand";
+//                case shrink -> "shrink";
+//                case toggleScaleChange -> "toggleScaleChange";
+//                case toggleGravityChange -> "toggleGravityChange";
+//                case toggleAccessControl -> "toggleAccessControl";
+//                default -> "none";
+//            };
+//        }
+//
+//        public static Mode fromStr(String str) {
+//            return switch (str) {
+//                case "expand" -> expand;
+//                case "shrink" -> shrink;
+//                case "toggleScaleChange" -> toggleScaleChange;
+//                case "toggleGravityChange" -> toggleGravityChange;
+//                case "toggleAccessControl" -> toggleAccessControl;
+//                default -> none;
+//            };
+//        }
+//    }
     
     public ManipulationWandItem(Properties properties) {
         super(properties);
@@ -60,6 +97,21 @@ public class ManipulationWandItem extends Item {
         func.accept(itemStack);
     }
     
+//    public static Mode getModeFromNbt(@Nullable CompoundTag tag) {
+//        if (tag == null) {
+//            return Mode.none;
+//        }
+//        else {
+//            return Mode.fromStr(tag.getString("mode"));
+//        }
+//    }
+//
+//    public static CompoundTag modeToNbt(Mode mode) {
+//        CompoundTag tag = new CompoundTag();
+//        tag.putString("mode", mode.toStr());
+//        return tag;
+//    }
+    
     @Override
     public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand usedHand) {
         ItemStack itemStack = player.getItemInHand(usedHand);
@@ -68,6 +120,7 @@ public class ManipulationWandItem extends Item {
             return new InteractionResultHolder<>(InteractionResult.SUCCESS, itemStack);
         }
         
+        // directly open the gui
         ScaleBoxGuiManager.get(player.getServer()).openGui(((ServerPlayer) player), null);
         
         return new InteractionResultHolder<>(InteractionResult.SUCCESS, itemStack);
@@ -90,7 +143,8 @@ public class ManipulationWandItem extends Item {
         
         BlockPos clickedPos = context.getClickedPos();
         BlockState blockState = world.getBlockState(clickedPos);
-        if (blockState.getBlock() == ScaleBoxPlaceholderBlock.instance) {
+        Block block = blockState.getBlock();
+        if (block == ScaleBoxPlaceholderBlock.instance) {
             BlockEntity blockEntity = world.getBlockEntity(clickedPos);
             
             if (blockEntity instanceof ScaleBoxPlaceholderBlockEntity placeholderBlockEntity) {
@@ -101,6 +155,11 @@ public class ManipulationWandItem extends Item {
                     entry = theEntry;
                 }
             }
+        }
+        else if (block instanceof StainedGlassBlock stainedGlassBlock) {
+            // TODO wrap scale box
+            
+            return InteractionResult.SUCCESS;
         }
         
         ScaleBoxGuiManager.get(player.getServer()).openGui(
