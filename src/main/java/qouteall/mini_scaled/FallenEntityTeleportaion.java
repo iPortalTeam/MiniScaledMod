@@ -22,7 +22,7 @@ public class FallenEntityTeleportaion {
     static void teleportFallenEntities(MinecraftServer server) {
         server.getProfiler().push("mini_scaled_tick");
         
-        ServerLevel voidWorld = server.getLevel(VoidDimension.dimensionId);
+        ServerLevel voidWorld = server.getLevel(VoidDimension.KEY);
         if (voidWorld != null) {
             for (Entity entity : voidWorld.getAllEntities()) {
                 teleportFallenEntity(entity);

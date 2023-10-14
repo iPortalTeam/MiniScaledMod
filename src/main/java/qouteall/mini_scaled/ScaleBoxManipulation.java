@@ -3,6 +3,7 @@ package qouteall.mini_scaled;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
@@ -101,6 +102,7 @@ public class ScaleBoxManipulation {
         ScaleBoxRecord record = ScaleBoxRecord.get(world.getServer());
         
         ScaleBoxRecord.Entry entry = ScaleBoxGeneration.getOrCreateEntry(
+            player.server,
             ownerId, ownerNameCache, scale, color, record
         );
         
@@ -121,7 +123,7 @@ public class ScaleBoxManipulation {
             .findFirst().orElse(null);
         
         if (realPlacementPos != null) {
-            ScaleBoxGeneration.putScaleBoxIntoWorld(
+            ScaleBoxOperations.putScaleBoxEntranceIntoWorld(
                 entry,
                 ((ServerLevel) world),
                 realPlacementPos,
@@ -228,6 +230,8 @@ public class ScaleBoxManipulation {
     public static InteractionResult tryToShrinkScaleBox(
         Player player, ServerLevel world, ScaleBoxRecord.Entry entry, Direction outerSide
     ) {
+        MinecraftServer server = player.getServer();
+        
         if (entry.accessControl) {
             if (!Objects.equals(entry.ownerId, player.getUUID())) {
                 showScaleBoxAccessDeniedMessage(player);
@@ -262,7 +266,7 @@ public class ScaleBoxManipulation {
             if (newInnerOffsets.contains(offset)) {return false;}
             IntBox innerUnitBox = entry.getInnerUnitBox(offset);
             
-            ServerLevel voidWorld = VoidDimension.getVoidServerWorld();
+            ServerLevel voidWorld = VoidDimension.getVoidServerWorld(server);
             
             return !innerUnitBox.stream().allMatch(blockPos -> {
                 BlockState blockState = voidWorld.getBlockState(blockPos);
@@ -283,7 +287,7 @@ public class ScaleBoxManipulation {
         entry.currentEntranceSize = newEntranceSize;
         ScaleBoxRecord.get(world.getServer()).setDirty(true);
         
-        ScaleBoxGeneration.putScaleBoxIntoWorld(
+        ScaleBoxOperations.putScaleBoxEntranceIntoWorld(
             entry,
             world,
             entry.currentEntrancePos,
@@ -292,8 +296,9 @@ public class ScaleBoxManipulation {
         );
         
         ScaleBoxGeneration.initializeInnerBoxBlocks(
-            oldEntranceSize, entry
-        );
+            server,
+            oldEntranceSize,
+            entry);
         
         if (!player.isCreative()) {
             int compensateNetheriteNum = getVolume(oldEntranceSize) - getVolume(newEntranceSize);
@@ -315,6 +320,8 @@ public class ScaleBoxManipulation {
         ScaleBoxRecord.Entry entry, Direction outerSide,
         Function<Integer, Boolean> itemConsumptionFunc
     ) {
+        MinecraftServer server = player.getServer();
+        
         if (entry.accessControl) {
             if (!Objects.equals(entry.ownerId, player.getUUID())) {
                 showScaleBoxAccessDeniedMessage(player);
@@ -371,7 +378,7 @@ public class ScaleBoxManipulation {
         entry.currentEntranceSize = newEntranceSize;
         ScaleBoxRecord.get(world.getServer()).setDirty(true);
         
-        ScaleBoxGeneration.putScaleBoxIntoWorld(
+        ScaleBoxOperations.putScaleBoxEntranceIntoWorld(
             entry,
             world,
             entry.currentEntrancePos,
@@ -380,7 +387,9 @@ public class ScaleBoxManipulation {
         );
         
         ScaleBoxGeneration.initializeInnerBoxBlocks(
-            oldEntranceSize, entry
+            server,
+            oldEntranceSize,
+            entry
         );
         
         return InteractionResult.SUCCESS;

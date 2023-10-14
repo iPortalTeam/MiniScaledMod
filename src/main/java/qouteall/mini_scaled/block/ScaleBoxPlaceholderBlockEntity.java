@@ -197,7 +197,7 @@ public class ScaleBoxPlaceholderBlockEntity extends BlockEntity {
             notifyPortalBreak(server, boxId);
             
             ScaleBoxGeneration.createInnerPortalsPointingToVoidUnderneath(
-                entry
+                server, entry
             );
         }
     }

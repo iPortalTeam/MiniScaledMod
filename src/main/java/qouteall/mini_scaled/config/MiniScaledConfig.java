@@ -10,4 +10,6 @@ public class MiniScaledConfig implements ConfigData {
     public String creationItem = "minecraft:netherite_ingot";
     @ConfigEntry.Gui.EnumHandler(option = ConfigEntry.Gui.EnumHandler.EnumDisplayOption.BUTTON)
     public ScaleBoxInteractionMode interactionMode = ScaleBoxInteractionMode.normal;
+    
+    public int maxScaleBoxPerPlayer = 40;
 }

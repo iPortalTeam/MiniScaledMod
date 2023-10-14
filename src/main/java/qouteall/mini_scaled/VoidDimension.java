@@ -20,7 +20,6 @@ import net.minecraft.world.level.chunk.ChunkGenerator;
 import net.minecraft.world.level.dimension.DimensionType;
 import net.minecraft.world.level.dimension.LevelStem;
 import net.minecraft.world.level.levelgen.FlatLevelSource;
-import net.minecraft.world.level.levelgen.WorldOptions;
 import net.minecraft.world.level.levelgen.flat.FlatLayerInfo;
 import net.minecraft.world.level.levelgen.flat.FlatLevelGeneratorSettings;
 import net.minecraft.world.phys.Vec3;
@@ -32,7 +31,7 @@ import java.util.ArrayList;
 import java.util.Optional;
 
 public class VoidDimension {
-    public static final ResourceKey<Level> dimensionId = ResourceKey.create(
+    public static final ResourceKey<Level> KEY = ResourceKey.create(
         Registries.DIMENSION,
         new ResourceLocation("mini_scaled:void")
     );
@@ -46,7 +45,7 @@ public class VoidDimension {
         DimensionAPI.SERVER_DIMENSIONS_LOAD_EVENT.register(server -> {
             DimensionAPI.addDimensionIfNotExists(
                 server,
-                dimensionId.location(),
+                KEY.location(),
                 () -> createLevelStem(server)
             );
         });
@@ -87,8 +86,8 @@ public class VoidDimension {
         );
     }
     
-    public static ServerLevel getVoidServerWorld() {
-        return McHelper.getServerWorld(dimensionId);
+    public static ServerLevel getVoidServerWorld(MinecraftServer server) {
+        return McHelper.getServerWorld(server, KEY);
     }
     
     @Environment(EnvType.CLIENT)

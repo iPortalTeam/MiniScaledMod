@@ -222,38 +222,6 @@ public class ScaleBoxEntranceCreation {
         return null;
     }
     
-    private static BlockPos getFurthest(
-        BlockPos pos,
-        Direction direction,
-        Predicate<BlockPos> predicate
-    ) {
-        BlockPos current = pos;
-        for (int i = 1; i < 64; i++) {
-            BlockPos newPos = pos.offset(direction.getNormal().multiply(i));
-            if (predicate.test(newPos)) {
-                current = newPos;
-            }
-            else {
-                return current;
-            }
-        }
-        return current;
-    }
-    
-    private static int getFurthestLen(
-        BlockPos pos,
-        Direction direction,
-        Predicate<BlockPos> predicate
-    ) {
-        for (int i = 1; i < 64; i++) {
-            BlockPos newPos = pos.offset(direction.getNormal().multiply(i));
-            if (!predicate.test(newPos)) {
-                return i;
-            }
-        }
-        return 64;
-    }
-    
     private static IntBox detectBoxSizeForErrorFeedback(
         ServerLevel world,
         BlockPos pos,
@@ -262,17 +230,17 @@ public class ScaleBoxEntranceCreation {
         Predicate<BlockPos> blockPredicate = p -> world.getBlockState(p) == blockState;
         
         BlockPos currPos = pos;
-        currPos = getFurthest(currPos, Direction.DOWN, blockPredicate);
-        currPos = getFurthest(currPos, Direction.NORTH, blockPredicate);
-        currPos = getFurthest(currPos, Direction.WEST, blockPredicate);
-        currPos = getFurthest(currPos, Direction.DOWN, blockPredicate);
-        currPos = getFurthest(currPos, Direction.NORTH, blockPredicate);
-        currPos = getFurthest(currPos, Direction.WEST, blockPredicate);
+        currPos = GlassFrameMatching.getFurthest(currPos, Direction.DOWN, blockPredicate);
+        currPos = GlassFrameMatching.getFurthest(currPos, Direction.NORTH, blockPredicate);
+        currPos = GlassFrameMatching.getFurthest(currPos, Direction.WEST, blockPredicate);
+        currPos = GlassFrameMatching.getFurthest(currPos, Direction.DOWN, blockPredicate);
+        currPos = GlassFrameMatching.getFurthest(currPos, Direction.NORTH, blockPredicate);
+        currPos = GlassFrameMatching.getFurthest(currPos, Direction.WEST, blockPredicate);
         
         BlockPos size = new BlockPos(
-            getFurthestLen(currPos, Direction.EAST, blockPredicate),
-            getFurthestLen(currPos, Direction.UP, blockPredicate),
-            getFurthestLen(currPos, Direction.SOUTH, blockPredicate)
+            GlassFrameMatching.getFurthestLen(currPos, Direction.EAST, blockPredicate),
+            GlassFrameMatching.getFurthestLen(currPos, Direction.UP, blockPredicate),
+            GlassFrameMatching.getFurthestLen(currPos, Direction.SOUTH, blockPredicate)
         );
     
         return IntBox.fromBasePointAndSize(currPos, size);

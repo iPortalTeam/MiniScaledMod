@@ -1,13 +1,13 @@
 package qouteall.mini_scaled;
 
 import it.unimi.dsi.fastutil.ints.Int2ObjectAVLTreeMap;
-import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.Tag;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
@@ -22,7 +22,6 @@ import org.slf4j.LoggerFactory;
 import qouteall.imm_ptl.core.chunk_loading.ChunkLoader;
 import qouteall.imm_ptl.core.chunk_loading.DimensionalChunkPos;
 import qouteall.q_misc_util.Helper;
-import qouteall.q_misc_util.MiscHelper;
 import qouteall.q_misc_util.my_util.AARotation;
 import qouteall.q_misc_util.my_util.IntBox;
 
@@ -32,16 +31,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 
 public class ScaleBoxRecord extends SavedData {
     private static final Logger LOGGER = LoggerFactory.getLogger(ScaleBoxRecord.class);
     
-    private final List<Entry> entries = new ArrayList<>();
-    
     private final Int2ObjectAVLTreeMap<Entry> byId = new Int2ObjectAVLTreeMap<>();
     
     private final Map<UUID, List<Entry>> byOwner = new Object2ObjectOpenHashMap<>();
+    
+    private int maxId = 0;
     
     public ScaleBoxRecord() {
         super();
@@ -72,55 +70,67 @@ public class ScaleBoxRecord extends SavedData {
         return byId.get(boxId);
     }
     
-    @Nullable
-    public Entry getEntryByPredicate(Predicate<Entry> predicate) {
-        return entries.stream().filter(predicate).findFirst().orElse(null);
-    }
-    
-    /**
-     * Note: should not modify the returned list
-     */
     public List<Entry> getEntriesByOwner(UUID uuid) {
-        return byOwner.getOrDefault(uuid, Collections.emptyList());
+        return Collections.unmodifiableList(byOwner.getOrDefault(uuid, Collections.emptyList()));
     }
     
     public void addEntry(Entry entry) {
-        entries.add(entry);
         byId.put(entry.id, entry);
         byOwner.computeIfAbsent(entry.ownerId, k -> new ObjectArrayList<>()).add(entry);
     }
     
-    // does not allow removing entry
-    
-    public int allocateId() {
-        if (byId.isEmpty()) {
-            return 1;
+    public boolean removeEntry(int id) {
+        Entry entry = byId.remove(id);
+        if (entry != null) {
+            List<Entry> entriesForOwner = byOwner.get(entry.ownerId);
+            if (entriesForOwner == null) {
+                LOGGER.error("Cannot find entries for owner {} {}", entry, byOwner);
+            }
+            else {
+                boolean removed = entriesForOwner.remove(entry);
+                if (!removed) {
+                    LOGGER.error("Cannot find entry for owner {} {}", entry, byOwner);
+                }
+            }
+            return true;
         }
         
-        return byId.lastIntKey() + 1;
+        return false;
+    }
+    
+    public int allocateId() {
+        maxId++;
+        return maxId;
     }
     
     private void readFromNbt(CompoundTag compoundTag) {
-        entries.clear();
         byId.clear();
         byOwner.clear();
+        maxId = 0;
         
         ListTag list = compoundTag.getList("entries", compoundTag.getId());
         
-        list.forEach(tag -> {
+        for (Tag tag : list) {
             if (tag instanceof CompoundTag c) {
                 Entry entry = Entry.fromTag(c);
                 addEntry(entry);
             }
-        });
+        }
+        
+        maxId = compoundTag.getInt("maxId");
+        
+        // old versions of MiniScaled does not put maxId tag. update it
+        int actualMaxId = byId.isEmpty() ? 0 : byId.lastIntKey();
+        maxId = Math.max(maxId, actualMaxId);
     }
     
     private void writeToNbt(CompoundTag compoundTag) {
         ListTag listTag = new ListTag();
-        for (Entry entry : entries) {
+        for (Entry entry : byId.values()) {
             listTag.add(entry.toTag());
         }
         compoundTag.put("entries", listTag);
+        compoundTag.putInt("maxId", maxId);
     }
     
     public void fromTag(CompoundTag tag) {
@@ -311,7 +321,7 @@ public class ScaleBoxRecord extends SavedData {
             BlockPos size = innerAreaBox.getSize();
             return new ChunkLoader(
                 new DimensionalChunkPos(
-                    VoidDimension.dimensionId,
+                    VoidDimension.KEY,
                     new ChunkPos(innerAreaBox.getCenter())
                 ),
                 Math.max(size.getX(), size.getZ()) / (16 * 2) + renderDistance

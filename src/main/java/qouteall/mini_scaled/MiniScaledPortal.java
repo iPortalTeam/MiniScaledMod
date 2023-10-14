@@ -40,6 +40,9 @@ public class MiniScaledPortal extends Portal {
     public static EntityType<MiniScaledPortal> entityType;
     
     public int boxId = 0;
+    
+    // the generation counter is used for invalidating scale box portal,
+    // without loading the chunk of the portal
     public int generation = 0;
     
     /**

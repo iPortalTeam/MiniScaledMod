@@ -275,7 +275,7 @@ public class ScaleBoxManagementScreen extends Screen {
         // Create the world render info
         WorldRenderInfo worldRenderInfo =
             new WorldRenderInfo.Builder()
-                .setWorld(ClientWorldLoader.getWorld(VoidDimension.dimensionId))
+                .setWorld(ClientWorldLoader.getWorld(VoidDimension.KEY))
                 .setCameraPos(cameraPosition)
                 .setCameraTransformation(cameraTransformation)
                 .setOverwriteCameraTransformation(true)

@@ -5,6 +5,7 @@ import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
@@ -14,7 +15,6 @@ import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
@@ -28,15 +28,12 @@ import qouteall.imm_ptl.core.chunk_loading.DimensionalChunkPos;
 import qouteall.imm_ptl.core.portal.PortalExtension;
 import qouteall.imm_ptl.core.portal.PortalManipulation;
 import qouteall.mini_scaled.block.BoxBarrierBlock;
-import qouteall.mini_scaled.block.ScaleBoxPlaceholderBlock;
-import qouteall.mini_scaled.block.ScaleBoxPlaceholderBlockEntity;
 import qouteall.q_misc_util.Helper;
 import qouteall.q_misc_util.my_util.AARotation;
 import qouteall.q_misc_util.my_util.DQuaternion;
 import qouteall.q_misc_util.my_util.IntBox;
 
 import java.util.Arrays;
-import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -46,45 +43,7 @@ public class ScaleBoxGeneration {
     
     public static final int[] supportedScales = {4, 8, 16, 32};
     
-    public static void putScaleBoxIntoWorld(
-        ScaleBoxRecord.Entry entry,
-        ServerLevel world, BlockPos outerBoxBasePos,
-        AARotation rotation,
-        ServerPlayer player
-    ) {
-        if (entry.accessControl) {
-            if (!Objects.equals(entry.ownerId, player.getUUID())) {
-                ScaleBoxManipulation.showScaleBoxAccessDeniedMessage(player);
-                return;
-            }
-        }
-        
-        entry.currentEntranceDim = world.dimension();
-        entry.currentEntrancePos = outerBoxBasePos;
-        entry.entranceRotation = rotation;
-        entry.generation++;
-        
-        ScaleBoxRecord.get(world.getServer()).setDirty(true);
-        
-        ServerLevel voidWorld = VoidDimension.getVoidServerWorld();
-        createScaleBoxPortals(voidWorld, world, entry);
-        
-        entry.getOuterAreaBox().stream().forEach(outerPos -> {
-            world.setBlockAndUpdate(outerPos, ScaleBoxPlaceholderBlock.instance.defaultBlockState());
-            
-            BlockEntity blockEntity = world.getBlockEntity(outerPos);
-            if (blockEntity == null) {
-                LOGGER.info("cannot find block entity for scale box");
-            }
-            else {
-                ScaleBoxPlaceholderBlockEntity be = (ScaleBoxPlaceholderBlockEntity) blockEntity;
-                be.boxId = entry.id;
-                be.isBasePos = outerPos.equals(entry.currentEntrancePos);
-            }
-        });
-    }
-    
-    private static void createScaleBoxPortals(
+    public static void createScaleBoxPortals(
         ServerLevel innerWorld,
         ServerLevel outerWorld,
         ScaleBoxRecord.Entry entry
@@ -157,6 +116,7 @@ public class ScaleBoxGeneration {
     
     
     public static ScaleBoxRecord.Entry getOrCreateEntry(
+        MinecraftServer server,
         UUID playerId, String playerName, int scale, DyeColor color, ScaleBoxRecord record
     ) {
         Validate.notNull(playerId);
@@ -179,14 +139,14 @@ public class ScaleBoxGeneration {
             record.addEntry(newEntry);
             record.setDirty(true);
             
-            initializeInnerBoxBlocks(null, newEntry);
+            initializeInnerBoxBlocks(server, null, newEntry);
             
             entry = newEntry;
         }
         return entry;
     }
     
-    private static BlockPos allocateInnerBoxPos(int boxId) {
+    public static BlockPos allocateInnerBoxPos(int boxId) {
         int xIndex = boxId % 256;
         int zIndex = Mth.floorDiv(boxId, 256);
         
@@ -203,12 +163,13 @@ public class ScaleBoxGeneration {
     }
     
     public static void initializeInnerBoxBlocks(
+        MinecraftServer server,
         @Nullable BlockPos oldEntranceSize,
         ScaleBoxRecord.Entry entry
     ) {
         IntBox innerAreaBox = entry.getInnerAreaBox();
         
-        ServerLevel voidWorld = VoidDimension.getVoidServerWorld();
+        ServerLevel voidWorld = VoidDimension.getVoidServerWorld(server);
         
         ChunkLoader chunkLoader = new ChunkLoader(
             new DimensionalChunkPos(
@@ -331,7 +292,7 @@ public class ScaleBoxGeneration {
             LOGGER.error("Updating a scale box that has no entrance");
             return;
         }
-        putScaleBoxIntoWorld(
+        ScaleBoxOperations.putScaleBoxEntranceIntoWorld(
             entry,
             McHelper.getServerWorld(currentEntranceDim),
             entry.currentEntrancePos,
@@ -341,9 +302,10 @@ public class ScaleBoxGeneration {
     }
     
     public static void createInnerPortalsPointingToVoidUnderneath(
+        MinecraftServer server,
         ScaleBoxRecord.Entry entry
     ) {
-        ServerLevel voidWorld = VoidDimension.getVoidServerWorld();
+        ServerLevel voidWorld = VoidDimension.getVoidServerWorld(server);
         AABB innerAreaBox = entry.getInnerAreaBox().toRealNumberBox();
         Vec3 innerAreaBoxSize = Helper.getBoxSize(innerAreaBox);
         int boxId = entry.id;
