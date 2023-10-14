@@ -65,7 +65,7 @@ public class MiniScaledPortal extends Portal {
             tickClient();
         }
         else {
-            ScaleBoxRecord scaleBoxRecord = ScaleBoxRecord.get();
+            ScaleBoxRecord scaleBoxRecord = ScaleBoxRecord.get(getServer());
             if (recordEntry == null) {
                 recordEntry = scaleBoxRecord.getEntryById(boxId);
                 if (recordEntry == null) {
@@ -137,7 +137,7 @@ public class MiniScaledPortal extends Portal {
                 // see ScaleBoxRecord.createInnerPortalsPointingToVoidUnderneath
             }
             else {
-                recordEntry = ScaleBoxRecord.get().getEntryById(boxId);
+                recordEntry = ScaleBoxRecord.get(getServer()).getEntryById(boxId);
             }
         }
     }

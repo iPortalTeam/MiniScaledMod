@@ -10,6 +10,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.level.ChunkPos;
@@ -46,8 +47,8 @@ public class ScaleBoxRecord extends SavedData {
         super();
     }
     
-    public static ScaleBoxRecord get() {
-        ServerLevel overworld = MiscHelper.getServer().overworld();
+    public static ScaleBoxRecord get(MinecraftServer server) {
+        ServerLevel overworld = server.overworld();
         
         return overworld.getDataStorage().computeIfAbsent(
             new Factory<ScaleBoxRecord>(

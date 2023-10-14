@@ -7,6 +7,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.item.Item;
@@ -151,8 +152,8 @@ public class ScaleBoxEntranceItem extends Item {
     }
     
     @Nullable
-    public static ItemStack boxIdToItem(int boxId) {
-        ScaleBoxRecord.Entry entry = ScaleBoxRecord.get().getEntryById(boxId);
+    public static ItemStack boxIdToItem(MinecraftServer server, int boxId) {
+        ScaleBoxRecord.Entry entry = ScaleBoxRecord.get(server).getEntryById(boxId);
         if (entry == null) {
             LOGGER.info("invalid boxId for item {}", boxId);
             return null;

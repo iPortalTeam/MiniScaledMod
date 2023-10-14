@@ -64,7 +64,7 @@ public class ScaleBoxGeneration {
         entry.entranceRotation = rotation;
         entry.generation++;
         
-        ScaleBoxRecord.get().setDirty(true);
+        ScaleBoxRecord.get(world.getServer()).setDirty(true);
         
         ServerLevel voidWorld = VoidDimension.getVoidServerWorld();
         createScaleBoxPortals(voidWorld, world, entry);

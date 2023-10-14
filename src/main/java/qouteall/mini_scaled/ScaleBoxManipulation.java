@@ -98,7 +98,7 @@ public class ScaleBoxManipulation {
         
         DyeColor color = itemInfo.color;
         
-        ScaleBoxRecord record = ScaleBoxRecord.get();
+        ScaleBoxRecord record = ScaleBoxRecord.get(world.getServer());
         
         ScaleBoxRecord.Entry entry = ScaleBoxGeneration.getOrCreateEntry(
             ownerId, ownerNameCache, scale, color, record
@@ -167,7 +167,7 @@ public class ScaleBoxManipulation {
         }
         
         int boxId = placeholderBlockEntity.boxId;
-        ScaleBoxRecord.Entry entry = ScaleBoxRecord.get().getEntryById(boxId);
+        ScaleBoxRecord.Entry entry = ScaleBoxRecord.get(world.getServer()).getEntryById(boxId);
         if (entry == null) {
             player.displayClientMessage(Component.literal("Error invalid box id"), false);
             return InteractionResult.FAIL;
@@ -281,7 +281,7 @@ public class ScaleBoxManipulation {
         }
         
         entry.currentEntranceSize = newEntranceSize;
-        ScaleBoxRecord.get().setDirty(true);
+        ScaleBoxRecord.get(world.getServer()).setDirty(true);
         
         ScaleBoxGeneration.putScaleBoxIntoWorld(
             entry,
@@ -369,7 +369,7 @@ public class ScaleBoxManipulation {
         }
         
         entry.currentEntranceSize = newEntranceSize;
-        ScaleBoxRecord.get().setDirty(true);
+        ScaleBoxRecord.get(world.getServer()).setDirty(true);
         
         ScaleBoxGeneration.putScaleBoxIntoWorld(
             entry,

@@ -149,7 +149,7 @@ public class ManipulationWandItem extends Item {
             
             if (blockEntity instanceof ScaleBoxPlaceholderBlockEntity placeholderBlockEntity) {
                 int boxId = placeholderBlockEntity.boxId;
-                ScaleBoxRecord scaleBoxRecord = ScaleBoxRecord.get();
+                ScaleBoxRecord scaleBoxRecord = ScaleBoxRecord.get(world.getServer());
                 ScaleBoxRecord.Entry theEntry = scaleBoxRecord.getEntryById(boxId);
                 if (theEntry != null && Objects.equals(theEntry.ownerId, player.getUUID())) {
                     entry = theEntry;

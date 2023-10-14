@@ -6,6 +6,7 @@ import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.Containers;
 import net.minecraft.world.item.ItemStack;
@@ -79,7 +80,7 @@ public class ScaleBoxPlaceholderBlockEntity extends BlockEntity {
     }
     
     public void checkValidity() {
-        ScaleBoxRecord.Entry entry = ScaleBoxRecord.get().getEntryById(boxId);
+        ScaleBoxRecord.Entry entry = ScaleBoxRecord.get(level.getServer()).getEntryById(boxId);
         
         if (entry == null) {
             LOGGER.info("invalid box with id {}", boxId);
@@ -118,7 +119,7 @@ public class ScaleBoxPlaceholderBlockEntity extends BlockEntity {
     public void dropItemIfNecessary() {
         if (isBasePos) {
             // the up-facing outer portal breaks. drop item
-            ItemStack itemToDrop = ScaleBoxEntranceItem.boxIdToItem(boxId);
+            ItemStack itemToDrop = ScaleBoxEntranceItem.boxIdToItem(level.getServer(), boxId);
             if (itemToDrop != null) {
                 Containers.dropItemStack(
                     level, getBlockPos().getX() + 0.5, getBlockPos().getY() + 0.5, getBlockPos().getZ() + 0.5, itemToDrop
@@ -130,11 +131,12 @@ public class ScaleBoxPlaceholderBlockEntity extends BlockEntity {
         }
     }
     
-    private static void notifyPortalBreak(int boxId) {
-        ScaleBoxRecord.Entry entry = ScaleBoxRecord.get().getEntryById(boxId);
+    private static void notifyPortalBreak(MinecraftServer server, int boxId) {
+        ScaleBoxRecord record = ScaleBoxRecord.get(server);
+        ScaleBoxRecord.Entry entry = record.getEntryById(boxId);
         if (entry != null) {
             entry.generation++;
-            ScaleBoxRecord.get().setDirty(true);
+            record.setDirty(true);
         }
     }
     
@@ -144,7 +146,7 @@ public class ScaleBoxPlaceholderBlockEntity extends BlockEntity {
      * in this case this integrity check will pass.
      * the generation counter was already incremented and the old portals will break.
      * in {@link ScaleBoxPlaceholderBlockEntity#checkValidity()} it will break the blocks.
-     * don't {@link ScaleBoxPlaceholderBlockEntity#notifyPortalBreak(int)} as it will break the new portals
+     * don't {@link ScaleBoxPlaceholderBlockEntity#notifyPortalBreak(MinecraftServer, int)} as it will break the new portals
      * <br>
      * 2. break the old entrance
      * in this case this integrity check will fail.
@@ -158,7 +160,8 @@ public class ScaleBoxPlaceholderBlockEntity extends BlockEntity {
         ServerLevel world,
         BlockPos pos
     ) {
-        ScaleBoxRecord record = ScaleBoxRecord.get();
+        MinecraftServer server = world.getServer();
+        ScaleBoxRecord record = ScaleBoxRecord.get(server);
         ScaleBoxRecord.Entry entry = record.getEntryById(boxId);
         
         if (entry == null) {
@@ -167,7 +170,7 @@ public class ScaleBoxPlaceholderBlockEntity extends BlockEntity {
         
         ResourceKey<Level> currentEntranceDim = entry.currentEntranceDim;
         if (currentEntranceDim == null) {
-            notifyPortalBreak(boxId);
+            notifyPortalBreak(server, boxId);
             return;
         }
         
@@ -191,7 +194,7 @@ public class ScaleBoxPlaceholderBlockEntity extends BlockEntity {
             entry.currentEntranceDim = null;
             record.setDirty(true);
             
-            notifyPortalBreak(boxId);
+            notifyPortalBreak(server, boxId);
             
             ScaleBoxGeneration.createInnerPortalsPointingToVoidUnderneath(
                 entry

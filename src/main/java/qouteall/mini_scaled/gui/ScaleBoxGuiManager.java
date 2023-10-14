@@ -54,7 +54,7 @@ public class ScaleBoxGuiManager {
     public ScaleBoxGuiManager(MinecraftServer server) {this.server = server;}
     
     public void openGui(ServerPlayer player, @Nullable Integer targetBoxId) {
-        ScaleBoxRecord scaleBoxRecord = ScaleBoxRecord.get();
+        ScaleBoxRecord scaleBoxRecord = ScaleBoxRecord.get(player.server);
         
         List<ScaleBoxRecord.Entry> entries = scaleBoxRecord.getEntriesByOwner(player.getUUID());
         
@@ -68,7 +68,7 @@ public class ScaleBoxGuiManager {
     }
     
     public void onRequestChunkLoading(ServerPlayer player, int boxId) {
-        ScaleBoxRecord scaleBoxRecord = ScaleBoxRecord.get();
+        ScaleBoxRecord scaleBoxRecord = ScaleBoxRecord.get(player.server);
         
         ScaleBoxRecord.Entry entry = scaleBoxRecord.getEntryById(boxId);
         
@@ -99,7 +99,7 @@ public class ScaleBoxGuiManager {
     public static void handleScaleBoxPropertyChange(
         ServerPlayer player, int boxId, Consumer<ScaleBoxRecord.Entry> func
     ) {
-        ScaleBoxRecord rec = ScaleBoxRecord.get();
+        ScaleBoxRecord rec = ScaleBoxRecord.get(player.server);
         
         ScaleBoxRecord.Entry entry = rec.getEntryById(boxId);
         
