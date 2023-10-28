@@ -1,0 +1,22 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "  A",
+    " N ",
+    "S  "
+  ],
+  "key": {
+    "A": {
+      "item": "minecraft:amethyst_crystal"
+    },
+    "N": {
+      "item": "minecraft:netherite_ingot"
+    },
+    "S": {
+      "item": "minecraft:stick"
+    }
+  },
+  "result": {
+    "item": "mini_scaled:manipulation_wand"
+  }
+}

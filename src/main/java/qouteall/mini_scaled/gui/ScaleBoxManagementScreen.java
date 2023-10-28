@@ -52,7 +52,7 @@ public class ScaleBoxManagementScreen extends Screen {
     
     private ScaleBoxListWidget listWidget;
     
-    private final ScaleBoxGuiManager.GuiData data;
+    private final ScaleBoxGuiManager.ManagementGuiData data;
     
     private @Nullable ScaleBoxRecord.Entry selected;
     
@@ -98,16 +98,16 @@ public class ScaleBoxManagementScreen extends Screen {
         });
     }
     
-    public static void openGui(ScaleBoxGuiManager.GuiData guiData) {
-        ScaleBoxManagementScreen screen = new ScaleBoxManagementScreen(guiData);
+    public static void openGui(ScaleBoxGuiManager.ManagementGuiData managementGuiData) {
+        ScaleBoxManagementScreen screen = new ScaleBoxManagementScreen(managementGuiData);
         
         Minecraft.getInstance().setScreen(screen);
     }
     
-    public ScaleBoxManagementScreen(ScaleBoxGuiManager.GuiData guiData) {
+    public ScaleBoxManagementScreen(ScaleBoxGuiManager.ManagementGuiData managementGuiData) {
         super(Component.literal("Scale box management"));
         
-        this.data = guiData;
+        this.data = managementGuiData;
         
         this.listWidget = new ScaleBoxListWidget(
             this, width, height,
@@ -115,7 +115,7 @@ public class ScaleBoxManagementScreen extends Screen {
             ScaleBoxEntryWidget.WIDGET_HEIGHT
         );
         
-        List<ScaleBoxRecord.Entry> entriesForPlayer = guiData.entriesForPlayer();
+        List<ScaleBoxRecord.Entry> entriesForPlayer = managementGuiData.entriesForPlayer();
         for (int i = 0; i < entriesForPlayer.size(); i++) {
             ScaleBoxRecord.Entry entry = entriesForPlayer.get(i);
             ScaleBoxEntryWidget widget = new ScaleBoxEntryWidget(
@@ -137,9 +137,9 @@ public class ScaleBoxManagementScreen extends Screen {
         ).build();
         optionsButton.visible = false;
         
-        if (guiData.boxId() != null) {
+        if (managementGuiData.boxId() != null) {
             ScaleBoxEntryWidget widget = listWidget.children().stream()
-                .filter(e -> e.entry.id == guiData.boxId())
+                .filter(e -> e.entry.id == managementGuiData.boxId())
                 .findFirst().orElse(null);
             
             if (widget != null) {

@@ -82,7 +82,7 @@ public class GlassFrameMatching {
         Predicate<BlockPos> predicate
     ) {
         BlockPos current = pos;
-        for (int i = 1; i < 64; i++) {
+        for (int i = 1; i < ScaleBoxManipulation.MAX_INNER_LEN; i++) {
             BlockPos newPos = pos.offset(direction.getNormal().multiply(i));
             if (predicate.test(newPos)) {
                 current = newPos;
@@ -99,12 +99,12 @@ public class GlassFrameMatching {
         Direction direction,
         Predicate<BlockPos> predicate
     ) {
-        for (int i = 1; i < 64; i++) {
+        for (int i = 1; i < ScaleBoxManipulation.MAX_INNER_LEN; i++) {
             BlockPos newPos = pos.offset(direction.getNormal().multiply(i));
             if (!predicate.test(newPos)) {
                 return i;
             }
         }
-        return 64;
+        return ScaleBoxManipulation.MAX_INNER_LEN;
     }
 }

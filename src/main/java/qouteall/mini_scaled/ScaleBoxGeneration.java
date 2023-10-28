@@ -157,7 +157,7 @@ public class ScaleBoxGeneration {
         double gridLen = 16.0 * 32;
         return BlockPos.containing(
             Math.round(pos.getX() / gridLen) * gridLen + 2,
-            64 + 2,
+            ScaleBoxManipulation.MAX_INNER_LEN + 2,
             Math.round(pos.getZ() / gridLen) * gridLen + 2
         );
     }

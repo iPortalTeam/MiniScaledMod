@@ -35,6 +35,9 @@ import java.util.UUID;
 import java.util.function.Function;
 
 public class ScaleBoxManipulation {
+    
+    public static final int MAX_INNER_LEN = 64;
+    
     private static AARotation getEntranceRotationForPlacing(UseOnContext context) {
         Validate.isTrue(context.getPlayer() != null);
         
@@ -362,7 +365,7 @@ public class ScaleBoxManipulation {
         
         int requiredEntranceItemNum = getVolume(newEntranceSize) - getVolume(oldEntranceSize);
         
-        if ((lenOnDirection + 1) * entry.scale > 64) {
+        if ((lenOnDirection + 1) * entry.scale > MAX_INNER_LEN) {
             player.displayClientMessage(
                 Component.translatable("mini_scaled.cannot_expand_size_limit"),
                 false

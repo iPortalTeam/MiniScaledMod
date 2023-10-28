@@ -201,7 +201,7 @@ public class ScaleBoxEntranceCreation {
         Predicate<BlockPos> pathPredicate,
         Function<BlockPos, IntBox> matchingFunc
     ) {
-        for (int i = 0; i < 64; i++) {
+        for (int i = 0; i < ScaleBoxManipulation.MAX_INNER_LEN; i++) {
             IntBox box = matchingFunc.apply(currentPos);
             
             if (box != null) {

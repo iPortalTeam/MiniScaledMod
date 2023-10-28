@@ -47,7 +47,7 @@ public class FallenEntityTeleportaion {
                 Math.abs(blockPos.getZ() - scaleBoxPos.getZ())
             );
             // too far from the nearest scale box position
-            if (horizontalDistance > 64 + 10) {
+            if (horizontalDistance > ScaleBoxManipulation.MAX_INNER_LEN + 10) {
                 ServerTeleportationManager.teleportEntityGeneral(
                     entity,
                     Vec3.atCenterOf(scaleBoxPos),

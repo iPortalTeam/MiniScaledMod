@@ -20,7 +20,7 @@ public class MiniScaledCommand {
                 ServerPlayer player = context.getSource().getPlayer();
                 Validate.notNull(player);
                 
-                ScaleBoxGuiManager.get(server).openGui(player, null);
+                ScaleBoxGuiManager.get(server).openManagementGui(player, null);
                 
                 return 0;
             })

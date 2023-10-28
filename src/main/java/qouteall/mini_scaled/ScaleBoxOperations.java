@@ -65,6 +65,16 @@ public class ScaleBoxOperations {
         return result;
     }
     
+    public static int getCost(
+        BlockPos boxSize, int scale
+    ) {
+        int product = boxSize.getX() * boxSize.getY() * boxSize.getZ();
+        
+        double r = Math.pow((double) product, 1.0 / 3) / 4;
+        
+        return (int) Math.ceil(r);
+    }
+    
     // Note should check for player action validity before calling this
     public static void wrap(
         ServerLevel world,

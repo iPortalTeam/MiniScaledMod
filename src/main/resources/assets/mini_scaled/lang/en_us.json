@@ -29,5 +29,7 @@
   "mini_scaled.select_a_scale_box": "Select a scale box",
   "mini_scaled.enable_scale_transform": "Enable scale transform",
   "mini_scaled.enable_gravity_transform": "Enable gravity transform",
-  "mini_scaled.enable_access_control": "Enable access control"
+  "mini_scaled.enable_access_control": "Enable access control",
+  "mini_scaled.cannot_wrap_size_too_small": "Cannot Wrap. Glass Frame Size Too Small.",
+  "mini_scaled.no_integer_scale": "There is no possible integer scale for box size %d x %d x %d"
 }
