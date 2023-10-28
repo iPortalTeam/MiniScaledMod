@@ -79,7 +79,7 @@ public class ScaleBoxEntryWidget extends ContainerObjectSelectionList.Entry<Scal
     }
     
     @Override
-    public List<? extends GuiEventListener> children() {
+    public @NotNull List<? extends GuiEventListener> children() {
         return children;
     }
     
