@@ -27,6 +27,7 @@ import qouteall.mini_scaled.block.BoxBarrierBlock;
 import qouteall.mini_scaled.block.ScaleBoxPlaceholderBlock;
 import qouteall.mini_scaled.block.ScaleBoxPlaceholderBlockEntity;
 import qouteall.mini_scaled.config.MiniScaledConfig;
+import qouteall.mini_scaled.gui.ScaleBoxGuiManager;
 import qouteall.mini_scaled.item.ManipulationWandItem;
 import qouteall.mini_scaled.item.ScaleBoxEntranceItem;
 import qouteall.q_misc_util.LifecycleHack;
@@ -57,6 +58,8 @@ public class MiniScaledModInitializer implements ModInitializer {
         ManipulationWandItem.init();
         
         ScaleBoxEntranceCreation.init();
+        
+        ScaleBoxGuiManager.init();
         
         IPGlobal.enableDepthClampForPortalRendering = true;
         

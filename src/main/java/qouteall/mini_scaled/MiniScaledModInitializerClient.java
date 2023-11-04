@@ -15,6 +15,8 @@ public class MiniScaledModInitializerClient implements ClientModInitializer {
         ClientScaleBoxInteractionControl.init();
         
         ScaleBoxManagementScreen.init_();
+        
+        ClientUnwrappingInteraction.init();
     }
     
     @Override

@@ -4,6 +4,7 @@ import com.mojang.logging.LogUtils;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
@@ -30,6 +31,7 @@ import qouteall.mini_scaled.ScaleBoxGeneration;
 import qouteall.mini_scaled.ScaleBoxOperations;
 import qouteall.mini_scaled.ScaleBoxRecord;
 import qouteall.mini_scaled.ducks.MiniScaled_MinecraftServerAccessor;
+import qouteall.mini_scaled.item.ScaleBoxEntranceItem;
 import qouteall.mini_scaled.util.MSUtil;
 import qouteall.q_misc_util.api.McRemoteProcedureCall;
 import qouteall.q_misc_util.my_util.IntBox;
@@ -42,6 +44,12 @@ import java.util.function.Consumer;
 public class ScaleBoxGuiManager {
     private static final Logger LOGGER = LogUtils.getLogger();
     
+    private static final int ACQUIRE_ENTRANCE_COOLDOWN_SECONDS = 30;
+    
+    public static void init() {
+        ServerTickEvents.END_SERVER_TICK.register(server -> get(server).tick());
+    }
+    
     private final MinecraftServer server;
     
     public static ScaleBoxGuiManager get(MinecraftServer server) {
@@ -49,9 +57,13 @@ public class ScaleBoxGuiManager {
     }
     
     public static class StateForPlayer {
+        public @Nullable Integer clickedBoxId;
+        
         public @Nullable ChunkLoader chunkLoader;
         
         public @Nullable PendingScaleBoxWrapping pendingScaleBoxWrapping;
+        
+        public long lastGetEntranceGameTime = 0;
         
         // TODO record player position and remove chunk loader when player moves
         
@@ -77,6 +89,10 @@ public class ScaleBoxGuiManager {
         return this.stateMap.computeIfAbsent(player, k -> new StateForPlayer());
     }
     
+    private void tick() {
+        stateMap.entrySet().removeIf(e -> e.getKey().isRemoved());
+    }
+    
     public void openManagementGui(ServerPlayer player, @Nullable Integer targetBoxId) {
         ScaleBoxRecord scaleBoxRecord = ScaleBoxRecord.get(player.server);
         
@@ -90,6 +106,9 @@ public class ScaleBoxGuiManager {
             "qouteall.mini_scaled.gui.ScaleBoxGuiManager.RemoteCallables.tellClientToOpenManagementGui",
             managementGuiData.toTag()
         );
+        
+        StateForPlayer playerState = getPlayerState(player);
+        playerState.clickedBoxId = targetBoxId;
     }
     
     public void onRequestChunkLoading(ServerPlayer player, int boxId) {
@@ -118,7 +137,7 @@ public class ScaleBoxGuiManager {
         
         state.clearChunkLoader(player);
         
-        stateMap.remove(player);
+        state.clickedBoxId = null;
     }
     
     public static void handleScaleBoxPropertyChange(
@@ -156,7 +175,7 @@ public class ScaleBoxGuiManager {
         
         if (areaSize.getX() <= 2 || areaSize.getY() <= 2 || areaSize.getZ() <= 2) {
             player.sendSystemMessage(Component.translatable(
-                "mini_scaled.cannot_wrap_size_too_small"
+                "mini_scaled.cannot_wrap_invalid_frame"
             ));
             return false;
         }
@@ -279,6 +298,43 @@ public class ScaleBoxGuiManager {
         playerState.pendingScaleBoxWrapping = null;
     }
     
+    private void acquireEntrance(ServerPlayer player, int boxId) {
+        StateForPlayer playerState = getPlayerState(player);
+        
+        long gameTime = player.level().getGameTime();
+        
+        if (gameTime - playerState.lastGetEntranceGameTime > 20 * ACQUIRE_ENTRANCE_COOLDOWN_SECONDS) {
+            playerState.lastGetEntranceGameTime = gameTime;
+            
+            ScaleBoxRecord record = ScaleBoxRecord.get(player.server);
+            ScaleBoxRecord.Entry entry = record.getEntryById(boxId);
+            
+            if (entry == null) {
+                LOGGER.warn("Invalid scale box id {} {} when acquiring entrance", boxId, player);
+                player.sendSystemMessage(Component.literal("Invalid box id"));
+                return;
+            }
+            
+            ItemStack itemStack = new ItemStack(
+                ScaleBoxEntranceItem.instance, 1
+            );
+            itemStack.setTag(
+                new ScaleBoxEntranceItem.ItemInfo(
+                    entry.scale, entry.color, entry.ownerId, entry.ownerNameCache, boxId
+                ).toTag()
+            );
+            
+            player.getInventory().add(itemStack);
+            // no need to care about the case when inventory is full, because entrance item is free now
+        }
+        else {
+            player.sendSystemMessage(Component.translatable(
+                "mini_scaled.acquire_entrance_cooldown",
+                ACQUIRE_ENTRANCE_COOLDOWN_SECONDS
+            ));
+        }
+    }
+    
     public static record ManagementGuiData(
         List<ScaleBoxRecord.Entry> entriesForPlayer,
         @Nullable Integer boxId
@@ -364,6 +420,12 @@ public class ScaleBoxGuiManager {
         public static void cancelWrapping(ServerPlayer player) {
             ScaleBoxGuiManager.get(player.server).cancelWrapping(player);
         }
+        
+        public static void acquireEntrance(ServerPlayer player, int boxId) {
+            ScaleBoxGuiManager.get(player.server).acquireEntrance(player,boxId);
+        }
+        
+        
     }
     
 }

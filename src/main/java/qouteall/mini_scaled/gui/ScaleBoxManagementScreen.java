@@ -28,6 +28,7 @@ import qouteall.imm_ptl.core.render.MyRenderHelper;
 import qouteall.imm_ptl.core.render.PortalRenderer;
 import qouteall.imm_ptl.core.render.context_management.RenderStates;
 import qouteall.imm_ptl.core.render.context_management.WorldRenderInfo;
+import qouteall.mini_scaled.ClientUnwrappingInteraction;
 import qouteall.mini_scaled.MiniScaledPortal;
 import qouteall.mini_scaled.ScaleBoxRecord;
 import qouteall.mini_scaled.VoidDimension;
@@ -83,6 +84,10 @@ public class ScaleBoxManagementScreen extends Screen {
     
     private final Button optionsButton;
     
+    private final Button getEntranceButton;
+    
+    private final Button unwrapButton;
+    
     public static void init_() {
         // don't render MiniScaled portal when rendering the view in scale box gui
         PortalRenderer.PORTAL_RENDERING_PREDICATE.register(portal -> {
@@ -110,6 +115,7 @@ public class ScaleBoxManagementScreen extends Screen {
         
         // in vanilla it's set in init(), but I want to initialize early
         this.minecraft = Minecraft.getInstance();
+        this.font = minecraft.font;
         
         this.data = managementGuiData;
         
@@ -141,6 +147,31 @@ public class ScaleBoxManagementScreen extends Screen {
         ).build();
         optionsButton.visible = false;
         
+        getEntranceButton = Button.builder(
+            Component.translatable("mini_scaled.get_entrance"),
+            button -> {
+                if (selected != null) {
+                    /**{@link ScaleBoxGuiManager.RemoteCallables#acquireEntrance}*/
+                    McRemoteProcedureCall.tellServerToInvoke(
+                        "qouteall.mini_scaled.gui.ScaleBoxGuiManager.RemoteCallables.acquireEntrance",
+                        selected.id
+                    );
+                    minecraft.setScreen(null);
+                }
+            }
+        ).build();
+        getEntranceButton.visible = false;
+        
+        unwrapButton = Button.builder(
+            Component.translatable("mini_scaled.unwrap"),
+            button -> {
+                if (selected != null) {
+                    ClientUnwrappingInteraction.startPreUnwrapping(selected);
+                }
+            }
+        ).build();
+        unwrapButton.visible = false;
+        
         if (managementGuiData.boxId() != null) {
             ScaleBoxEntryWidget widget = listWidget.children().stream()
                 .filter(e -> e.entry.id == managementGuiData.boxId())
@@ -153,7 +184,7 @@ public class ScaleBoxManagementScreen extends Screen {
         
         // initialize the global singleton framebuffer
         if (frameBuffer == null) {
-            // the framebuffer size doesn't matter here
+            // the initial framebuffer size doesn't matter here
             // because it will be automatically resized when rendering
             frameBuffer = new TextureTarget(2, 2, true, true);
         }
@@ -164,6 +195,11 @@ public class ScaleBoxManagementScreen extends Screen {
         listWidget.setSelected(w);
         labelCache = null;
         optionsButton.visible = true;
+        getEntranceButton.visible = true;
+        
+        // unwrap button is only visible for the interacted box
+        unwrapButton.visible = Objects.equals(data.boxId(), w.entry.id);
+        
         McRemoteProcedureCall.tellServerToInvoke(
             "qouteall.mini_scaled.gui.ScaleBoxGuiManager.RemoteCallables.requestChunkLoading",
             w.entry.id
@@ -199,9 +235,12 @@ public class ScaleBoxManagementScreen extends Screen {
         super.render(guiGraphics, mouseX, mouseY, partialTick);
         
         if (selected == null) {
+            MutableComponent text = data.entriesForPlayer().isEmpty() ?
+                Component.translatable("mini_scaled.no_scale_box") :
+                Component.translatable("mini_scaled.select_a_scale_box");
             guiGraphics.drawCenteredString(
                 font,
-                Component.translatable("mini_scaled.select_a_scale_box"),
+                text,
                 (int) (width * (1 - VIEW_RATIO)) + (int) (width * VIEW_RATIO) / 2,
                 (int) (height * VIEW_RATIO) / 2,
                 0xFFFFFFFF

@@ -71,7 +71,7 @@ public class ScaleBoxWrappingScreen extends Screen {
         for (Option option : options) {
             optionListWidget.children().add(new OptionEntryWidget(
                 option, this::onSelect,
-                costItem
+                costItem, boxSize
             ));
         }
         
@@ -213,17 +213,19 @@ public class ScaleBoxWrappingScreen extends Screen {
         public final Option option;
         public final Consumer<OptionEntryWidget> selectCallback;
         public final Item costItem;
+        private final BlockPos outerBoxSize;
         
         private MultiLineLabel line1;
         private MultiLineLabel line2;
         
         public OptionEntryWidget(
             Option option, Consumer<OptionEntryWidget> selectCallback,
-            Item costItem
+            Item costItem, BlockPos outerBoxSize
         ) {
             this.option = option;
             this.selectCallback = selectCallback;
             this.costItem = costItem;
+            this.outerBoxSize = outerBoxSize;
         }
         
         @Override
@@ -244,7 +246,12 @@ public class ScaleBoxWrappingScreen extends Screen {
                 line1 = MultiLineLabel.create(
                     font,
                     Component.translatable("mini_scaled.scale")
-                        .append(String.valueOf(option.scale())),
+                        .append(String.valueOf(option.scale()))
+                        .append("   (%d × %d × %d)".formatted(
+                            outerBoxSize.getX() / option.scale(),
+                            outerBoxSize.getY() / option.scale(),
+                            outerBoxSize.getZ() / option.scale()
+                        )),
                     width
                 );
             }

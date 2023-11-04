@@ -50,18 +50,24 @@ public class ScaleBoxEntranceItem extends Item {
         @Nullable
         public String ownerNameCache;
         
+        // boxId only exists in newer versions of the mod
+        @Nullable
+        public Integer boxId;
+        
         public ItemInfo(int scale, DyeColor color) {
             this.scale = scale;
             this.color = color;
         }
         
         public ItemInfo(
-            int size, DyeColor color, @NotNull UUID ownerId, @NotNull String ownerNameCache
+            int scale, DyeColor color, @NotNull UUID ownerId, @NotNull String ownerNameCache,
+            int boxId
         ) {
-            this.scale = size;
+            this.scale = scale;
             this.color = color;
             this.ownerId = ownerId;
             this.ownerNameCache = ownerNameCache;
+            this.boxId = boxId;
         }
         
         public ItemInfo(CompoundTag tag) {
@@ -70,6 +76,9 @@ public class ScaleBoxEntranceItem extends Item {
             if (tag.contains("ownerId")) {
                 ownerId = tag.getUUID("ownerId");
                 ownerNameCache = tag.getString("ownerNameCache");
+            }
+            if (tag.contains("boxId")) {
+                boxId = tag.getInt("boxId");
             }
         }
         
@@ -80,6 +89,15 @@ public class ScaleBoxEntranceItem extends Item {
                 compoundTag.putUUID("ownerId", ownerId);
                 compoundTag.putString("ownerNameCache", ownerNameCache);
             }
+            if (boxId != null) {
+                compoundTag.putInt("boxId", boxId);
+            }
+        }
+        
+        public CompoundTag toTag() {
+            CompoundTag compoundTag = new CompoundTag();
+            writeToTag(compoundTag);
+            return compoundTag;
         }
     }
     
@@ -161,7 +179,7 @@ public class ScaleBoxEntranceItem extends Item {
         
         ItemStack itemStack = new ItemStack(ScaleBoxEntranceItem.instance);
         new ScaleBoxEntranceItem.ItemInfo(
-            entry.scale, entry.color, entry.ownerId, entry.ownerNameCache
+            entry.scale, entry.color, entry.ownerId, entry.ownerNameCache, boxId
         ).writeToTag(itemStack.getOrCreateTag());
         
         return itemStack;

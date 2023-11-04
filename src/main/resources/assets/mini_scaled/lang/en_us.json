@@ -30,12 +30,16 @@
   "mini_scaled.enable_scale_transform": "Enable scale transform",
   "mini_scaled.enable_gravity_transform": "Enable gravity transform",
   "mini_scaled.enable_access_control": "Enable access control",
-  "mini_scaled.cannot_wrap_size_too_small": "Cannot Wrap. Glass Frame Size Too Small.",
+  "mini_scaled.cannot_wrap_invalid_frame": "Cannot Wrap. Glass Frame is incomplete.",
   "mini_scaled.no_integer_scale": "There is no possible integer scale for box size %d x %d x %d",
   "mini_scaled.wrap_select_scale": "Select the scale for wrapping",
   "mini_scaled.ingredient_cost": "Requires: ",
-  "mini_scaled.wrap_box_size": "Box Size: %s * %s * %s",
+  "mini_scaled.wrap_box_size": "Box Size: %s × %s × %s",
   "mini_scaled.not_enough_ingredient": "You don't have enough ingredient (%s %s)",
   "mini_scaled.already_has_box":"You already have scale box with color %s and scale %s. Try unwrapping that or try using another color.",
-  "mini_scaled.glass_frame_broken": "The glass frame is broken."
+  "mini_scaled.glass_frame_broken": "The glass frame is broken.",
+  "mini_scaled.no_scale_box": "You don't have any scale box yet",
+  "mini_scaled.get_entrance": "Get Entrance Item",
+  "mini_scaled.acquire_entrance_cooldown": "You can only get one entrance item every %s seconds.",
+  "mini_scaled.unwrap": "Unwrap"
 }
