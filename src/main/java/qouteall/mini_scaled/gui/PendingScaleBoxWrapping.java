@@ -1,5 +1,6 @@
 package qouteall.mini_scaled.gui;
 
+import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.level.Level;
@@ -11,5 +12,6 @@ public record PendingScaleBoxWrapping(
     ResourceKey<Level> dimension,
     IntBox glassFrame,
     DyeColor color,
-    List<ScaleBoxWrappingScreen.Option> options
+    List<ScaleBoxWrappingScreen.Option> options,
+    BlockPos clickingPos
 ) {}

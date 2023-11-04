@@ -166,7 +166,7 @@ public class ManipulationWandItem extends Item {
             if (glassFrame != null) {
                 scaleBoxGuiManager.tryStartingPendingWrapping(
                     ((ServerPlayer) player), world.dimension(),
-                    glassFrame, color
+                    glassFrame, color, clickedPos
                 );
             }
             

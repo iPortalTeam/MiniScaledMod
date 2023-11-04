@@ -12,18 +12,25 @@ import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.DyeColor;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import qouteall.imm_ptl.core.McHelper;
 import qouteall.imm_ptl.core.api.PortalAPI;
 import qouteall.imm_ptl.core.chunk_loading.ChunkLoader;
+import qouteall.mini_scaled.ScaleBoxEntranceCreation;
 import qouteall.mini_scaled.ScaleBoxGeneration;
 import qouteall.mini_scaled.ScaleBoxOperations;
 import qouteall.mini_scaled.ScaleBoxRecord;
 import qouteall.mini_scaled.ducks.MiniScaled_MinecraftServerAccessor;
+import qouteall.mini_scaled.util.MSUtil;
 import qouteall.q_misc_util.api.McRemoteProcedureCall;
 import qouteall.q_misc_util.my_util.IntBox;
 
@@ -140,7 +147,8 @@ public class ScaleBoxGuiManager {
      */
     public boolean tryStartingPendingWrapping(
         ServerPlayer player, ResourceKey<Level> dimension,
-        IntBox glassFrame, DyeColor color
+        IntBox glassFrame, DyeColor color,
+        BlockPos clickedPos
     ) {
         StateForPlayer playerState = getPlayerState(player);
         
@@ -173,7 +181,7 @@ public class ScaleBoxGuiManager {
             ).toList();
         
         playerState.pendingScaleBoxWrapping = new PendingScaleBoxWrapping(
-            dimension, glassFrame, color, options
+            dimension, glassFrame, color, options, clickedPos
         );
         
         /**{@link qouteall.mini_scaled.gui.ScaleBoxGuiManager.RemoteCallables#tellClientToOpenPendingWrappingGui}*/
@@ -182,7 +190,8 @@ public class ScaleBoxGuiManager {
             "qouteall.mini_scaled.gui.ScaleBoxGuiManager.RemoteCallables.tellClientToOpenPendingWrappingGui",
             dimension,
             options,
-            glassFrame.getSize()
+            glassFrame.getSize(),
+            ScaleBoxEntranceCreation.getCreationItem()
         );
         
         return true;
@@ -197,6 +206,71 @@ public class ScaleBoxGuiManager {
             player.sendSystemMessage(Component.literal("Failed to confirm wrapping scale box."));
             return;
         }
+        
+        ScaleBoxWrappingScreen.Option option = pendingScaleBoxWrapping.options().stream()
+            .filter(o -> o.scale() == scale)
+            .findFirst().orElse(null);
+        
+        if (option == null) {
+            player.sendSystemMessage(Component.literal("Invalid option"));
+            return;
+        }
+        
+        // check color+scale conflict
+        DyeColor color = pendingScaleBoxWrapping.color();
+        ScaleBoxRecord scaleBoxRecord = ScaleBoxRecord.get(server);
+        boolean hasExisting = scaleBoxRecord.getEntriesByOwner(player.getUUID())
+            .stream().anyMatch(e -> e.color == color && e.scale == scale);
+        if (hasExisting) {
+            player.sendSystemMessage(Component.translatable(
+                "mini_scaled.already_has_box",
+                MSUtil.getColorText(color),
+                scale
+            ));
+            return;
+        }
+        
+        // check glass frame integrity
+        IntBox glassFrame = pendingScaleBoxWrapping.glassFrame();
+        ServerLevel world = server.getLevel(pendingScaleBoxWrapping.dimension());
+        if (world == null) {
+            LOGGER.error("Cannot find world {}", pendingScaleBoxWrapping.dimension().location());
+            return;
+        }
+        BlockState glassBlockState =
+            ScaleBoxGeneration.getGlassBlock(pendingScaleBoxWrapping.color()).defaultBlockState();
+        for (IntBox edge : glassFrame.get12Edges()) {
+            if (edge.fastStream().anyMatch(p -> world.getBlockState(p) != glassBlockState)) {
+                player.sendSystemMessage(Component.translatable(
+                    "mini_scaled.glass_frame_broken"
+                ));
+                return;
+            }
+        }
+        
+        // check item
+        if (!player.isCreative()) {
+            int ingredientCost = option.ingredientCost();
+            Item costItem = ScaleBoxEntranceCreation.getCreationItem();
+            ItemStack costItemStack = new ItemStack(costItem, ingredientCost);
+            Inventory playerInventory = player.getInventory();
+            int playerItemCount = playerInventory.countItem(costItem);
+            if (playerItemCount < ingredientCost) {
+                player.sendSystemMessage(Component.translatable(
+                    "mini_scaled.not_enough_ingredient",
+                    ingredientCost, costItemStack.getDisplayName()
+                ));
+                return;
+            }
+            
+            MSUtil.removeItem(playerInventory, s -> s.getItem() == costItem, ingredientCost);
+        }
+        
+        ScaleBoxOperations.wrap(
+            world, pendingScaleBoxWrapping.glassFrame(),
+            player, pendingScaleBoxWrapping.color(),
+            scale, pendingScaleBoxWrapping.clickingPos()
+        );
     }
     
     public void cancelWrapping(ServerPlayer player) {
@@ -273,11 +347,12 @@ public class ScaleBoxGuiManager {
         public static void tellClientToOpenPendingWrappingGui(
             ResourceKey<Level> dimension,
             List<ScaleBoxWrappingScreen.Option> options,
-            BlockPos boxSize
+            BlockPos boxSize,
+            Item creationItem
         ) {
             ScaleBoxWrappingScreen screen = new ScaleBoxWrappingScreen(
                 Component.literal(""),
-                options, boxSize
+                options, boxSize, creationItem
             );
             Minecraft.getInstance().setScreen(screen);
         }

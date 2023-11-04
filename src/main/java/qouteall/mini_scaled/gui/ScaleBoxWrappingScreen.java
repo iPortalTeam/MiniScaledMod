@@ -4,14 +4,12 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractSelectionList;
-import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.ContainerObjectSelectionList;
 import net.minecraft.client.gui.components.MultiLineLabel;
 import net.minecraft.client.gui.components.StringWidget;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.layouts.GridLayout;
-import net.minecraft.client.gui.layouts.LayoutElement;
 import net.minecraft.client.gui.layouts.LayoutSettings;
 import net.minecraft.client.gui.narration.NarratableEntry;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
@@ -19,11 +17,10 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
 import org.apache.commons.lang3.Validate;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import qouteall.q_misc_util.api.McRemoteProcedureCall;
 
 import java.util.List;
@@ -39,6 +36,7 @@ public class ScaleBoxWrappingScreen extends Screen {
     ) {}
     
     public final List<Option> options;
+    private final Item costItem;
     
     private final OptionListWidget optionListWidget;
     
@@ -54,7 +52,8 @@ public class ScaleBoxWrappingScreen extends Screen {
     private final Button cancelButton;
     
     public ScaleBoxWrappingScreen(
-        Component title, List<Option> options, BlockPos boxSize
+        Component title, List<Option> options, BlockPos boxSize,
+        Item costItem
     ) {
         super(title);
         
@@ -71,7 +70,8 @@ public class ScaleBoxWrappingScreen extends Screen {
         
         for (Option option : options) {
             optionListWidget.children().add(new OptionEntryWidget(
-                option, this::onSelect
+                option, this::onSelect,
+                costItem
             ));
         }
         
@@ -103,6 +103,8 @@ public class ScaleBoxWrappingScreen extends Screen {
         this.confirmButton.active = false;
         
         this.proxyForOptionListWidget = new StringWidget(Component.empty(), font);
+        
+        this.costItem = costItem;
     }
     
     private void onSelect(OptionEntryWidget selected) {
@@ -181,11 +183,6 @@ public class ScaleBoxWrappingScreen extends Screen {
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
         super.render(guiGraphics, mouseX, mouseY, partialTick);
 
-//        guiGraphics.drawCenteredString(
-//            minecraft.font,
-//            Component.translatable("mini_scaled.wrap_select_scale"),
-//            width / 2, 10, 0xffffffff
-//        );
     }
     
     @Override
@@ -215,13 +212,18 @@ public class ScaleBoxWrappingScreen extends Screen {
         
         public final Option option;
         public final Consumer<OptionEntryWidget> selectCallback;
+        public final Item costItem;
         
         private MultiLineLabel line1;
         private MultiLineLabel line2;
         
-        public OptionEntryWidget(Option option, Consumer<OptionEntryWidget> selectCallback) {
+        public OptionEntryWidget(
+            Option option, Consumer<OptionEntryWidget> selectCallback,
+            Item costItem
+        ) {
             this.option = option;
             this.selectCallback = selectCallback;
+            this.costItem = costItem;
         }
         
         @Override
@@ -268,7 +270,7 @@ public class ScaleBoxWrappingScreen extends Screen {
             // render cost item icon
             int costItemIconOffset = line2.getWidth();
             
-            ItemStack itemStack = new ItemStack(Items.NETHERITE_INGOT, option.ingredientCost());
+            ItemStack itemStack = new ItemStack(costItem, option.ingredientCost());
             guiGraphics.renderItem(
                 itemStack,
                 left + costItemIconOffset, top + 15 - 5

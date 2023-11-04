@@ -34,5 +34,8 @@
   "mini_scaled.no_integer_scale": "There is no possible integer scale for box size %d x %d x %d",
   "mini_scaled.wrap_select_scale": "Select the scale for wrapping",
   "mini_scaled.ingredient_cost": "Requires: ",
-  "mini_scaled.wrap_box_size": "Box Size: %s * %s * %s"
+  "mini_scaled.wrap_box_size": "Box Size: %s * %s * %s",
+  "mini_scaled.not_enough_ingredient": "You don't have enough ingredient (%s %s)",
+  "mini_scaled.already_has_box":"You already have scale box with color %s and scale %s. Try unwrapping that or try using another color.",
+  "mini_scaled.glass_frame_broken": "The glass frame is broken."
 }
