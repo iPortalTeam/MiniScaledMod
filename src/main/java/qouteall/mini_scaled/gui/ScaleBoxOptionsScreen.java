@@ -9,6 +9,7 @@ import net.minecraft.client.gui.layouts.LayoutSettings;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.server.level.ServerPlayer;
 import org.jetbrains.annotations.Nullable;
 import qouteall.mini_scaled.ScaleBoxRecord;
 import qouteall.q_misc_util.api.McRemoteProcedureCall;
@@ -81,6 +82,7 @@ public class ScaleBoxOptionsScreen extends Screen {
     
     @Override
     public void onClose() {
+        /**{@link ScaleBoxGuiManager.RemoteCallables#updateScaleBoxOption(ServerPlayer, int, boolean, boolean, boolean)}*/
         McRemoteProcedureCall.tellServerToInvoke(
             "qouteall.mini_scaled.gui.ScaleBoxGuiManager.RemoteCallables.updateScaleBoxOption",
             entry.id,

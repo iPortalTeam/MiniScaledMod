@@ -31,5 +31,8 @@
   "mini_scaled.enable_gravity_transform": "Enable gravity transform",
   "mini_scaled.enable_access_control": "Enable access control",
   "mini_scaled.cannot_wrap_size_too_small": "Cannot Wrap. Glass Frame Size Too Small.",
-  "mini_scaled.no_integer_scale": "There is no possible integer scale for box size %d x %d x %d"
+  "mini_scaled.no_integer_scale": "There is no possible integer scale for box size %d x %d x %d",
+  "mini_scaled.wrap_select_scale": "Select the scale for wrapping",
+  "mini_scaled.ingredient_cost": "Requires: ",
+  "mini_scaled.wrap_box_size": "Box Size: %s * %s * %s"
 }

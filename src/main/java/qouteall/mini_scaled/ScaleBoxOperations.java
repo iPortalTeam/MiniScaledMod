@@ -70,9 +70,11 @@ public class ScaleBoxOperations {
     ) {
         int product = boxSize.getX() * boxSize.getY() * boxSize.getZ();
         
-        double r = Math.pow((double) product, 1.0 / 3) / 4;
+        double r = Math.pow((double) product, 1.0 / 3) / 8;
         
-        return (int) Math.ceil(r);
+        double r2 = scale / 8.0;
+        
+        return (int) Math.ceil(r + r2);
     }
     
     // Note should check for player action validity before calling this
@@ -168,20 +170,20 @@ public class ScaleBoxOperations {
      * (for example, the torch block drops when its wall block is missing. Placing torch before wall make it break. Clearing wall before torch also make it break.)
      * In {@link Level#setBlock(BlockPos, BlockState, int, int)}, the meaning of flag on server side:
      * 1 : Cause {@link NeighborUpdater#updateNeighborsAtExceptFromFacing(BlockPos, Block, Direction)}
-     *     Including redstone updates.
+     * Including redstone updates.
      * 2 : Cause mob AI pathfinding update and notify ChunkHolder block change for network sync.
-     *     This is always required if we don't want client block de-sync.
+     * This is always required if we don't want client block de-sync.
      * 4 : not relevant on server side
      * 8 : ?
      * 16: cause shape update (this is the update that cause torch to drop without wall)
      * 32: drop item when block destroys {@link Block#updateOrDestroy(BlockState, BlockState, LevelAccessor, BlockPos, int, int)}
-     *
-     *  -2 erases 1,  -33 erases 32,  -34 erases 1 and 32
-     *
+     * <p>
+     * -2 erases 1,  -33 erases 32,  -34 erases 1 and 32
+     * <p>
      * Ref:
      * {@link StructureTemplate#placeInWorld(ServerLevelAccessor, BlockPos, BlockPos, StructurePlaceSettings, RandomSource, int)}
      * uses flag 2 for structure block (use flag 16 + 4 to remove block entity with barrier before)
-     *
+     * <p>
      * {@link FillCommand#fillBlocks(CommandSourceStack, BoundingBox, BlockInput, FillCommand.Mode, Predicate)}
      * uses flag 2
      */

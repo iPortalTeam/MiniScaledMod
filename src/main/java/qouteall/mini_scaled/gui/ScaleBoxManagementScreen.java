@@ -14,6 +14,7 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.Style;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
@@ -107,6 +108,9 @@ public class ScaleBoxManagementScreen extends Screen {
     public ScaleBoxManagementScreen(ScaleBoxGuiManager.ManagementGuiData managementGuiData) {
         super(Component.literal("Scale box management"));
         
+        // in vanilla it's set in init(), but I want to initialize early
+        this.minecraft = Minecraft.getInstance();
+        
         this.data = managementGuiData;
         
         this.listWidget = new ScaleBoxListWidget(
@@ -192,8 +196,6 @@ public class ScaleBoxManagementScreen extends Screen {
     
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        renderBackground(guiGraphics, mouseX, mouseY, partialTick);
-        
         super.render(guiGraphics, mouseX, mouseY, partialTick);
         
         if (selected == null) {
@@ -341,6 +343,7 @@ public class ScaleBoxManagementScreen extends Screen {
         super.onClose();
         
         // tell server to remove chunk loader
+        /**{@link ScaleBoxGuiManager.RemoteCallables#onGuiClose(ServerPlayer)}*/
         McRemoteProcedureCall.tellServerToInvoke(
             "qouteall.mini_scaled.gui.ScaleBoxGuiManager.RemoteCallables.onGuiClose"
         );
@@ -359,5 +362,13 @@ public class ScaleBoxManagementScreen extends Screen {
         }
         
         return false;
+    }
+    
+    // change background color
+    @Override
+    public void renderTransparentBackground(GuiGraphics guiGraphics) {
+        guiGraphics.fillGradient(
+            0, 0, this.width, this.height, 0x21000000, 0x21000000
+        );
     }
 }

@@ -87,6 +87,6 @@ public class ScaleBoxEntryWidget extends ContainerObjectSelectionList.Entry<Scal
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
         selectCallback.accept(this);
         super.mouseClicked(mouseX, mouseY, button);
-        return true;//allow outer dragging
+        return true;
     }
 }

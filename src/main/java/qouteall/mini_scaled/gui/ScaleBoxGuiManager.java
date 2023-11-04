@@ -146,7 +146,7 @@ public class ScaleBoxGuiManager {
         
         BlockPos areaSize = glassFrame.getSize();
         
-        if (areaSize.getX() <= 1 || areaSize.getY() <= 1 || areaSize.getZ() <= 1) {
+        if (areaSize.getX() <= 2 || areaSize.getY() <= 2 || areaSize.getZ() <= 2) {
             player.sendSystemMessage(Component.translatable(
                 "mini_scaled.cannot_wrap_size_too_small"
             ));
@@ -176,13 +176,33 @@ public class ScaleBoxGuiManager {
             dimension, glassFrame, color, options
         );
         
+        /**{@link qouteall.mini_scaled.gui.ScaleBoxGuiManager.RemoteCallables#tellClientToOpenPendingWrappingGui}*/
         McRemoteProcedureCall.tellClientToInvoke(
             player,
             "qouteall.mini_scaled.gui.ScaleBoxGuiManager.RemoteCallables.tellClientToOpenPendingWrappingGui",
-            options
+            dimension,
+            options,
+            glassFrame.getSize()
         );
         
         return true;
+    }
+    
+    public void confirmWrapping(ServerPlayer player, int scale) {
+        StateForPlayer playerState = getPlayerState(player);
+        
+        PendingScaleBoxWrapping pendingScaleBoxWrapping = playerState.pendingScaleBoxWrapping;
+        
+        if (pendingScaleBoxWrapping == null) {
+            player.sendSystemMessage(Component.literal("Failed to confirm wrapping scale box."));
+            return;
+        }
+    }
+    
+    public void cancelWrapping(ServerPlayer player) {
+        StateForPlayer playerState = getPlayerState(player);
+        
+        playerState.pendingScaleBoxWrapping = null;
     }
     
     public static record ManagementGuiData(
@@ -252,13 +272,22 @@ public class ScaleBoxGuiManager {
         @Environment(EnvType.CLIENT)
         public static void tellClientToOpenPendingWrappingGui(
             ResourceKey<Level> dimension,
-            List<ScaleBoxWrappingScreen.Option> options
+            List<ScaleBoxWrappingScreen.Option> options,
+            BlockPos boxSize
         ) {
             ScaleBoxWrappingScreen screen = new ScaleBoxWrappingScreen(
                 Component.literal(""),
-                options
+                options, boxSize
             );
             Minecraft.getInstance().setScreen(screen);
+        }
+        
+        public static void confirmWrapping(ServerPlayer player, int scale) {
+            ScaleBoxGuiManager.get(player.server).confirmWrapping(player, scale);
+        }
+        
+        public static void cancelWrapping(ServerPlayer player) {
+            ScaleBoxGuiManager.get(player.server).cancelWrapping(player);
         }
     }
     
