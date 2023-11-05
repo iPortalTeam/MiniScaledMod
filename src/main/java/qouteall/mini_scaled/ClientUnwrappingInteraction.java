@@ -3,26 +3,40 @@ package qouteall.mini_scaled;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.logging.LogUtils;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
+import net.fabricmc.fabric.api.event.client.player.ClientPreAttackCallback;
+import net.fabricmc.fabric.api.event.player.UseItemCallback;
+import net.fabricmc.fabric.impl.event.interaction.InteractionEventsRouterClient;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.core.BlockPos;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResultHolder;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
+import qouteall.imm_ptl.core.CHelper;
 import qouteall.imm_ptl.core.IPGlobal;
 import qouteall.imm_ptl.core.render.context_management.PortalRendering;
 import qouteall.imm_ptl.core.render.context_management.WorldRenderInfo;
+import qouteall.mini_scaled.gui.ScaleBoxInteractionManager;
 import qouteall.mini_scaled.item.ManipulationWandItem;
+import qouteall.q_misc_util.CustomTextOverlay;
+import qouteall.q_misc_util.api.McRemoteProcedureCall;
 import qouteall.q_misc_util.my_util.AARotation;
 import qouteall.q_misc_util.my_util.IntBox;
 
 import java.util.Objects;
+
+import static qouteall.mini_scaled.gui.ScaleBoxInteractionManager.*;
 
 public class ClientUnwrappingInteraction {
     
@@ -56,6 +70,31 @@ public class ClientUnwrappingInteraction {
         IPGlobal.clientCleanupSignal.connect(ClientUnwrappingInteraction::reset);
         
         ClientTickEvents.END_CLIENT_TICK.register(client -> updateDisplay());
+        
+        ClientPreAttackCallback.EVENT.register((client, player, clickCount) -> {
+            ItemStack mainHandItem = player.getMainHandItem();
+            if (mainHandItem.getItem() == ManipulationWandItem.INSTANCE) {
+                if (session != null) {
+                    onLeftClick();
+                    return true;
+                }
+            }
+            return false;
+        });
+        
+        UseItemCallback.EVENT.register((player, world, hand) -> {
+            ItemStack mainHandItem = player.getMainHandItem();
+            if (mainHandItem.getItem() == ManipulationWandItem.INSTANCE) {
+                if (session != null) {
+                    onRightClick();
+                    
+                    // don't send interaction packet to server
+                    return InteractionResultHolder.fail(mainHandItem);
+                }
+            }
+            
+            return InteractionResultHolder.pass(mainHandItem);
+        });
     }
     
     private static void reset() {
@@ -81,7 +120,17 @@ public class ClientUnwrappingInteraction {
     }
     
     public static void onRightClick() {
-    
+        if (session != null) {
+            if (session.unwrappingArea != null) {
+                /**{@link ScaleBoxInteractionManager.RemoteCallables#confirmUnwrapping}*/
+                McRemoteProcedureCall.tellServerToInvoke(
+                    "qouteall.mini_scaled.gui.ScaleBoxInteractionManager.RemoteCallables.confirmUnwrapping",
+                    session.boxId,
+                    session.unwrappingArea
+                );
+                reset();
+            }
+        }
     }
     
     private static void updateDisplay() {
@@ -120,6 +169,16 @@ public class ClientUnwrappingInteraction {
         );
         
         session.unwrappingArea = IntBox.getBoxByPosAndSignedSize(basePos, signedSize);
+        
+        CustomTextOverlay.putText(
+            Component.translatable(
+                "mini_scaled.select_direction_for_unwrapping",
+                minecraft.options.keyUse.getTranslatedKeyMessage(),
+                minecraft.options.keyAttack.getTranslatedKeyMessage()
+            ),
+            0.1,
+            "mini_scaled"
+        );
     }
     
     public static void clientRender(
@@ -147,7 +206,7 @@ public class ClientUnwrappingInteraction {
         LevelRenderer.renderLineBox(
             poseStack,
             bufferSource.getBuffer(RenderType.lines()),
-            unwrappingArea.toRealNumberBox(),
+            unwrappingArea.toRealNumberBox().move(-camX, -camY, -camZ),
             1, 1, 1, 1
         );
     }

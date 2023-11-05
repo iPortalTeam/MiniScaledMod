@@ -168,6 +168,7 @@ public class ScaleBoxManagementScreen extends Screen {
             Component.translatable("mini_scaled.unwrap"),
             button -> {
                 if (selected != null) {
+                    Minecraft.getInstance().setScreen(null);
                     ClientUnwrappingInteraction.startPreUnwrapping(selected);
                 }
             }

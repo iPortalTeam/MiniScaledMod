@@ -22,6 +22,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import qouteall.mini_scaled.ClientUnwrappingInteraction;
 import qouteall.mini_scaled.GlassFrameMatching;
 import qouteall.mini_scaled.ScaleBoxManipulation;
 import qouteall.mini_scaled.ScaleBoxRecord;

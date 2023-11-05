@@ -126,6 +126,8 @@ public class ScaleBoxOperations {
             AARotation.IDENTITY,
             player
         );
+        
+        // TODO setup barrier block
     }
     
     public static void unwrap(
@@ -135,7 +137,24 @@ public class ScaleBoxOperations {
         IntBox expandedBox,
         AARotation rotationFromInnerToOuter
     ) {
-    
+        MinecraftServer server = world.getServer();
+        ServerLevel voidDim = VoidDimension.getVoidServerWorld(server);
+        
+        ScaleBoxRecord scaleBoxRecord = ScaleBoxRecord.get(server);
+        
+        IntBox innerAreaBox = entry.getInnerAreaBox();
+        
+        scaleBoxRecord.removeEntry(entry.id);
+        scaleBoxRecord.setDirty();
+        
+        transferRegion(
+            voidDim,
+            innerAreaBox.l,
+            world,
+            expandedBox.l,
+            innerAreaBox.getSize(),
+            rotationFromInnerToOuter
+        );
     }
     
     public static void transferRegion(

@@ -287,6 +287,8 @@ public class ScaleBoxInteractionManager {
             MSUtil.removeItem(playerInventory, s -> s.getItem() == costItem, ingredientCost);
         }
         
+        // TODO check bedrock and boss entities
+        
         ScaleBoxOperations.wrap(
             world, pendingScaleBoxWrapping.glassFrame(),
             player, pendingScaleBoxWrapping.color(),
@@ -356,7 +358,8 @@ public class ScaleBoxInteractionManager {
             return;
         }
         
-        if (player.level().dimension() != entry.currentEntranceDim) {
+        ServerLevel world = ((ServerLevel) player.level());
+        if (world.dimension() != entry.currentEntranceDim) {
             player.sendSystemMessage(Component.literal("You are not in the dimension of the entrance"));
             return;
         }
@@ -368,13 +371,18 @@ public class ScaleBoxInteractionManager {
         }
         
         if (!area.contains(entranceBox.l) || !area.contains(entranceBox.h) ||
-            !entranceBox.getSize().equals(area.getSize())) {
+            !entranceBox.getSize().multiply(entry.scale).equals(area.getSize())) {
             player.sendSystemMessage(Component.literal("Invalid box argument"));
             return;
         }
         
+        if (!area.fastStream().allMatch(p -> world.getBlockState(p).isAir())) {
+            player.sendSystemMessage(Component.translatable("mini_scaled.unwrapping_area_not_empty"));
+            return;
+        }
+        
         ScaleBoxOperations.unwrap(
-            ((ServerLevel) player.level()),
+            world,
             player, entry, area,
             entry.getEntranceRotation()
         );
