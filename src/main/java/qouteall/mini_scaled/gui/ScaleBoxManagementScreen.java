@@ -56,7 +56,7 @@ public class ScaleBoxManagementScreen extends Screen {
     
     private ScaleBoxListWidget listWidget;
     
-    private final ScaleBoxGuiManager.ManagementGuiData data;
+    private final ScaleBoxInteractionManager.ManagementGuiData data;
     
     private @Nullable ScaleBoxRecord.Entry selected;
     
@@ -106,13 +106,13 @@ public class ScaleBoxManagementScreen extends Screen {
         });
     }
     
-    public static void openGui(ScaleBoxGuiManager.ManagementGuiData managementGuiData) {
+    public static void openGui(ScaleBoxInteractionManager.ManagementGuiData managementGuiData) {
         ScaleBoxManagementScreen screen = new ScaleBoxManagementScreen(managementGuiData);
         
         Minecraft.getInstance().setScreen(screen);
     }
     
-    public ScaleBoxManagementScreen(ScaleBoxGuiManager.ManagementGuiData managementGuiData) {
+    public ScaleBoxManagementScreen(ScaleBoxInteractionManager.ManagementGuiData managementGuiData) {
         super(Component.literal("Scale box management"));
         
         // in vanilla it's set in init(), but I want to initialize early
@@ -153,9 +153,9 @@ public class ScaleBoxManagementScreen extends Screen {
             Component.translatable("mini_scaled.get_entrance"),
             button -> {
                 if (selected != null) {
-                    /**{@link ScaleBoxGuiManager.RemoteCallables#acquireEntrance}*/
+                    /**{@link ScaleBoxInteractionManager.RemoteCallables#acquireEntrance}*/
                     McRemoteProcedureCall.tellServerToInvoke(
-                        "qouteall.mini_scaled.gui.ScaleBoxGuiManager.RemoteCallables.acquireEntrance",
+                        "qouteall.mini_scaled.gui.ScaleBoxInteractionManager.RemoteCallables.acquireEntrance",
                         selected.id
                     );
                     minecraft.setScreen(null);
@@ -202,8 +202,9 @@ public class ScaleBoxManagementScreen extends Screen {
         // unwrap button is only visible for the interacted box
         unwrapButton.visible = Objects.equals(data.boxId(), w.entry.id);
         
+        /**{@link ScaleBoxInteractionManager.RemoteCallables#requestChunkLoading(ServerPlayer, int)}*/
         McRemoteProcedureCall.tellServerToInvoke(
-            "qouteall.mini_scaled.gui.ScaleBoxGuiManager.RemoteCallables.requestChunkLoading",
+            "qouteall.mini_scaled.gui.ScaleBoxInteractionManager.RemoteCallables.requestChunkLoading",
             w.entry.id
         );
     }
@@ -396,9 +397,9 @@ public class ScaleBoxManagementScreen extends Screen {
         super.onClose();
         
         // tell server to remove chunk loader
-        /**{@link ScaleBoxGuiManager.RemoteCallables#onGuiClose(ServerPlayer)}*/
+        /**{@link ScaleBoxInteractionManager.RemoteCallables#onGuiClose(ServerPlayer)}*/
         McRemoteProcedureCall.tellServerToInvoke(
-            "qouteall.mini_scaled.gui.ScaleBoxGuiManager.RemoteCallables.onGuiClose"
+            "qouteall.mini_scaled.gui.ScaleBoxInteractionManager.RemoteCallables.onGuiClose"
         );
     }
     

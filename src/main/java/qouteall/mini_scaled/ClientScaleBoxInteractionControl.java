@@ -37,7 +37,7 @@ public class ClientScaleBoxInteractionControl {
             return;
         }
         
-        if (client.player.getMainHandItem().getItem() == ManipulationWandItem.instance) {
+        if (client.player.getMainHandItem().getItem() == ManipulationWandItem.INSTANCE) {
             return;
         }
         

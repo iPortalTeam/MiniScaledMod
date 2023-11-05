@@ -20,7 +20,6 @@ import net.minecraft.world.level.block.StainedGlassBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import qouteall.mini_scaled.GlassFrameMatching;
@@ -28,7 +27,7 @@ import qouteall.mini_scaled.ScaleBoxManipulation;
 import qouteall.mini_scaled.ScaleBoxRecord;
 import qouteall.mini_scaled.block.ScaleBoxPlaceholderBlock;
 import qouteall.mini_scaled.block.ScaleBoxPlaceholderBlockEntity;
-import qouteall.mini_scaled.gui.ScaleBoxGuiManager;
+import qouteall.mini_scaled.gui.ScaleBoxInteractionManager;
 import qouteall.q_misc_util.my_util.IntBox;
 
 import java.util.Objects;
@@ -37,13 +36,13 @@ import java.util.function.Consumer;
 public class ManipulationWandItem extends Item {
     private static final Logger LOGGER = LoggerFactory.getLogger(ManipulationWandItem.class);
     
-    public static final ManipulationWandItem instance = new ManipulationWandItem(new Item.Properties());
+    public static final ManipulationWandItem INSTANCE = new ManipulationWandItem(new Item.Properties());
     
     public static void init() {
         Registry.register(
             BuiltInRegistries.ITEM,
             new ResourceLocation("mini_scaled:manipulation_wand"),
-            instance
+            INSTANCE
         );
     }
 //
@@ -87,7 +86,7 @@ public class ManipulationWandItem extends Item {
     }
     
     public static void registerCreativeInventory(Consumer<ItemStack> func) {
-        ItemStack itemStack = new ItemStack(instance);
+        ItemStack itemStack = new ItemStack(INSTANCE);
         func.accept(itemStack);
     }
 
@@ -117,7 +116,7 @@ public class ManipulationWandItem extends Item {
         }
         
         // directly open the gui
-        ScaleBoxGuiManager.get(player.getServer()).openManagementGui(((ServerPlayer) player), null);
+        ScaleBoxInteractionManager.get(player.getServer()).openManagementGui(((ServerPlayer) player), null);
         
         return new InteractionResultHolder<>(InteractionResult.SUCCESS, itemStack);
     }
@@ -139,7 +138,7 @@ public class ManipulationWandItem extends Item {
         BlockState blockState = world.getBlockState(clickedPos);
         Block block = blockState.getBlock();
         
-        ScaleBoxGuiManager scaleBoxGuiManager = ScaleBoxGuiManager.get(player.getServer());
+        ScaleBoxInteractionManager scaleBoxInteractionManager = ScaleBoxInteractionManager.get(player.getServer());
         
         if (block == ScaleBoxPlaceholderBlock.instance) {
             BlockEntity blockEntity = world.getBlockEntity(clickedPos);
@@ -158,7 +157,7 @@ public class ManipulationWandItem extends Item {
             }
             
             if (Objects.equals(theEntry.ownerId, player.getUUID())) {
-                scaleBoxGuiManager.openManagementGui(
+                scaleBoxInteractionManager.openManagementGui(
                     ((ServerPlayer) player), theEntry.id
                 );
             }
@@ -181,7 +180,7 @@ public class ManipulationWandItem extends Item {
             );
             
             if (glassFrame != null) {
-                scaleBoxGuiManager.tryStartingPendingWrapping(
+                scaleBoxInteractionManager.tryStartingPendingWrapping(
                     ((ServerPlayer) player), world.dimension(),
                     glassFrame, color, clickedPos
                 );
@@ -190,7 +189,7 @@ public class ManipulationWandItem extends Item {
             return InteractionResult.SUCCESS;
         }
         
-        scaleBoxGuiManager.openManagementGui(
+        scaleBoxInteractionManager.openManagementGui(
             ((ServerPlayer) player), null
         );
         

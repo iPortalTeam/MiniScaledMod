@@ -6,6 +6,7 @@ import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
@@ -21,6 +22,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import qouteall.imm_ptl.core.McHelper;
@@ -41,7 +43,7 @@ import java.util.Objects;
 import java.util.WeakHashMap;
 import java.util.function.Consumer;
 
-public class ScaleBoxGuiManager {
+public class ScaleBoxInteractionManager {
     private static final Logger LOGGER = LogUtils.getLogger();
     
     private static final int ACQUIRE_ENTRANCE_COOLDOWN_SECONDS = 30;
@@ -52,7 +54,7 @@ public class ScaleBoxGuiManager {
     
     private final MinecraftServer server;
     
-    public static ScaleBoxGuiManager get(MinecraftServer server) {
+    public static ScaleBoxInteractionManager get(MinecraftServer server) {
         return ((MiniScaled_MinecraftServerAccessor) server).miniScaled_getScaleBoxGuiManager();
     }
     
@@ -83,7 +85,7 @@ public class ScaleBoxGuiManager {
     
     private final WeakHashMap<ServerPlayer, StateForPlayer> stateMap = new WeakHashMap<>();
     
-    public ScaleBoxGuiManager(MinecraftServer server) {this.server = server;}
+    public ScaleBoxInteractionManager(MinecraftServer server) {this.server = server;}
     
     private StateForPlayer getPlayerState(ServerPlayer player) {
         return this.stateMap.computeIfAbsent(player, k -> new StateForPlayer());
@@ -103,7 +105,7 @@ public class ScaleBoxGuiManager {
         /**{@link RemoteCallables#tellClientToOpenManagementGui(CompoundTag)}*/
         McRemoteProcedureCall.tellClientToInvoke(
             player,
-            "qouteall.mini_scaled.gui.ScaleBoxGuiManager.RemoteCallables.tellClientToOpenManagementGui",
+            "qouteall.mini_scaled.gui.ScaleBoxInteractionManager.RemoteCallables.tellClientToOpenManagementGui",
             managementGuiData.toTag()
         );
         
@@ -203,10 +205,10 @@ public class ScaleBoxGuiManager {
             dimension, glassFrame, color, options, clickedPos
         );
         
-        /**{@link qouteall.mini_scaled.gui.ScaleBoxGuiManager.RemoteCallables#tellClientToOpenPendingWrappingGui}*/
+        /**{@link ScaleBoxInteractionManager.RemoteCallables#tellClientToOpenPendingWrappingGui}*/
         McRemoteProcedureCall.tellClientToInvoke(
             player,
-            "qouteall.mini_scaled.gui.ScaleBoxGuiManager.RemoteCallables.tellClientToOpenPendingWrappingGui",
+            "qouteall.mini_scaled.gui.ScaleBoxInteractionManager.RemoteCallables.tellClientToOpenPendingWrappingGui",
             dimension,
             options,
             glassFrame.getSize(),
@@ -335,6 +337,49 @@ public class ScaleBoxGuiManager {
         }
     }
     
+    private void confirmUnwrapping(ServerPlayer player, int boxId, IntBox area) {
+        ScaleBoxRecord record = ScaleBoxRecord.get(player.server);
+        ScaleBoxRecord.Entry entry = record.getEntryById(boxId);
+        
+        if (entry == null) {
+            player.sendSystemMessage(Component.literal("Invalid box id"));
+            return;
+        }
+        
+        if (!Objects.equals(player.getUUID(), entry.ownerId)) {
+            player.sendSystemMessage(Component.literal("You are not the owner of this box"));
+            return;
+        }
+        
+        if (entry.currentEntranceDim == null || entry.currentEntrancePos == null) {
+            player.sendSystemMessage(Component.literal("The scale box entrance does not exist now"));
+            return;
+        }
+        
+        if (player.level().dimension() != entry.currentEntranceDim) {
+            player.sendSystemMessage(Component.literal("You are not in the dimension of the entrance"));
+            return;
+        }
+        
+        IntBox entranceBox = entry.getOuterAreaBox();
+        if (player.position().subtract(entranceBox.getCenterVec()).lengthSqr() > 32 * 32) {
+            player.sendSystemMessage(Component.literal("You are too far away from the entrance"));
+            return;
+        }
+        
+        if (!area.contains(entranceBox.l) || !area.contains(entranceBox.h) ||
+            !entranceBox.getSize().equals(area.getSize())) {
+            player.sendSystemMessage(Component.literal("Invalid box argument"));
+            return;
+        }
+        
+        ScaleBoxOperations.unwrap(
+            ((ServerLevel) player.level()),
+            player, entry, area,
+            entry.getEntranceRotation()
+        );
+    }
+    
     public static record ManagementGuiData(
         List<ScaleBoxRecord.Entry> entriesForPlayer,
         @Nullable Integer boxId
@@ -376,20 +421,20 @@ public class ScaleBoxGuiManager {
         }
         
         public static void requestChunkLoading(ServerPlayer player, int boxId) {
-            ScaleBoxGuiManager scaleBoxGuiManager = ScaleBoxGuiManager.get(player.server);
+            ScaleBoxInteractionManager scaleBoxInteractionManager = ScaleBoxInteractionManager.get(player.server);
             
-            scaleBoxGuiManager.onRequestChunkLoading(player, boxId);
+            scaleBoxInteractionManager.onRequestChunkLoading(player, boxId);
         }
         
         public static void onGuiClose(ServerPlayer player) {
-            ScaleBoxGuiManager.get(player.server).onCloseGui(player);
+            ScaleBoxInteractionManager.get(player.server).onCloseGui(player);
         }
         
         public static void updateScaleBoxOption(
             ServerPlayer player, int boxId,
             boolean scaleTransform, boolean gravityTransform, boolean accessControl
         ) {
-            ScaleBoxGuiManager.handleScaleBoxPropertyChange(
+            ScaleBoxInteractionManager.handleScaleBoxPropertyChange(
                 player, boxId,
                 entry -> {
                     entry.teleportChangesScale = scaleTransform;
@@ -414,18 +459,24 @@ public class ScaleBoxGuiManager {
         }
         
         public static void confirmWrapping(ServerPlayer player, int scale) {
-            ScaleBoxGuiManager.get(player.server).confirmWrapping(player, scale);
+            ScaleBoxInteractionManager.get(player.server).confirmWrapping(player, scale);
         }
         
         public static void cancelWrapping(ServerPlayer player) {
-            ScaleBoxGuiManager.get(player.server).cancelWrapping(player);
+            ScaleBoxInteractionManager.get(player.server).cancelWrapping(player);
         }
         
         public static void acquireEntrance(ServerPlayer player, int boxId) {
-            ScaleBoxGuiManager.get(player.server).acquireEntrance(player,boxId);
+            ScaleBoxInteractionManager.get(player.server).acquireEntrance(player, boxId);
         }
         
-        
+        public static void confirmUnwrapping(
+            ServerPlayer player,
+            int boxId,
+            IntBox area
+        ) {
+            ScaleBoxInteractionManager.get(player.server).confirmUnwrapping(player, boxId, area);
+        }
     }
     
 }

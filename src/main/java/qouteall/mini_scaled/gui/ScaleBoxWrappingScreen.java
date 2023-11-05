@@ -113,9 +113,9 @@ public class ScaleBoxWrappingScreen extends Screen {
     }
     
     private void onCancel() {
-        /**{@link ScaleBoxGuiManager.RemoteCallables#cancelWrapping(ServerPlayer)}*/
+        /**{@link ScaleBoxInteractionManager.RemoteCallables#cancelWrapping(ServerPlayer)}*/
         McRemoteProcedureCall.tellServerToInvoke(
-            "qouteall.mini_scaled.gui.ScaleBoxGuiManager.RemoteCallables.cancelWrapping"
+            "qouteall.mini_scaled.gui.ScaleBoxInteractionManager.RemoteCallables.cancelWrapping"
         );
         
         assert minecraft != null;
@@ -127,9 +127,9 @@ public class ScaleBoxWrappingScreen extends Screen {
         
         if (selected != null) {
             int scale = selected.option.scale;
-            /**{@link ScaleBoxGuiManager.RemoteCallables#confirmWrapping(ServerPlayer, int)}*/
+            /**{@link ScaleBoxInteractionManager.RemoteCallables#confirmWrapping(ServerPlayer, int)}*/
             McRemoteProcedureCall.tellServerToInvoke(
-                "qouteall.mini_scaled.gui.ScaleBoxGuiManager.RemoteCallables.confirmWrapping",
+                "qouteall.mini_scaled.gui.ScaleBoxInteractionManager.RemoteCallables.confirmWrapping",
                 scale
             );
             

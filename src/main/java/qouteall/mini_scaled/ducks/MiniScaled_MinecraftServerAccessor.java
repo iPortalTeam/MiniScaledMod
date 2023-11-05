@@ -1,7 +1,7 @@
 package qouteall.mini_scaled.ducks;
 
-import qouteall.mini_scaled.gui.ScaleBoxGuiManager;
+import qouteall.mini_scaled.gui.ScaleBoxInteractionManager;
 
 public interface MiniScaled_MinecraftServerAccessor {
-    ScaleBoxGuiManager miniScaled_getScaleBoxGuiManager();
+    ScaleBoxInteractionManager miniScaled_getScaleBoxGuiManager();
 }

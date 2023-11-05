@@ -12,7 +12,10 @@ import qouteall.mini_scaled.VoidDimension;
 public class MixinLivingEntity {
     // do not apply fall damage in the scale box dimension
     @Inject(method = "causeFallDamage", at = @At("HEAD"), cancellable = true)
-    private void onHandleFallDamage(float fallDistance, float damageMultiplier, DamageSource damageSource, CallbackInfoReturnable<Boolean> cir) {
+    private void onHandleFallDamage(
+        float fallDistance, float damageMultiplier, DamageSource damageSource,
+        CallbackInfoReturnable<Boolean> cir
+    ) {
         LivingEntity this_ = (LivingEntity) ((Object) this);
         if (this_.level().dimension() == VoidDimension.KEY) {
             cir.cancel();

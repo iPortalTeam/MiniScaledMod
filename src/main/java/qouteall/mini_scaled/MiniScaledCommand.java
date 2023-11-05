@@ -7,7 +7,7 @@ import net.minecraft.commands.Commands;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import org.apache.commons.lang3.Validate;
-import qouteall.mini_scaled.gui.ScaleBoxGuiManager;
+import qouteall.mini_scaled.gui.ScaleBoxInteractionManager;
 
 public class MiniScaledCommand {
     
@@ -20,7 +20,7 @@ public class MiniScaledCommand {
                 ServerPlayer player = context.getSource().getPlayer();
                 Validate.notNull(player);
                 
-                ScaleBoxGuiManager.get(server).openManagementGui(player, null);
+                ScaleBoxInteractionManager.get(server).openManagementGui(player, null);
                 
                 return 0;
             })

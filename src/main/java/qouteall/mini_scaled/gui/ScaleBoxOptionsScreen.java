@@ -2,7 +2,6 @@ package qouteall.mini_scaled.gui;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.Button;
-import net.minecraft.client.gui.components.MultiLineTextWidget;
 import net.minecraft.client.gui.components.StringWidget;
 import net.minecraft.client.gui.layouts.GridLayout;
 import net.minecraft.client.gui.layouts.LayoutSettings;
@@ -82,9 +81,9 @@ public class ScaleBoxOptionsScreen extends Screen {
     
     @Override
     public void onClose() {
-        /**{@link ScaleBoxGuiManager.RemoteCallables#updateScaleBoxOption(ServerPlayer, int, boolean, boolean, boolean)}*/
+        /**{@link ScaleBoxInteractionManager.RemoteCallables#updateScaleBoxOption(ServerPlayer, int, boolean, boolean, boolean)}*/
         McRemoteProcedureCall.tellServerToInvoke(
-            "qouteall.mini_scaled.gui.ScaleBoxGuiManager.RemoteCallables.updateScaleBoxOption",
+            "qouteall.mini_scaled.gui.ScaleBoxInteractionManager.RemoteCallables.updateScaleBoxOption",
             entry.id,
             entry.teleportChangesScale,
             entry.teleportChangesGravity,

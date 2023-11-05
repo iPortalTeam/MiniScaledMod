@@ -22,17 +22,15 @@ import net.minecraft.world.phys.BlockHitResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import qouteall.imm_ptl.core.IPGlobal;
-import qouteall.imm_ptl.core.commands.PortalCommand;
 import qouteall.mini_scaled.block.BoxBarrierBlock;
 import qouteall.mini_scaled.block.ScaleBoxPlaceholderBlock;
 import qouteall.mini_scaled.block.ScaleBoxPlaceholderBlockEntity;
 import qouteall.mini_scaled.config.MiniScaledConfig;
-import qouteall.mini_scaled.gui.ScaleBoxGuiManager;
+import qouteall.mini_scaled.gui.ScaleBoxInteractionManager;
 import qouteall.mini_scaled.item.ManipulationWandItem;
 import qouteall.mini_scaled.item.ScaleBoxEntranceItem;
 import qouteall.q_misc_util.LifecycleHack;
 import qouteall.q_misc_util.MiscHelper;
-import qouteall.q_misc_util.api.DimensionAPI;
 import qouteall.q_misc_util.my_util.LimitedLogger;
 
 public class MiniScaledModInitializer implements ModInitializer {
@@ -59,7 +57,7 @@ public class MiniScaledModInitializer implements ModInitializer {
         
         ScaleBoxEntranceCreation.init();
         
-        ScaleBoxGuiManager.init();
+        ScaleBoxInteractionManager.init();
         
         IPGlobal.enableDepthClampForPortalRendering = true;
         

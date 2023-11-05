@@ -120,7 +120,7 @@ public class ScaleBoxEntranceCreation {
         player.addItem(itemStack);
         
         // give player a wand
-        player.addItem(new ItemStack(ManipulationWandItem.instance));
+        player.addItem(new ItemStack(ManipulationWandItem.INSTANCE));
         
         // remove the frame
         for (IntBox edge : box.get12Edges()) {
