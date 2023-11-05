@@ -41,5 +41,6 @@
   "mini_scaled.no_scale_box": "You don't have any scale box yet",
   "mini_scaled.get_entrance": "Get Entrance Item",
   "mini_scaled.acquire_entrance_cooldown": "You can only get one entrance item every %s seconds.",
-  "mini_scaled.unwrap": "Unwrap"
+  "mini_scaled.unwrap": "Unwrap",
+  "mini_scaled.not_your_scale_box": "This scale box is not yours."
 }

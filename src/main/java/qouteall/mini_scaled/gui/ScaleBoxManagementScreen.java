@@ -10,6 +10,8 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.MultiLineLabel;
+import net.minecraft.client.gui.layouts.GridLayout;
+import net.minecraft.client.gui.layouts.LayoutSettings;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
@@ -222,12 +224,24 @@ public class ScaleBoxManagementScreen extends Screen {
         listWidget.rowWidth = listWidth;
         
         addRenderableWidget(listWidget);
+        addRenderableWidget(optionsButton);
+        addRenderableWidget(getEntranceButton);
+        addRenderableWidget(unwrapButton);
         
         optionsButton.setWidth(100);
-        optionsButton.setX(width - 10 - optionsButton.getWidth());
-        optionsButton.setY(height - 10 - optionsButton.getHeight());
+        getEntranceButton.setWidth(120);
+        unwrapButton.setWidth(100);
         
-        addRenderableWidget(optionsButton);
+        GridLayout gridLayout = new GridLayout(0, 0).spacing(10);
+        LayoutSettings layoutSettings = gridLayout.defaultCellSetting()
+            .alignVerticallyMiddle().alignHorizontallyLeft();
+        
+        gridLayout.addChild(optionsButton, 0, 0);
+        gridLayout.addChild(getEntranceButton, 0, 1);
+        gridLayout.addChild(unwrapButton, 0, 2);
+        
+        gridLayout.arrangeElements();
+        gridLayout.setPosition(listWidth+10, height - 5 - gridLayout.getHeight());
     }
     
     @Override
@@ -261,7 +275,7 @@ public class ScaleBoxManagementScreen extends Screen {
         labelCache.renderLeftAligned(
             guiGraphics,
             ((int) (width * (1 - VIEW_RATIO))) + 10,
-            ((int) (height * VIEW_RATIO)) + 10,
+            ((int) (height * VIEW_RATIO)) + 0,
             10, 0xFFFFFFFF
         );
     }

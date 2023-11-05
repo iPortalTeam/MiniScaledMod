@@ -19,6 +19,7 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.StainedGlassBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -106,7 +107,9 @@ public class ManipulationWandItem extends Item {
 //    }
     
     @Override
-    public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand usedHand) {
+    public @NotNull InteractionResultHolder<ItemStack> use(
+        Level level, Player player, InteractionHand usedHand
+    ) {
         ItemStack itemStack = player.getItemInHand(usedHand);
         
         if (level.isClientSide()) {
@@ -120,7 +123,7 @@ public class ManipulationWandItem extends Item {
     }
     
     @Override
-    public InteractionResult useOn(UseOnContext context) {
+    public @NotNull InteractionResult useOn(UseOnContext context) {
         Level world = context.getLevel();
         if (world.isClientSide()) {
             return InteractionResult.SUCCESS;
@@ -132,8 +135,6 @@ public class ManipulationWandItem extends Item {
             return InteractionResult.FAIL;
         }
         
-        @Nullable ScaleBoxRecord.Entry entry = null;
-        
         BlockPos clickedPos = context.getClickedPos();
         BlockState blockState = world.getBlockState(clickedPos);
         Block block = blockState.getBlock();
@@ -143,18 +144,34 @@ public class ManipulationWandItem extends Item {
         if (block == ScaleBoxPlaceholderBlock.instance) {
             BlockEntity blockEntity = world.getBlockEntity(clickedPos);
             
-            if (blockEntity instanceof ScaleBoxPlaceholderBlockEntity placeholderBlockEntity) {
-                int boxId = placeholderBlockEntity.boxId;
-                ScaleBoxRecord scaleBoxRecord = ScaleBoxRecord.get(world.getServer());
-                ScaleBoxRecord.Entry theEntry = scaleBoxRecord.getEntryById(boxId);
-                if (theEntry != null && Objects.equals(theEntry.ownerId, player.getUUID())) {
-                    entry = theEntry;
-                }
+            if (!(blockEntity instanceof ScaleBoxPlaceholderBlockEntity placeholderBlockEntity)) {
+                LOGGER.error("Block entity abnormal {} {} {}", world, clickedPos, blockEntity);
+                return InteractionResult.SUCCESS;
             }
-        }
-        else if (block instanceof StainedGlassBlock stainedGlassBlock) {
-            // TODO wrap scale box
             
+            int boxId = placeholderBlockEntity.boxId;
+            ScaleBoxRecord scaleBoxRecord = ScaleBoxRecord.get(world.getServer());
+            ScaleBoxRecord.Entry theEntry = scaleBoxRecord.getEntryById(boxId);
+            
+            if (theEntry == null) {
+                return InteractionResult.FAIL;
+            }
+            
+            if (Objects.equals(theEntry.ownerId, player.getUUID())) {
+                scaleBoxGuiManager.openManagementGui(
+                    ((ServerPlayer) player), theEntry.id
+                );
+            }
+            else {
+                player.sendSystemMessage(
+                    Component.translatable("mini_scaled.not_your_scale_box")
+                );
+            }
+            
+            return InteractionResult.SUCCESS;
+        }
+        
+        if (block instanceof StainedGlassBlock stainedGlassBlock) {
             DyeColor color = stainedGlassBlock.getColor();
             
             IntBox glassFrame = GlassFrameMatching.matchGlassFrame(
@@ -174,15 +191,14 @@ public class ManipulationWandItem extends Item {
         }
         
         scaleBoxGuiManager.openManagementGui(
-            ((ServerPlayer) player),
-            entry == null ? null : entry.id
+            ((ServerPlayer) player), null
         );
         
         return InteractionResult.FAIL;
     }
     
     @Override
-    public Component getName(ItemStack stack) {
+    public @NotNull Component getName(ItemStack stack) {
         return Component.translatable("item.mini_scaled.manipulation_wand");
     }
 }
