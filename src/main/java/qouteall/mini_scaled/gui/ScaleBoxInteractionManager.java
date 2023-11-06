@@ -16,6 +16,7 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.item.Item;
@@ -28,6 +29,7 @@ import org.slf4j.Logger;
 import qouteall.imm_ptl.core.McHelper;
 import qouteall.imm_ptl.core.api.PortalAPI;
 import qouteall.imm_ptl.core.chunk_loading.ChunkLoader;
+import qouteall.mini_scaled.MSGlobal;
 import qouteall.mini_scaled.ScaleBoxEntranceCreation;
 import qouteall.mini_scaled.ScaleBoxGeneration;
 import qouteall.mini_scaled.ScaleBoxOperations;
@@ -171,6 +173,17 @@ public class ScaleBoxInteractionManager {
         IntBox glassFrame, DyeColor color,
         BlockPos clickedPos
     ) {
+        ScaleBoxRecord record = ScaleBoxRecord.get(player.server);
+        
+        int maxScaleBoxPerPlayer = MSGlobal.config.getConfig().maxScaleBoxPerPlayer;
+        if (record.getEntriesByOwner(player.getUUID()).size() + 1 >= maxScaleBoxPerPlayer) {
+            player.sendSystemMessage(Component.translatable(
+                "mini_scaled.count_limit",
+                maxScaleBoxPerPlayer
+            ));
+            return false;
+        }
+        
         StateForPlayer playerState = getPlayerState(player);
         
         BlockPos areaSize = glassFrame.getSize();
@@ -269,6 +282,26 @@ public class ScaleBoxInteractionManager {
             }
         }
         
+        // check unbreakable block
+        BlockPos nonWrappableBlockPos = ScaleBoxOperations.checkNonWrappableBlock(world, glassFrame);
+        if (nonWrappableBlockPos != null) {
+            player.sendSystemMessage(Component.translatable(
+                "mini_scaled.non_wrappable_block",
+                nonWrappableBlockPos.getX(), nonWrappableBlockPos.getY(), nonWrappableBlockPos.getZ()
+            ));
+            return;
+        }
+        
+        // check important entity (including wither boss)
+        Entity nonWrappableEntity = ScaleBoxOperations.checkNonWrappableEntity(world, glassFrame);
+        if (nonWrappableEntity != null) {
+            player.sendSystemMessage(Component.translatable(
+                "mini_scaled.non_wrappable_entity",
+                nonWrappableEntity.getDisplayName()
+            ));
+            return;
+        }
+        
         // check item
         if (!player.isCreative()) {
             int ingredientCost = option.ingredientCost();
@@ -286,8 +319,6 @@ public class ScaleBoxInteractionManager {
             
             MSUtil.removeItem(playerInventory, s -> s.getItem() == costItem, ingredientCost);
         }
-        
-        // TODO check bedrock and boss entities
         
         ScaleBoxOperations.wrap(
             world, pendingScaleBoxWrapping.glassFrame(),
@@ -376,10 +407,25 @@ public class ScaleBoxInteractionManager {
             return;
         }
         
-        if (!area.fastStream().allMatch(p -> world.getBlockState(p).isAir())) {
+        boolean areaBlocksClear = area.fastStream().allMatch(
+            p -> entranceBox.contains(p) || world.getBlockState(p).isAir()
+        );
+        if (!areaBlocksClear) {
             player.sendSystemMessage(Component.translatable("mini_scaled.unwrapping_area_not_empty"));
             return;
         }
+        
+        Entity nonWrappableEntity = ScaleBoxOperations.checkNonWrappableEntity(world, area);
+        if (nonWrappableEntity != null) {
+            player.sendSystemMessage(Component.translatable(
+                "mini_scaled.unwrapping_area_has_entity", nonWrappableEntity.getDisplayName()
+            ));
+            return;
+        }
+        
+        // does not check whether the scale box contains non-wrappable blocks and entities
+        // because having them is not feasible in non-cheating gameplay
+        // and the player should always be able to unwrap any box to free slot
         
         ScaleBoxOperations.unwrap(
             world,

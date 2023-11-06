@@ -4,6 +4,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.logging.LogUtils;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.event.client.player.ClientPreAttackCallback;
+import net.fabricmc.fabric.api.event.player.UseBlockCallback;
 import net.fabricmc.fabric.api.event.player.UseItemCallback;
 import net.fabricmc.fabric.impl.event.interaction.InteractionEventsRouterClient;
 import net.minecraft.client.Minecraft;
@@ -16,10 +17,12 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -94,6 +97,20 @@ public class ClientUnwrappingInteraction {
             }
             
             return InteractionResultHolder.pass(mainHandItem);
+        });
+        
+        UseBlockCallback.EVENT.register((player, world, hand, hitResult) -> {
+            ItemStack mainHandItem = player.getMainHandItem();
+            if (mainHandItem.getItem() == ManipulationWandItem.INSTANCE) {
+                if (session != null) {
+                    onRightClick();
+                    
+                    // don't send interaction packet to server
+                    return InteractionResult.FAIL;
+                }
+            }
+            
+            return InteractionResult.PASS;
         });
     }
     

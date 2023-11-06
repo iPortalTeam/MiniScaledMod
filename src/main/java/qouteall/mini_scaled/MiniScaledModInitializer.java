@@ -93,7 +93,7 @@ public class MiniScaledModInitializer implements ModInitializer {
             });
         
         CommandRegistrationCallback.EVENT.register(
-            (dispatcher, registryAccess, environment) -> MiniScaledCommand.register(dispatcher)
+            (dispatcher, ctx, environment) -> MiniScaledCommand.register(dispatcher, ctx)
         );
         
         LOGGER.info("MiniScaled Mod Initializing");

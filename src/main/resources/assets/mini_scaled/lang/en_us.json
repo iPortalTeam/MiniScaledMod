@@ -36,7 +36,7 @@
   "mini_scaled.ingredient_cost": "Requires: ",
   "mini_scaled.wrap_box_size": "Box Size: %s × %s × %s",
   "mini_scaled.not_enough_ingredient": "You don't have enough ingredient (%s %s)",
-  "mini_scaled.already_has_box":"You already have scale box with color %s and scale %s. Try unwrapping that or try using another color.",
+  "mini_scaled.already_has_box": "You already have scale box with color %s and scale %s. Try unwrapping that or try using another color.",
   "mini_scaled.glass_frame_broken": "The glass frame is broken.",
   "mini_scaled.no_scale_box": "You don't have any scale box yet",
   "mini_scaled.get_entrance": "Get Entrance Item",
@@ -44,5 +44,9 @@
   "mini_scaled.unwrap": "Unwrap",
   "mini_scaled.not_your_scale_box": "This scale box is not yours.",
   "mini_scaled.select_direction_for_unwrapping": "Select the direction for unwrapping.\nPress %s to confirm. Press %s to cancel.",
-  "mini_scaled.unwrapping_area_not_empty": "The unwrapping area is not empty."
+  "mini_scaled.unwrapping_area_not_empty": "The unwrapping area is not empty.",
+  "mini_scaled.count_limit": "Each player can have at most %s scale boxes. Try unwrapping your existing scale boxes.",
+  "mini_scaled.non_wrappable_block": "The area has a non-wrappable block at (%s, %s, %s).",
+  "mini_scaled.non_wrappable_entity": "The area has a non-wrappable entity (%s).",
+  "mini_scaled.unwrapping_area_has_entity": "Cannot unwrap because of the entity in region (%s)."
 }

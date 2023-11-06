@@ -147,11 +147,19 @@ public class ScaleBoxOperations {
         scaleBoxRecord.removeEntry(entry.id);
         scaleBoxRecord.setDirty();
         
+        BlockPos innerDiagVec = innerAreaBox.getSize().multiply(entry.scale);
+        BlockPos outerDiagVec = rotationFromInnerToOuter.transform(innerDiagVec);
+        BlockPos outerBoxBasePos = new BlockPos(
+            outerDiagVec.getX() > 0 ? expandedBox.l.getX() : expandedBox.h.getX(),
+            outerDiagVec.getY() > 0 ? expandedBox.l.getY() : expandedBox.h.getY(),
+            outerDiagVec.getZ() > 0 ? expandedBox.l.getZ() : expandedBox.h.getZ()
+        );
+        
         transferRegion(
             voidDim,
             innerAreaBox.l,
             world,
-            expandedBox.l,
+            outerBoxBasePos,
             innerAreaBox.getSize(),
             rotationFromInnerToOuter
         );
@@ -372,5 +380,34 @@ public class ScaleBoxOperations {
                 be.isBasePos = outerPos.equals(entry.currentEntrancePos);
             }
         });
+    }
+    
+    public static @Nullable BlockPos checkNonWrappableBlock(
+        ServerLevel world, IntBox area
+    ) {
+        return area.fastStream().filter(
+            p -> {
+                BlockState blockState = world.getBlockState(p);
+                float destroySpeed = blockState.getDestroySpeed(world, p);
+                return destroySpeed < 0 || destroySpeed >= 50;
+            }
+        ).findFirst().map(BlockPos::immutable).orElse(null);
+    }
+    
+    public static @Nullable Entity checkNonWrappableEntity(
+        ServerLevel world, IntBox area
+    ) {
+        List<Entity> entities = world.getEntitiesOfClass(
+            Entity.class,
+            area.toRealNumberBox()
+        );
+        
+        for (Entity entity : entities) {
+            if (!entity.canChangeDimensions()) {
+                return entity;
+            }
+        }
+        
+        return null;
     }
 }
