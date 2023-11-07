@@ -202,7 +202,7 @@ public class ScaleBoxOperations {
      * This is always required if we don't want client block de-sync.
      * 4 : not relevant on server side
      * 8 : ?
-     * 16: cause shape update (this is the update that cause torch to drop without wall)
+     * 16: disable shape update (this is the update that cause torch to drop without wall)
      * 32: drop item when block destroys {@link Block#updateOrDestroy(BlockState, BlockState, LevelAccessor, BlockPos, int, int)}
      * <p>
      * -2 erases 1,  -33 erases 32,  -34 erases 1 and 32
@@ -244,12 +244,12 @@ public class ScaleBoxOperations {
                     
                     // clear the block without triggering shape update
                     fromWorld.setBlock(
-                        fromPos, Blocks.AIR.defaultBlockState(), 2
+                        fromPos, Blocks.AIR.defaultBlockState(), 2 | 16
                     );
                     
                     // set the block without triggering shape update
                     toWorld.setBlock(
-                        toPos, rotatedBlockState, 2
+                        toPos, rotatedBlockState, 2 | 16
                     );
                     
                     if (blockEntityTag != null) {
