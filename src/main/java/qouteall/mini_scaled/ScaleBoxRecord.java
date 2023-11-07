@@ -159,7 +159,7 @@ public class ScaleBoxRecord extends SavedData {
         public AARotation entranceRotation; // the rotation from inner scale box to outer entrance
         public boolean teleportChangesScale = false;
         public boolean teleportChangesGravity = false;
-        public boolean accessControl = false;
+        public boolean accessControl = true;
         
         public Entry() {
         
@@ -279,7 +279,7 @@ public class ScaleBoxRecord extends SavedData {
                 accessControl = tag.getBoolean("accessControl");
             }
             else {
-                accessControl = false;
+                accessControl = true;
             }
         }
         
