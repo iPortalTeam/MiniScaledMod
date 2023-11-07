@@ -316,7 +316,7 @@ public class ScaleBoxRecord extends SavedData {
             return tag;
         }
         
-        public ChunkLoader createChunkLoader(int renderDistance) {
+        public ChunkLoader createChunkLoader(int extraRenderDistance) {
             IntBox innerAreaBox = getInnerAreaBox();
             BlockPos size = innerAreaBox.getSize();
             return new ChunkLoader(
@@ -324,7 +324,7 @@ public class ScaleBoxRecord extends SavedData {
                     VoidDimension.KEY,
                     new ChunkPos(innerAreaBox.getCenter())
                 ),
-                Math.max(size.getX(), size.getZ()) / (16 * 2) + renderDistance
+                Math.max(size.getX(), size.getZ()) / (16 * 2) + extraRenderDistance
             );
         }
     }

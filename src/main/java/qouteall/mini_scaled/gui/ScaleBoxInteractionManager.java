@@ -6,7 +6,6 @@ import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
@@ -23,9 +22,9 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
+import qouteall.imm_ptl.core.IPGlobal;
 import qouteall.imm_ptl.core.McHelper;
 import qouteall.imm_ptl.core.api.PortalAPI;
 import qouteall.imm_ptl.core.chunk_loading.ChunkLoader;
@@ -37,8 +36,10 @@ import qouteall.mini_scaled.ScaleBoxRecord;
 import qouteall.mini_scaled.ducks.MiniScaled_MinecraftServerAccessor;
 import qouteall.mini_scaled.item.ScaleBoxEntranceItem;
 import qouteall.mini_scaled.util.MSUtil;
+import qouteall.q_misc_util.Helper;
 import qouteall.q_misc_util.api.McRemoteProcedureCall;
 import qouteall.q_misc_util.my_util.IntBox;
+import qouteall.q_misc_util.my_util.MyTaskList;
 
 import java.util.List;
 import java.util.Objects;
@@ -273,58 +274,174 @@ public class ScaleBoxInteractionManager {
         }
         BlockState glassBlockState =
             ScaleBoxGeneration.getGlassBlock(pendingScaleBoxWrapping.color()).defaultBlockState();
-        for (IntBox edge : glassFrame.get12Edges()) {
-            if (edge.fastStream().anyMatch(p -> world.getBlockState(p) != glassBlockState)) {
-                player.sendSystemMessage(Component.translatable(
-                    "mini_scaled.glass_frame_broken"
-                ));
-                return;
-            }
-        }
         
-        // check unbreakable block
-        BlockPos nonWrappableBlockPos = ScaleBoxOperations.checkNonWrappableBlock(world, glassFrame);
-        if (nonWrappableBlockPos != null) {
-            player.sendSystemMessage(Component.translatable(
-                "mini_scaled.non_wrappable_block",
-                nonWrappableBlockPos.getX(), nonWrappableBlockPos.getY(), nonWrappableBlockPos.getZ()
-            ));
+        if (!checkGlassFrameIntegrityAndInform(player, glassFrame, world, glassBlockState)) {
             return;
         }
         
-        // check important entity (including wither boss)
+        if (!checkUnbreakableBlock(player, world, glassFrame)) {
+            return;
+        }
+        
+        if (!checkEntityInRegion(player, world, glassFrame)) {
+            return;
+        }
+        
+        int ingredientCost = option.ingredientCost();
+        Item costItem = ScaleBoxEntranceCreation.getCreationItem();
+        ItemStack costItemStack = new ItemStack(costItem, ingredientCost);
+        
+        // check item
+        if (!player.isCreative()) {
+            if (!checkInventory(player, costItemStack, ingredientCost)) {
+                return;
+            }
+            
+            // don't remove the item for now. remove when the chunk is loaded
+        }
+        
+        IntBox wrappedBox = pendingScaleBoxWrapping.glassFrame();
+        BlockPos boxSize = wrappedBox.getSize();
+        BlockPos entranceSize = Helper.divide(boxSize, scale);
+        IntBox entranceBox = wrappedBox.confineInnerBox(
+            IntBox.fromBasePointAndSize(pendingScaleBoxWrapping.clickingPos(), entranceSize)
+        );
+        
+        // allocate the id but does not immediately add the entry
+        int newBoxId = scaleBoxRecord.allocateId();
+        
+        ScaleBoxRecord.Entry newEntry = new ScaleBoxRecord.Entry();
+        newEntry.id = newBoxId;
+        newEntry.color = pendingScaleBoxWrapping.color();
+        newEntry.ownerId = player.getUUID();
+        newEntry.ownerNameCache = player.getName().getString();
+        newEntry.scale = scale;
+        newEntry.generation = 0;
+        newEntry.innerBoxPos = ScaleBoxGeneration.getInnerBoxPosFromId(newBoxId);
+        newEntry.currentEntranceSize = entranceSize;
+        
+        int renderDistance = McHelper.getLoadDistanceOnServer(player.server);
+        ChunkLoader chunkLoader = newEntry.createChunkLoader(renderDistance);
+        
+        PortalAPI.addChunkLoaderForPlayer(player, chunkLoader);
+        
+        IPGlobal.serverTaskList.addTask(MyTaskList.withMacroLifecycle(
+            // begin action
+            () -> {},
+            
+            // end action
+            () -> {
+                // don't immediately remove the chunk loading
+                // because portal chunk loading has delay
+                IPGlobal.serverTaskList.addTask(MyTaskList.withDelay(
+                    20, MyTaskList.oneShotTask(() -> {
+                        PortalAPI.removeChunkLoaderForPlayer(player, chunkLoader);
+                    })
+                ));
+            },
+            
+            // task
+            () -> {
+                if (player.isRemoved()) {
+                    return true;
+                }
+                
+                if (server.getLevel(chunkLoader.center.dimension) == null ||
+                    server.getLevel(pendingScaleBoxWrapping.dimension()) == null
+                ) {
+                    // dimension dynamically removed
+                    return true;
+                }
+                
+                if (chunkLoader.getLoadedChunkNum(server) < chunkLoader.getChunkNum()) {
+                    // wait for loading
+                    
+                    player.displayClientMessage(
+                        Component.translatable("mini_scaled.wait_for_chunk_loading"),
+                        true
+                    );
+                    
+                    return false;
+                }
+                
+                // re-check because chunk loading takes time, and it may change during loading
+                
+                if (!checkGlassFrameIntegrityAndInform(player, glassFrame, world, glassBlockState)) {
+                    return true;
+                }
+                if (!checkUnbreakableBlock(player, world, glassFrame)) {
+                    return true;
+                }
+                if (!checkEntityInRegion(player, world, glassFrame)) {
+                    return true;
+                }
+                
+                if (!player.isCreative()) {
+                    if (!checkInventory(player, costItemStack, ingredientCost)) {
+                        return true;
+                    }
+                    
+                    // finally remove the item
+                    MSUtil.removeItem(player.getInventory(), s -> s.getItem() == costItem, ingredientCost);
+                }
+                
+                // finally do wrapping
+                ScaleBoxOperations.doWrap(world, player, newEntry, wrappedBox, entranceBox);
+                
+                return true;
+            }
+        ));
+    }
+    
+    private static boolean checkEntityInRegion(ServerPlayer player, ServerLevel world, IntBox glassFrame) {
         Entity nonWrappableEntity = ScaleBoxOperations.checkNonWrappableEntity(world, glassFrame);
         if (nonWrappableEntity != null) {
             player.sendSystemMessage(Component.translatable(
                 "mini_scaled.non_wrappable_entity",
                 nonWrappableEntity.getDisplayName()
             ));
-            return;
+            return false;
         }
-        
-        // check item
-        if (!player.isCreative()) {
-            int ingredientCost = option.ingredientCost();
-            Item costItem = ScaleBoxEntranceCreation.getCreationItem();
-            ItemStack costItemStack = new ItemStack(costItem, ingredientCost);
-            Inventory playerInventory = player.getInventory();
-            int playerItemCount = playerInventory.countItem(costItem);
-            if (playerItemCount < ingredientCost) {
+        return true;
+    }
+    
+    private static boolean checkInventory(ServerPlayer player, ItemStack costItemStack, int ingredientCost) {
+        int playerItemCount = player.getInventory().countItem(costItemStack.getItem());
+        if (playerItemCount < costItemStack.getCount()) {
+            player.sendSystemMessage(Component.translatable(
+                "mini_scaled.not_enough_ingredient",
+                ingredientCost, costItemStack.getDisplayName()
+            ));
+            return false;
+        }
+        return true;
+    }
+    
+    private static boolean checkUnbreakableBlock(ServerPlayer player, ServerLevel world, IntBox glassFrame) {
+        BlockPos nonWrappableBlockPos = ScaleBoxOperations.checkNonWrappableBlock(world, glassFrame);
+        if (nonWrappableBlockPos != null) {
+            player.sendSystemMessage(Component.translatable(
+                "mini_scaled.non_wrappable_block",
+                nonWrappableBlockPos.getX(), nonWrappableBlockPos.getY(), nonWrappableBlockPos.getZ()
+            ));
+            return false;
+        }
+        return true;
+    }
+    
+    private static boolean checkGlassFrameIntegrityAndInform(
+        ServerPlayer player, IntBox glassFrame, ServerLevel world, BlockState glassBlockState
+    ) {
+        for (IntBox edge : glassFrame.get12Edges()) {
+            if (edge.fastStream().anyMatch(p -> world.getBlockState(p) != glassBlockState)) {
                 player.sendSystemMessage(Component.translatable(
-                    "mini_scaled.not_enough_ingredient",
-                    ingredientCost, costItemStack.getDisplayName()
+                    "mini_scaled.glass_frame_broken"
                 ));
-                return;
+                return false;
             }
-            
-            MSUtil.removeItem(playerInventory, s -> s.getItem() == costItem, ingredientCost);
         }
         
-        ScaleBoxOperations.wrap(
-            world, pendingScaleBoxWrapping.glassFrame(),
-            player, pendingScaleBoxWrapping.color(),
-            scale, pendingScaleBoxWrapping.clickingPos()
-        );
+        return true;
     }
     
     public void cancelWrapping(ServerPlayer player) {

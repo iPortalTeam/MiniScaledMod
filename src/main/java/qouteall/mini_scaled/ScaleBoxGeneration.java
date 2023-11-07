@@ -134,7 +134,7 @@ public class ScaleBoxGeneration {
             newEntry.ownerNameCache = playerName;
             newEntry.scale = scale;
             newEntry.generation = 0;
-            newEntry.innerBoxPos = allocateInnerBoxPos(newId);
+            newEntry.innerBoxPos = getInnerBoxPosFromId(newId);
             newEntry.currentEntranceSize = new BlockPos(1, 1, 1);
             record.addEntry(newEntry);
             record.setDirty(true);
@@ -146,7 +146,7 @@ public class ScaleBoxGeneration {
         return entry;
     }
     
-    public static BlockPos allocateInnerBoxPos(int boxId) {
+    public static BlockPos getInnerBoxPosFromId(int boxId) {
         int xIndex = boxId % 256;
         int zIndex = Mth.floorDiv(boxId, 256);
         

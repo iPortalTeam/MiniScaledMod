@@ -8,7 +8,6 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.commands.CloneCommands;
 import net.minecraft.server.commands.FillCommand;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -16,7 +15,6 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.util.Tuple;
 import net.minecraft.world.Clearable;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.ServerLevelAccessor;
@@ -38,7 +36,6 @@ import qouteall.imm_ptl.core.McHelper;
 import qouteall.imm_ptl.core.api.PortalAPI;
 import qouteall.mini_scaled.block.ScaleBoxPlaceholderBlock;
 import qouteall.mini_scaled.block.ScaleBoxPlaceholderBlockEntity;
-import qouteall.q_misc_util.Helper;
 import qouteall.q_misc_util.my_util.AARotation;
 import qouteall.q_misc_util.my_util.DQuaternion;
 import qouteall.q_misc_util.my_util.IntBox;
@@ -77,42 +74,27 @@ public class ScaleBoxOperations {
         return (int) Math.ceil(r + r2);
     }
     
-    // Note should check for player action validity before calling this
-    public static void wrap(
+    public static void doWrap(
         ServerLevel world,
-        IntBox box,
         ServerPlayer player,
-        DyeColor color,
-        int scale,
-        BlockPos clickingPos
+        ScaleBoxRecord.Entry newEntry,
+        IntBox wrappedBox,
+        IntBox entranceBox
     ) {
         MinecraftServer server = world.getServer();
-        ServerLevel voidDim = VoidDimension.getVoidServerWorld(server);
         
         ScaleBoxRecord scaleBoxRecord = ScaleBoxRecord.get(server);
         
-        BlockPos boxSize = box.getSize();
-        BlockPos entranceSize = Helper.divide(boxSize, scale);
-        IntBox entranceBox = box.confineInnerBox(IntBox.fromBasePointAndSize(clickingPos, entranceSize));
-        
-        int newBoxId = scaleBoxRecord.allocateId();
-        
-        ScaleBoxRecord.Entry newEntry = new ScaleBoxRecord.Entry();
-        newEntry.id = newBoxId;
-        newEntry.color = color;
-        newEntry.ownerId = player.getUUID();
-        newEntry.ownerNameCache = player.getName().getString();
-        newEntry.scale = scale;
-        newEntry.generation = 0;
-        newEntry.innerBoxPos = ScaleBoxGeneration.allocateInnerBoxPos(newBoxId);
-        newEntry.currentEntranceSize = entranceSize;
+        ServerLevel voidDim = VoidDimension.getVoidServerWorld(server);
         
         scaleBoxRecord.addEntry(newEntry);
         scaleBoxRecord.setDirty();
         
+        BlockPos boxSize = wrappedBox.getSize();
+        
         transferRegion(
             world,
-            box.l,
+            wrappedBox.l,
             voidDim,
             newEntry.innerBoxPos,
             boxSize,
