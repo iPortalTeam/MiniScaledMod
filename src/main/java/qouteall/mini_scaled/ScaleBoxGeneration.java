@@ -27,6 +27,7 @@ import qouteall.imm_ptl.core.chunk_loading.ChunkLoader;
 import qouteall.imm_ptl.core.chunk_loading.DimensionalChunkPos;
 import qouteall.imm_ptl.core.portal.PortalExtension;
 import qouteall.imm_ptl.core.portal.PortalManipulation;
+import qouteall.imm_ptl.core.portal.shape.BoxPortalShape;
 import qouteall.mini_scaled.block.BoxBarrierBlock;
 import qouteall.q_misc_util.Helper;
 import qouteall.q_misc_util.my_util.AARotation;
@@ -58,60 +59,54 @@ public class ScaleBoxGeneration {
         int boxId = entry.id;
         int generation = entry.generation;
         
-        for (Direction outerDirection : Direction.values()) {
-            MiniScaledPortal portal = MiniScaledPortal.entityType.create(outerWorld);
-            Validate.notNull(portal);
-            
-            portal.setDestinationDimension(innerWorld.dimension());
-            
-            Direction innerDirection = toInnerRotation.transformDirection(outerDirection);
-            
-            portal.setOriginPos(Helper.getBoxSurface(outerAreaBox, outerDirection).getCenter());
-            portal.setDestination(Helper.getBoxSurface(innerAreaBox, innerDirection).getCenter());
-            
-            Tuple<Direction, Direction> perpendicularDirections = Helper.getPerpendicularDirections(outerDirection);
-            Direction pd1 = perpendicularDirections.getA();
-            Direction pd2 = perpendicularDirections.getB();
-            
-            portal.setOrientation(Vec3.atLowerCornerOf(pd1.getNormal()), Vec3.atLowerCornerOf(pd2.getNormal()));
-            portal.setWidth(Helper.getCoordinate(outerAreaBoxSize, pd1.getAxis()));
-            portal.setHeight(Helper.getCoordinate(outerAreaBoxSize, pd2.getAxis()));
-            
-            portal.setRotation(quaternion);
-            
-            portal.scaling = scale;
-            portal.teleportChangesScale = entry.teleportChangesScale;
-            portal.setTeleportChangesGravity(entry.teleportChangesGravity);
-            portal.fuseView = true;
-            portal.renderingMergable = true;
-            portal.hasCrossPortalCollision = true;
-            portal.portalTag = "mini_scaled:scaled_box";
-            PortalExtension.get(portal).adjustPositionAfterTeleport = true;
-            portal.setInteractable(true);
-            portal.boxId = boxId;
-            portal.generation = generation;
-            portal.recordEntry = entry;
-            
-            McHelper.spawnServerEntity(portal);
-            
-            MiniScaledPortal reversePortal =
-                PortalManipulation.createReversePortal(portal, MiniScaledPortal.entityType);
-            
-            reversePortal.fuseView = false;
-            reversePortal.renderingMergable = true;
-            reversePortal.hasCrossPortalCollision = true;
-            reversePortal.setInteractable(true);
-            reversePortal.boxId = boxId;
-            reversePortal.generation = generation;
-            reversePortal.recordEntry = entry;
-            
-            // When used with Iris, it renders normal portal instead of fuse view,
-            // then when the player touches the portal, it wrongly renders the player.
-            // It's a workaround to avoid this.
-            reversePortal.doRenderPlayer = false;
-            
-            McHelper.spawnServerEntity(reversePortal);
-        }
+        MiniScaledPortal portal = MiniScaledPortal.entityType.create(outerWorld);
+        assert portal != null;
+        
+        portal.setOriginPos(outerAreaBox.getCenter());
+        
+        portal.setPortalShape(BoxPortalShape.FACING_OUTWARDS);
+        
+        portal.axisW = new Vec3(1, 0, 0);
+        portal.axisH = new Vec3(0, 1, 0);
+        portal.width = outerAreaBoxSize.getX();
+        portal.height = outerAreaBoxSize.getY();
+        portal.thickness = outerAreaBoxSize.getZ();
+        
+        portal.setDestinationDimension(innerWorld.dimension());
+        portal.setDestination(innerAreaBox.getCenter());
+        
+        portal.setRotation(quaternion);
+        portal.scaling = scale;
+        
+        portal.teleportChangesScale = entry.teleportChangesScale;
+        portal.setTeleportChangesGravity(entry.teleportChangesGravity);
+        portal.fuseView = true;
+        portal.hasCrossPortalCollision = true;
+        portal.portalTag = "mini_scaled:scaled_box";
+        PortalExtension.get(portal).adjustPositionAfterTeleport = true;
+        portal.setInteractable(true);
+        portal.boxId = boxId;
+        portal.generation = generation;
+        portal.recordEntry = entry;
+        
+        McHelper.spawnServerEntity(portal);
+        
+        MiniScaledPortal reversePortal =
+            PortalManipulation.createReversePortal(portal, MiniScaledPortal.entityType);
+        
+        reversePortal.fuseView = false;
+        reversePortal.hasCrossPortalCollision = true;
+        reversePortal.setInteractable(true);
+        reversePortal.boxId = boxId;
+        reversePortal.generation = generation;
+        reversePortal.recordEntry = entry;
+        
+        // When used with Iris, it renders normal portal instead of fuse view,
+        // then when the player touches the portal, it wrongly renders the player.
+        // It's a workaround to avoid this.
+        reversePortal.doRenderPlayer = false;
+        
+        McHelper.spawnServerEntity(reversePortal);
     }
     
     
@@ -310,29 +305,26 @@ public class ScaleBoxGeneration {
         Vec3 innerAreaBoxSize = Helper.getBoxSize(innerAreaBox);
         int boxId = entry.id;
         int generation = entry.generation;
-        for (Direction innerDirection : Direction.values()) {
-            MiniScaledPortal portal = MiniScaledPortal.entityType.create(voidWorld);
-            Validate.notNull(portal);
-            
-            portal.setOriginPos(Helper.getBoxSurface(innerAreaBox, innerDirection).getCenter());
-            portal.setDestination(portal.getOriginPos().add(0, -1000, 0));
-            portal.setDestinationDimension(voidWorld.dimension());
-            
-            Tuple<Direction, Direction> perpendicularDirections =
-                Helper.getPerpendicularDirections(innerDirection.getOpposite());
-            Direction pd1 = perpendicularDirections.getA();
-            Direction pd2 = perpendicularDirections.getB();
-            
-            portal.setOrientation(Vec3.atLowerCornerOf(pd1.getNormal()), Vec3.atLowerCornerOf(pd2.getNormal()));
-            portal.setWidth(Helper.getCoordinate(innerAreaBoxSize, pd1.getAxis()));
-            portal.setHeight(Helper.getCoordinate(innerAreaBoxSize, pd2.getAxis()));
-            
-            portal.renderingMergable = true;
-            portal.portalTag = "mini_scaled:scaled_box_inner_wrapping";
-            portal.boxId = boxId;
-            portal.generation = generation;
-            
-            McHelper.spawnServerEntity(portal);
-        }
+        
+        MiniScaledPortal portal = MiniScaledPortal.entityType.create(voidWorld);
+        assert portal != null;
+        
+        portal.setPortalShape(BoxPortalShape.FACING_INWARDS);
+        
+        portal.axisW = new Vec3(1, 0, 0);
+        portal.axisH = new Vec3(0, 1, 0);
+        portal.width = innerAreaBoxSize.x();
+        portal.height = innerAreaBoxSize.y();
+        portal.thickness = innerAreaBoxSize.z();
+        
+        portal.setOriginPos(innerAreaBox.getCenter());
+        portal.setDestination(portal.getOriginPos().add(0, -1000, 0));
+        portal.setDestinationDimension(voidWorld.dimension());
+        
+        portal.portalTag = "mini_scaled:scaled_box_inner_wrapping";
+        portal.boxId = boxId;
+        portal.generation = generation;
+        
+        McHelper.spawnServerEntity(portal);
     }
 }

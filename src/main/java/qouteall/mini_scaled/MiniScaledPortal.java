@@ -27,8 +27,11 @@ import org.slf4j.Logger;
 import qouteall.imm_ptl.core.IPGlobal;
 import qouteall.imm_ptl.core.McHelper;
 import qouteall.imm_ptl.core.portal.Portal;
+import qouteall.imm_ptl.core.portal.shape.BoxPortalShape;
+import qouteall.imm_ptl.core.portal.shape.PortalShape;
 import qouteall.mini_scaled.block.ScaleBoxPlaceholderBlock;
 import qouteall.mini_scaled.util.MSUtil;
+import qouteall.q_misc_util.my_util.RayTraceResult;
 
 import java.util.Objects;
 import java.util.function.Consumer;
@@ -215,8 +218,7 @@ public class MiniScaledPortal extends Portal {
     private void onCollidingWithEntityClientOnly(Entity entity) {
         if (isOuterPortal() && !teleportChangesScale && entity instanceof LocalPlayer) {
             Vec3 gravityVec = MSUtil.getGravityVec(entity);
-            // TODO handle 3D portal
-            if (getNormal().dot(gravityVec) < -0.5) {
+            if (allowShiftDescent(entity, gravityVec)) {
                 showShiftDescendMessage();
                 
                 // not ClientPlayerEntity to avoid dedicated server crash as it's captured in lambda
@@ -240,6 +242,16 @@ public class MiniScaledPortal extends Portal {
             }
         }
         
+    }
+    
+    private boolean allowShiftDescent(Entity entity, Vec3 gravityVec) {
+        PortalShape portalShape = getPortalShape();
+        if (portalShape instanceof BoxPortalShape) {
+            return getThinAreaBox().inflate(0.1).contains(entity.position());
+        }
+        
+        // for old flat shaped portal
+        return getNormal().dot(gravityVec) < -0.5;
     }
     
     
