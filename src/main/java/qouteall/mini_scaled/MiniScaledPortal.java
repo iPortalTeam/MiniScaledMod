@@ -105,7 +105,7 @@ public class MiniScaledPortal extends Portal {
             }
             else {
                 MinecraftServer server = getServer();
-                Validate.notNull(server);
+                assert server != null;
                 ServerLevel entranceDim = server.getLevel(entry.currentEntranceDim);
                 if (entranceDim == null) {
                     LOGGER.error("Cannot find entrance dim {}. Removing portal {}.", entry.currentEntranceDim, this);
@@ -140,7 +140,9 @@ public class MiniScaledPortal extends Portal {
                 // see ScaleBoxRecord.createInnerPortalsPointingToVoidUnderneath
             }
             else {
-                recordEntry = ScaleBoxRecord.get(getServer()).getEntryById(boxId);
+                MinecraftServer server = getServer();
+                assert server != null;
+                recordEntry = ScaleBoxRecord.get(server).getEntryById(boxId);
             }
         }
     }
@@ -213,6 +215,7 @@ public class MiniScaledPortal extends Portal {
     private void onCollidingWithEntityClientOnly(Entity entity) {
         if (isOuterPortal() && !teleportChangesScale && entity instanceof LocalPlayer) {
             Vec3 gravityVec = MSUtil.getGravityVec(entity);
+            // TODO handle 3D portal
             if (getNormal().dot(gravityVec) < -0.5) {
                 showShiftDescendMessage();
                 
@@ -246,9 +249,11 @@ public class MiniScaledPortal extends Portal {
         
         if (isOuterPortal()) {
             Vec3 gravityVec = MSUtil.getGravityVec(entity);
-            if (getNormal().dot(gravityVec) < -0.5) {
-                return velocity.scale(0.5);
-            }
+            
+            Vec3 projectionOnGravityVec = gravityVec.scale(v.dot(gravityVec));
+            Vec3 extra = v.subtract(projectionOnGravityVec);
+            
+            return projectionOnGravityVec.scale(0.5).add(extra);
         }
         
         return velocity;
