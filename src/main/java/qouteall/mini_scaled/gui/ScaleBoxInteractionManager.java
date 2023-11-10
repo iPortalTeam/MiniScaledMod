@@ -16,7 +16,6 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -307,23 +306,32 @@ public class ScaleBoxInteractionManager {
             IntBox.fromBasePointAndSize(pendingScaleBoxWrapping.clickingPos(), entranceSize)
         );
         
-        // allocate the id but does not immediately add the entry
-        int newBoxId = scaleBoxRecord.allocateId();
+        // pre-reserve the region id
+        int regionId = scaleBoxRecord.reserveRegionId();
         
         ScaleBoxRecord.Entry newEntry = new ScaleBoxRecord.Entry();
-        newEntry.id = newBoxId;
+        newEntry.id = -1; // allocate id later
+        newEntry.regionId = regionId;
         newEntry.color = pendingScaleBoxWrapping.color();
         newEntry.ownerId = player.getUUID();
         newEntry.ownerNameCache = player.getName().getString();
         newEntry.scale = scale;
         newEntry.generation = 0;
-        newEntry.innerBoxPos = ScaleBoxGeneration.getInnerBoxPosFromId(newBoxId);
+        newEntry.innerBoxPos = ScaleBoxGeneration.getInnerBoxPosFromRegionId(regionId);
         newEntry.currentEntranceSize = entranceSize;
         
         int renderDistance = McHelper.getLoadDistanceOnServer(player.server);
         ChunkLoader chunkLoader = newEntry.createChunkLoader(renderDistance);
         
+        // don't add the entry to record now
+        // add when the process finishes
+        
         PortalAPI.addChunkLoaderForPlayer(player, chunkLoader);
+        
+        Runnable onFail = () -> {
+            LOGGER.info("On wrapping failed {} {}", player, newEntry);
+            scaleBoxRecord.clearRegionId(regionId);
+        };
         
         IPGlobal.serverTaskList.addTask(MyTaskList.withMacroLifecycle(
             // begin action
@@ -335,6 +343,8 @@ public class ScaleBoxInteractionManager {
                 // because portal chunk loading has delay
                 IPGlobal.serverTaskList.addTask(MyTaskList.withDelay(
                     20, MyTaskList.oneShotTask(() -> {
+                        LOGGER.info("Cleaning up wrapping {} {}", player, newEntry);
+                        
                         PortalAPI.removeChunkLoaderForPlayer(player, chunkLoader);
                     })
                 ));
@@ -343,6 +353,7 @@ public class ScaleBoxInteractionManager {
             // task
             () -> {
                 if (player.isRemoved()) {
+                    onFail.run();
                     return true;
                 }
                 
@@ -350,6 +361,7 @@ public class ScaleBoxInteractionManager {
                     server.getLevel(pendingScaleBoxWrapping.dimension()) == null
                 ) {
                     // dimension dynamically removed
+                    onFail.run();
                     return true;
                 }
                 
@@ -367,17 +379,21 @@ public class ScaleBoxInteractionManager {
                 // re-check because chunk loading takes time, and it may change during loading
                 
                 if (!checkGlassFrameIntegrityAndInform(player, glassFrame, world, glassBlockState)) {
+                    onFail.run();
                     return true;
                 }
                 if (!checkUnbreakableBlock(player, world, glassFrame)) {
+                    onFail.run();
                     return true;
                 }
                 if (!checkEntityInRegion(player, world, glassFrame)) {
+                    onFail.run();
                     return true;
                 }
                 
                 if (!player.isCreative()) {
                     if (!checkInventory(player, costItemStack, ingredientCost)) {
+                        onFail.run();
                         return true;
                     }
                     
@@ -386,6 +402,10 @@ public class ScaleBoxInteractionManager {
                 }
                 
                 // finally do wrapping
+                newEntry.id = scaleBoxRecord.allocateId();
+                scaleBoxRecord.addEntry(newEntry);
+                scaleBoxRecord.setDirty();
+                
                 ScaleBoxOperations.doWrap(world, player, newEntry, wrappedBox, entranceBox);
                 
                 return true;

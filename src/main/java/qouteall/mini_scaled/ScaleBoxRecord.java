@@ -25,12 +25,11 @@ import qouteall.q_misc_util.Helper;
 import qouteall.q_misc_util.my_util.AARotation;
 import qouteall.q_misc_util.my_util.IntBox;
 
-import java.util.ArrayList;
+import java.util.BitSet;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.function.Predicate;
 
 public class ScaleBoxRecord extends SavedData {
     private static final Logger LOGGER = LoggerFactory.getLogger(ScaleBoxRecord.class);
@@ -38,6 +37,8 @@ public class ScaleBoxRecord extends SavedData {
     private final Int2ObjectAVLTreeMap<Entry> byId = new Int2ObjectAVLTreeMap<>();
     
     private final Map<UUID, List<Entry>> byOwner = new Object2ObjectOpenHashMap<>();
+    
+    private final BitSet regionIdUsage = new BitSet();
     
     private int maxId = 0;
     
@@ -77,6 +78,7 @@ public class ScaleBoxRecord extends SavedData {
     public void addEntry(Entry entry) {
         byId.put(entry.id, entry);
         byOwner.computeIfAbsent(entry.ownerId, k -> new ObjectArrayList<>()).add(entry);
+        regionIdUsage.set(entry.regionId, true);
     }
     
     public boolean removeEntry(int id) {
@@ -92,6 +94,15 @@ public class ScaleBoxRecord extends SavedData {
                     LOGGER.error("Cannot find entry for owner {} {}", entry, byOwner);
                 }
             }
+            
+            int regionId = entry.regionId;
+            
+            boolean oldRegionBit = regionIdUsage.get(regionId);
+            if (!oldRegionBit) {
+                LOGGER.error("Removing an entry while region id bit not set {}", entry);
+            }
+            regionIdUsage.set(regionId, false);
+            
             return true;
         }
         
@@ -103,10 +114,21 @@ public class ScaleBoxRecord extends SavedData {
         return maxId;
     }
     
+    public int reserveRegionId() {
+        int regionId = regionIdUsage.nextClearBit(0);
+        regionIdUsage.set(regionId, true);
+        return regionId;
+    }
+    
+    public void clearRegionId(int regionId) {
+        regionIdUsage.clear(regionId);
+    }
+    
     private void readFromNbt(CompoundTag compoundTag) {
         byId.clear();
         byOwner.clear();
         maxId = 0;
+        regionIdUsage.clear();
         
         ListTag list = compoundTag.getList("entries", compoundTag.getId());
         
@@ -145,6 +167,7 @@ public class ScaleBoxRecord extends SavedData {
     
     public static class Entry {
         public int id;
+        public int regionId;
         public BlockPos innerBoxPos;
         public int scale;
         public DyeColor color;
@@ -159,7 +182,7 @@ public class ScaleBoxRecord extends SavedData {
         public AARotation entranceRotation; // the rotation from inner scale box to outer entrance
         public boolean teleportChangesScale = false;
         public boolean teleportChangesGravity = false;
-        public boolean accessControl = true;
+        public boolean accessControl = false;
         
         public Entry() {
         
@@ -225,8 +248,33 @@ public class ScaleBoxRecord extends SavedData {
         
         void readFromNbt(CompoundTag tag) {
             id = tag.getInt("id");
+            
+            if (tag.contains("regionId")) {
+                regionId = tag.getInt("regionId");
+            }
+            else {
+                regionId = id;
+            }
+            
+            if (regionId < 0) {
+                LOGGER.error("Invalid region id {}", regionId);
+                regionId = 0;
+            }
+            
             innerBoxPos = Helper.getVec3i(tag, "innerBoxPos");
-            scale = tag.getInt("size"); // the old name is "size"
+            
+            if (tag.contains("scale")) {
+                scale = tag.getInt("scale");
+            }
+            else {
+                scale = tag.getInt("size"); // the old name is "size"
+            }
+            
+            if (scale <= 0) {
+                LOGGER.error("Invalid scale {} {}", scale, tag);
+                scale = 4;
+            }
+            
             color = DyeColor.byName(tag.getString("color"), DyeColor.BLACK);
             ownerId = tag.getUUID("ownerId");
             ownerNameCache = tag.getString("ownerNameCache");
@@ -279,14 +327,19 @@ public class ScaleBoxRecord extends SavedData {
                 accessControl = tag.getBoolean("accessControl");
             }
             else {
-                accessControl = true;
+                accessControl = false;
+            }
+            
+            if (regionId > 100000) {
+                LOGGER.error("Region id too large {}. Something may be wrong.", this);
             }
         }
         
         void writeToNbt(CompoundTag tag) {
             tag.putInt("id", id);
+            tag.putInt("regionId", regionId);
             Helper.putVec3i(tag, "innerBoxPos", innerBoxPos);
-            tag.putInt("size", scale); // the old name is "size"
+            tag.putInt("scale", scale);
             tag.putString("color", color.getName());
             tag.putUUID("ownerId", ownerId);
             tag.putString("ownerNameCache", ownerNameCache);
@@ -326,6 +379,27 @@ public class ScaleBoxRecord extends SavedData {
                 ),
                 Math.max(size.getX(), size.getZ()) / (16 * 2) + extraRenderDistance
             );
+        }
+        
+        @Override
+        public String toString() {
+            return "Entry{" +
+                "id=" + id +
+                ", regionId=" + regionId +
+                ", innerBoxPos=" + innerBoxPos +
+                ", scale=" + scale +
+                ", color=" + color +
+                ", ownerId=" + ownerId +
+                ", ownerNameCache='" + ownerNameCache + '\'' +
+                ", currentEntranceDim=" + currentEntranceDim +
+                ", currentEntrancePos=" + currentEntrancePos +
+                ", currentEntranceSize=" + currentEntranceSize +
+                ", generation=" + generation +
+                ", entranceRotation=" + entranceRotation +
+                ", teleportChangesScale=" + teleportChangesScale +
+                ", teleportChangesGravity=" + teleportChangesGravity +
+                ", accessControl=" + accessControl +
+                '}';
         }
     }
 }

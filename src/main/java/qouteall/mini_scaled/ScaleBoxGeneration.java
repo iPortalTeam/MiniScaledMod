@@ -9,7 +9,6 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
-import net.minecraft.util.Tuple;
 import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
@@ -129,7 +128,7 @@ public class ScaleBoxGeneration {
             newEntry.ownerNameCache = playerName;
             newEntry.scale = scale;
             newEntry.generation = 0;
-            newEntry.innerBoxPos = getInnerBoxPosFromId(newId);
+            newEntry.innerBoxPos = getInnerBoxPosFromRegionId(newId);
             newEntry.currentEntranceSize = new BlockPos(1, 1, 1);
             record.addEntry(newEntry);
             record.setDirty(true);
@@ -141,9 +140,9 @@ public class ScaleBoxGeneration {
         return entry;
     }
     
-    public static BlockPos getInnerBoxPosFromId(int boxId) {
-        int xIndex = boxId % 256;
-        int zIndex = Mth.floorDiv(boxId, 256);
+    public static BlockPos getInnerBoxPosFromRegionId(int regionId) {
+        int xIndex = regionId % 256;
+        int zIndex = Mth.floorDiv(regionId, 256);
         
         return new BlockPos(xIndex * 16 * 32, 64, zIndex * 16 * 32);
     }

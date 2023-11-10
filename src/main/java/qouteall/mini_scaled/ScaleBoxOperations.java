@@ -83,12 +83,7 @@ public class ScaleBoxOperations {
     ) {
         MinecraftServer server = world.getServer();
         
-        ScaleBoxRecord scaleBoxRecord = ScaleBoxRecord.get(server);
-        
         ServerLevel voidDim = VoidDimension.getVoidServerWorld(server);
-        
-        scaleBoxRecord.addEntry(newEntry);
-        scaleBoxRecord.setDirty();
         
         BlockPos boxSize = wrappedBox.getSize();
         
