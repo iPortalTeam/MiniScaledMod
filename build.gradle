@@ -54,8 +54,9 @@ dependencies {
 	modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
 
 	// maven local
-	modImplementation('qouteall:imm_ptl_core:4.1.0.3')
-	modImplementation('qouteall:q_misc_util:4.1.0.3')
+	modImplementation('qouteall:imm_ptl_core:4.1.0.7')
+	modImplementation('qouteall:q_misc_util:4.1.0.7')
+	modImplementation('qouteall:imm_ptl_20:4.1.0.7')
 
 //	modImplementation ("com.github.iPortalTeam.ImmersivePortalsMod:imm_ptl_core:${immptl_version}"){
 ////		exclude(group: "maven.modrinth")

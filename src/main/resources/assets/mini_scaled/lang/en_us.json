@@ -49,5 +49,6 @@
   "mini_scaled.non_wrappable_block": "The area has a non-wrappable block at (%s, %s, %s).",
   "mini_scaled.non_wrappable_entity": "The area has a non-wrappable entity (%s).",
   "mini_scaled.unwrapping_area_has_entity": "Cannot unwrap because of the entity in region (%s).",
-  "mini_scaled.wait_for_chunk_loading": "Waiting for chunk loading..."
+  "mini_scaled.wait_for_chunk_loading": "Waiting for chunk loading...",
+  "mini_scaled.cannot_place_other_players_box": "You cannot place other player's scale box."
 }

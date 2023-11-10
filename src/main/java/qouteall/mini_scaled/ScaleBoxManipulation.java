@@ -131,7 +131,8 @@ public class ScaleBoxManipulation {
                 ((ServerLevel) world),
                 realPlacementPos,
                 entranceRotation,
-                ((ServerPlayer) player)
+                ((ServerPlayer) player),
+                null
             );
             
             stack.shrink(1);
@@ -150,6 +151,7 @@ public class ScaleBoxManipulation {
         }
     }
     
+    @Deprecated
     public static InteractionResult onHandRightClickEntrance(
         Player player,
         Level world,
@@ -230,6 +232,7 @@ public class ScaleBoxManipulation {
         }
     }
     
+    @Deprecated
     public static InteractionResult tryToShrinkScaleBox(
         Player player, ServerLevel world, ScaleBoxRecord.Entry entry, Direction outerSide
     ) {
@@ -273,7 +276,7 @@ public class ScaleBoxManipulation {
             
             return !innerUnitBox.stream().allMatch(blockPos -> {
                 BlockState blockState = voidWorld.getBlockState(blockPos);
-                return blockState.getBlock() == BoxBarrierBlock.instance ||
+                return blockState.getBlock() == BoxBarrierBlock.INSTANCE ||
                     blockState.isAir() ||
                     (blockState.getBlock() == glassBlock);
                 // the glass is considered clear
@@ -295,7 +298,8 @@ public class ScaleBoxManipulation {
             world,
             entry.currentEntrancePos,
             entry.getEntranceRotation(),
-            ((ServerPlayer) player)
+            ((ServerPlayer) player),
+            null
         );
         
         ScaleBoxGeneration.initializeInnerBoxBlocks(
@@ -318,6 +322,7 @@ public class ScaleBoxManipulation {
         return entranceSize.getX() * entranceSize.getY() * entranceSize.getZ();
     }
     
+    @Deprecated
     public static InteractionResult tryToExpandScaleBox(
         Player player, ServerLevel world,
         ScaleBoxRecord.Entry entry, Direction outerSide,
@@ -386,7 +391,8 @@ public class ScaleBoxManipulation {
             world,
             entry.currentEntrancePos,
             entry.getEntranceRotation(),
-            ((ServerPlayer) player)
+            ((ServerPlayer) player),
+            null
         );
         
         ScaleBoxGeneration.initializeInnerBoxBlocks(

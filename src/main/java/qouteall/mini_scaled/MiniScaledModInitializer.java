@@ -63,14 +63,14 @@ public class MiniScaledModInitializer implements ModInitializer {
         
         ServerTickEvents.END_SERVER_TICK.register(FallenEntityTeleportaion::teleportFallenEntities);
         
-        UseBlockCallback.EVENT.register((Player player, Level world, InteractionHand hand, BlockHitResult hitResult) -> {
-            Block block = world.getBlockState(hitResult.getBlockPos()).getBlock();
-            if (block == ScaleBoxPlaceholderBlock.instance) {
-                return ScaleBoxManipulation.onHandRightClickEntrance(player, world, hand, hitResult);
-            }
-            
-            return InteractionResult.PASS;
-        });
+//        UseBlockCallback.EVENT.register((Player player, Level world, InteractionHand hand, BlockHitResult hitResult) -> {
+//            Block block = world.getBlockState(hitResult.getBlockPos()).getBlock();
+//            if (block == ScaleBoxPlaceholderBlock.instance) {
+//                return ScaleBoxManipulation.onHandRightClickEntrance(player, world, hand, hitResult);
+//            }
+//
+//            return InteractionResult.PASS;
+//        });
         
         // config
         MSGlobal.config = AutoConfig.register(MiniScaledConfig.class, GsonConfigSerializer::new);

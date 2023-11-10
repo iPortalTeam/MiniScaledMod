@@ -7,6 +7,7 @@ import net.minecraft.commands.arguments.blocks.BlockInput;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.commands.FillCommand;
 import net.minecraft.server.level.ServerLevel;
@@ -34,6 +35,7 @@ import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import qouteall.imm_ptl.core.McHelper;
 import qouteall.imm_ptl.core.api.PortalAPI;
+import qouteall.mini_scaled.block.BoxBarrierBlock;
 import qouteall.mini_scaled.block.ScaleBoxPlaceholderBlock;
 import qouteall.mini_scaled.block.ScaleBoxPlaceholderBlockEntity;
 import qouteall.q_misc_util.my_util.AARotation;
@@ -101,10 +103,18 @@ public class ScaleBoxOperations {
             world,
             entranceBox.l,
             AARotation.IDENTITY,
-            player
+            player,
+            wrappedBox
         );
         
-        // TODO setup barrier block
+        // setup barrier blocks
+        IntBox barrierBox = newEntry.getInnerAreaBox()
+            .getAdjusted(-1, -1, -1, 1, 1, 1);
+        for (Direction direction : Direction.values()) {
+            barrierBox.getSurfaceLayer(direction).fastStream().forEach(blockPos -> {
+                voidDim.setBlockAndUpdate(blockPos, BoxBarrierBlock.INSTANCE.defaultBlockState());
+            });
+        }
     }
     
     public static void unwrap(
@@ -140,6 +150,14 @@ public class ScaleBoxOperations {
             innerAreaBox.getSize(),
             rotationFromInnerToOuter
         );
+        
+        // clear barrier blocks
+        IntBox barrierBox = innerAreaBox.getAdjusted(-1, -1, -1, 1, 1, 1);
+        for (Direction direction : Direction.values()) {
+            barrierBox.getSurfaceLayer(direction).fastStream().forEach(blockPos -> {
+                voidDim.setBlockAndUpdate(blockPos, Blocks.AIR.defaultBlockState());
+            });
+        }
     }
     
     public static void transferRegion(
@@ -309,28 +327,29 @@ public class ScaleBoxOperations {
         }
     }
     
-    // TODO pre-check
-    public static boolean canMoveBlock(Level world, BlockPos pos, BlockState blockState) {
-        float destroySpeed = blockState.getDestroySpeed(world, pos);
-        // bedrock's is -1. obsidian's is 50
-        return destroySpeed >= 0 && destroySpeed < 50;
-    }
-    
     public static boolean canMoveEntity(Entity entity) {
         return entity.canChangeDimensions();
+    }
+    
+    public static boolean canMoveBlock(ServerLevel world, BlockPos p, BlockState blockState) {
+        float destroySpeed = blockState.getDestroySpeed(world, p);
+        // bedrock is -1, obsidian is 50
+        return destroySpeed >= 0 && destroySpeed < 50;
     }
     
     public static void putScaleBoxEntranceIntoWorld(
         ScaleBoxRecord.Entry entry,
         ServerLevel world, BlockPos outerBoxBasePos,
         AARotation rotation,
-        ServerPlayer player
+        ServerPlayer player,
+        @Nullable IntBox fromWrappedBox
     ) {
-        if (entry.accessControl) {
-            if (!Objects.equals(entry.ownerId, player.getUUID())) {
-                ScaleBoxManipulation.showScaleBoxAccessDeniedMessage(player);
-                return;
-            }
+        if (!Objects.equals(entry.ownerId, player.getUUID()) && !player.hasPermissions(2)) {
+            player.displayClientMessage(
+                Component.translatable("mini_scaled.cannot_place_other_players_box"),
+                true
+            );
+            return;
         }
         
         entry.currentEntranceDim = world.dimension();
@@ -342,7 +361,7 @@ public class ScaleBoxOperations {
         ScaleBoxRecord.get(server).setDirty(true);
         
         ServerLevel voidWorld = VoidDimension.getVoidServerWorld(server);
-        ScaleBoxGeneration.createScaleBoxPortals(voidWorld, world, entry);
+        ScaleBoxGeneration.createScaleBoxPortals(voidWorld, world, entry, fromWrappedBox);
         
         entry.getOuterAreaBox().stream().forEach(outerPos -> {
             world.setBlockAndUpdate(outerPos, ScaleBoxPlaceholderBlock.instance.defaultBlockState());
@@ -363,11 +382,7 @@ public class ScaleBoxOperations {
         ServerLevel world, IntBox area
     ) {
         return area.fastStream().filter(
-            p -> {
-                BlockState blockState = world.getBlockState(p);
-                float destroySpeed = blockState.getDestroySpeed(world, p);
-                return destroySpeed < 0 || destroySpeed >= 50;
-            }
+            p -> !canMoveBlock(world, p, world.getBlockState(p))
         ).findFirst().map(BlockPos::immutable).orElse(null);
     }
     

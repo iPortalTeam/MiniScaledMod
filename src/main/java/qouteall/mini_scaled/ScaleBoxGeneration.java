@@ -26,6 +26,10 @@ import qouteall.imm_ptl.core.chunk_loading.ChunkLoader;
 import qouteall.imm_ptl.core.chunk_loading.DimensionalChunkPos;
 import qouteall.imm_ptl.core.portal.PortalExtension;
 import qouteall.imm_ptl.core.portal.PortalManipulation;
+import qouteall.imm_ptl.core.portal.animation.DeltaUnilateralPortalState;
+import qouteall.imm_ptl.core.portal.animation.NormalAnimation;
+import qouteall.imm_ptl.core.portal.animation.TimingFunction;
+import qouteall.imm_ptl.core.portal.animation.UnilateralPortalState;
 import qouteall.imm_ptl.core.portal.shape.BoxPortalShape;
 import qouteall.mini_scaled.block.BoxBarrierBlock;
 import qouteall.q_misc_util.Helper;
@@ -34,6 +38,7 @@ import qouteall.q_misc_util.my_util.DQuaternion;
 import qouteall.q_misc_util.my_util.IntBox;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -46,7 +51,8 @@ public class ScaleBoxGeneration {
     public static void createScaleBoxPortals(
         ServerLevel innerWorld,
         ServerLevel outerWorld,
-        ScaleBoxRecord.Entry entry
+        ScaleBoxRecord.Entry entry,
+        @Nullable IntBox fromWrappedBox
     ) {
         AARotation entranceRotation = entry.getEntranceRotation();
         AARotation toInnerRotation = entranceRotation.getInverse();
@@ -61,21 +67,57 @@ public class ScaleBoxGeneration {
         MiniScaledPortal portal = MiniScaledPortal.entityType.create(outerWorld);
         assert portal != null;
         
-        portal.setOriginPos(outerAreaBox.getCenter());
+        
         
         portal.setPortalShape(BoxPortalShape.FACING_OUTWARDS);
         
         portal.axisW = new Vec3(1, 0, 0);
         portal.axisH = new Vec3(0, 1, 0);
-        portal.width = outerAreaBoxSize.getX();
-        portal.height = outerAreaBoxSize.getY();
-        portal.thickness = outerAreaBoxSize.getZ();
         
         portal.setDestinationDimension(innerWorld.dimension());
-        portal.setDestination(innerAreaBox.getCenter());
         
         portal.setRotation(quaternion);
-        portal.scaling = scale;
+        
+        if (fromWrappedBox == null) {
+            portal.setOriginPos(outerAreaBox.getCenter());
+            portal.width = outerAreaBoxSize.getX();
+            portal.height = outerAreaBoxSize.getY();
+            portal.thickness = outerAreaBoxSize.getZ();
+            portal.setDestination(innerAreaBox.getCenter());
+            portal.scaling = scale;
+        }
+        else {
+            portal.setOriginPos(fromWrappedBox.getCenterVec());
+            portal.width = fromWrappedBox.getSize().getX();
+            portal.height = fromWrappedBox.getSize().getY();
+            portal.thickness = fromWrappedBox.getSize().getZ();
+            portal.setDestination(innerAreaBox.getCenter());
+            portal.scaling = 1;
+            
+            UnilateralPortalState currState = portal.getThisSideState();
+            UnilateralPortalState destState = new UnilateralPortalState.Builder()
+                .position(outerAreaBox.getCenter())
+                .orientation(currState.orientation())
+                .width(outerAreaBoxSize.getX())
+                .height(outerAreaBoxSize.getY())
+                .thickness(outerAreaBoxSize.getZ())
+                .build();
+            DeltaUnilateralPortalState delta =
+                DeltaUnilateralPortalState.fromDiff(currState, destState);
+            
+            portal.addThisSideAnimationDriver(new NormalAnimation.Builder()
+                .startingGameTime(portal.level().getGameTime())
+                .phases(List.of(
+                    new NormalAnimation.Phase.Builder()
+                        .durationTicks(3 * 20)
+                        .delta(delta)
+                        .timingFunction(TimingFunction.easeInOutCubic)
+                        .build()
+                ))
+                .loopCount(1)
+                .build()
+            );
+        }
         
         portal.teleportChangesScale = entry.teleportChangesScale;
         portal.setTeleportChangesGravity(entry.teleportChangesGravity);
@@ -87,8 +129,6 @@ public class ScaleBoxGeneration {
         portal.boxId = boxId;
         portal.generation = generation;
         portal.recordEntry = entry;
-        
-        McHelper.spawnServerEntity(portal);
         
         MiniScaledPortal reversePortal =
             PortalManipulation.createReversePortal(portal, MiniScaledPortal.entityType);
@@ -105,6 +145,13 @@ public class ScaleBoxGeneration {
         // It's a workaround to avoid this.
         reversePortal.doRenderPlayer = false;
         
+        // manually bind
+        PortalExtension.get(portal).reversePortalId = reversePortal.getUUID();
+        PortalExtension.get(portal).reversePortal = reversePortal;
+        PortalExtension.get(reversePortal).reversePortalId = portal.getUUID();
+        PortalExtension.get(reversePortal).reversePortal = portal;
+        
+        McHelper.spawnServerEntity(portal);
         McHelper.spawnServerEntity(reversePortal);
     }
     
@@ -216,7 +263,7 @@ public class ScaleBoxGeneration {
             IntBox expanded = innerAreaBox.getAdjusted(-1, -1, -1, 1, 1, 1);
             for (Direction direction : Direction.values()) {
                 expanded.getSurfaceLayer(direction).fastStream().forEach(blockPos -> {
-                    voidWorld.setBlockAndUpdate(blockPos, BoxBarrierBlock.instance.defaultBlockState());
+                    voidWorld.setBlockAndUpdate(blockPos, BoxBarrierBlock.INSTANCE.defaultBlockState());
                 });
             }
             
@@ -272,8 +319,8 @@ public class ScaleBoxGeneration {
         return BuiltInRegistries.BLOCK.get(new ResourceLocation("minecraft:" + color.getName() + "_stained_glass"));
     }
     
-    public static boolean isValidScale(int size) {
-        return Arrays.stream(supportedScales).anyMatch(s -> s == size);
+    public static boolean isValidScale(int scale) {
+        return scale >= 2 && scale <= 64;
     }
     
     // will set dirty
@@ -291,7 +338,8 @@ public class ScaleBoxGeneration {
             McHelper.getServerWorld(currentEntranceDim),
             entry.currentEntrancePos,
             entry.getEntranceRotation(),
-            player
+            player,
+            null
         );
     }
     

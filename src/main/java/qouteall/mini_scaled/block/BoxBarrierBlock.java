@@ -22,7 +22,7 @@ import qouteall.mini_scaled.ClientScaleBoxInteractionControl;
 import qouteall.q_misc_util.my_util.MyTaskList;
 
 public class BoxBarrierBlock extends Block {
-    public static final BoxBarrierBlock instance = new BoxBarrierBlock(
+    public static final BoxBarrierBlock INSTANCE = new BoxBarrierBlock(
         BlockBehaviour.Properties.of()
             .strength(-1.0F, 3600000.0F)
             .noLootTable().noOcclusion()
@@ -33,7 +33,7 @@ public class BoxBarrierBlock extends Block {
         Registry.register(
             BuiltInRegistries.BLOCK,
             new ResourceLocation("mini_scaled", "barrier"),
-            BoxBarrierBlock.instance
+            BoxBarrierBlock.INSTANCE
         );
     }
     
