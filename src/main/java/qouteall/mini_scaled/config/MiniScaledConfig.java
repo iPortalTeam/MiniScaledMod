@@ -12,4 +12,7 @@ public class MiniScaledConfig implements ConfigData {
     public ScaleBoxInteractionMode interactionMode = ScaleBoxInteractionMode.normal;
     
     public int maxScaleBoxPerPlayer = 40;
+    
+    public int wrappingAnimationTicks = 60;
+    public int unwrappingAnimationTicks = 60;
 }

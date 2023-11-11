@@ -35,7 +35,7 @@ public class ScaleBoxPlaceholderBlockEntity extends BlockEntity {
             "mini_scaled:placeholder_block_entity",
             FabricBlockEntityTypeBuilder.create(
                 ScaleBoxPlaceholderBlockEntity::new,
-                ScaleBoxPlaceholderBlock.instance
+                ScaleBoxPlaceholderBlock.INSTANCE
             ).build()
         );
     }
@@ -187,7 +187,7 @@ public class ScaleBoxPlaceholderBlockEntity extends BlockEntity {
         }
         
         boolean blocksValid = entry.getOuterAreaBox().stream().allMatch(blockPos ->
-            entranceWorld.getBlockState(blockPos).getBlock() == ScaleBoxPlaceholderBlock.instance
+            entranceWorld.getBlockState(blockPos).getBlock() == ScaleBoxPlaceholderBlock.INSTANCE
         );
         
         if (!blocksValid) {

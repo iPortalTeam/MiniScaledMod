@@ -24,6 +24,7 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.entity.EntityTypeTest;
 import net.minecraft.world.level.levelgen.structure.BoundingBox;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructurePlaceSettings;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
@@ -33,14 +34,23 @@ import net.minecraft.world.phys.Vec3;
 import org.apache.commons.lang3.Validate;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
+import qouteall.imm_ptl.core.IPGlobal;
 import qouteall.imm_ptl.core.McHelper;
 import qouteall.imm_ptl.core.api.PortalAPI;
+import qouteall.imm_ptl.core.portal.Portal;
+import qouteall.imm_ptl.core.portal.animation.DeltaUnilateralPortalState;
+import qouteall.imm_ptl.core.portal.animation.NormalAnimation;
+import qouteall.imm_ptl.core.portal.animation.TimingFunction;
+import qouteall.imm_ptl.core.portal.animation.UnilateralPortalState;
+import qouteall.imm_ptl.core.portal.shape.BoxPortalShape;
+import qouteall.imm_ptl.core.portal.shape.PortalShape;
 import qouteall.mini_scaled.block.BoxBarrierBlock;
 import qouteall.mini_scaled.block.ScaleBoxPlaceholderBlock;
 import qouteall.mini_scaled.block.ScaleBoxPlaceholderBlockEntity;
 import qouteall.q_misc_util.my_util.AARotation;
 import qouteall.q_misc_util.my_util.DQuaternion;
 import qouteall.q_misc_util.my_util.IntBox;
+import qouteall.q_misc_util.my_util.MyTaskList;
 
 import java.util.List;
 import java.util.Objects;
@@ -117,17 +127,175 @@ public class ScaleBoxOperations {
         }
     }
     
-    public static void unwrap(
-        ServerLevel world,
+    public static void preUnwrap(
         ServerPlayer player,
+        ScaleBoxRecord.Entry entry,
+        IntBox unwrappedBox,
+        AARotation rotationFromInnerToOuter
+    ) {
+        MinecraftServer server = player.server;
+        
+        int durationTicks = MSGlobal.config.getConfig().unwrappingAnimationTicks;
+        
+        if (entry.currentEntranceDim == null || entry.currentEntrancePos == null) {
+            player.sendSystemMessage(Component.literal("The scale box entrance does not exist now"));
+            return;
+        }
+        
+        ServerLevel entranceWorld = server.getLevel(entry.currentEntranceDim);
+        if (entranceWorld == null) {
+            LOGGER.error("cannot find world {} to unwrap scale box", entry.currentEntranceDim.location());
+            return;
+        }
+        
+        if (!ScaleBoxOperations.validateUnwrappingRegion(unwrappedBox, entry)) {
+            player.sendSystemMessage(Component.literal("Invalid box argument"));
+            return;
+        }
+        
+        if (!ScaleBoxOperations.validateUnwrappingRegionBlocks(unwrappedBox, entry, entranceWorld)) {
+            player.sendSystemMessage(Component.translatable("mini_scaled.unwrapping_area_not_empty"));
+            return;
+        }
+        
+        // find the portal and start animation
+        List<MiniScaledPortal> portals = entranceWorld.getEntities(
+            EntityTypeTest.forClass(MiniScaledPortal.class),
+            unwrappedBox.toRealNumberBox(),
+            p -> p.recordEntry != null && p.recordEntry.id == entry.id
+        );
+        
+        if (portals.isEmpty()) {
+            LOGGER.error("cannot find portal to unwrap scale box {}", entry);
+            player.sendSystemMessage(Component.literal("Valid scale box portal not found"));
+            return;
+        }
+        
+        if (portals.stream().anyMatch(p -> p.getPortalShape().isPlanar())) {
+            player.sendSystemMessage(Component.literal(
+                "Scale box portal not upgraded. Try to break the scale box and place it again."
+            ));
+            return;
+        }
+        
+        portals = portals.stream().filter(p -> {
+            PortalShape portalShape = p.getPortalShape();
+            if (portalShape instanceof BoxPortalShape boxPortalShape) {
+                return boxPortalShape.facingOutwards;
+            }
+            return false;
+        }).toList();
+        
+        if (portals.isEmpty()) {
+            LOGGER.error("cannot find portal to unwrap scale box {} after filtering", entry);
+            player.sendSystemMessage(Component.literal("Valid scale box portal not found"));
+            return;
+        }
+        
+        MiniScaledPortal portal = portals.get(0);
+        UnilateralPortalState currState = portal.getThisSideState();
+        UnilateralPortalState destState = new UnilateralPortalState.Builder()
+            .dimension(currState.dimension())
+            .position(unwrappedBox.getCenterVec())
+            .orientation(currState.orientation())
+            .width(unwrappedBox.getSize().getX())
+            .height(unwrappedBox.getSize().getY())
+            .thickness(unwrappedBox.getSize().getZ())
+            .build();
+        DeltaUnilateralPortalState diff = DeltaUnilateralPortalState.fromDiff(currState, destState);
+        
+        long currTime = entranceWorld.getGameTime();
+        portal.addThisSideAnimationDriver(
+            new NormalAnimation.Builder()
+                .startingGameTime(currTime)
+                .loopCount(1)
+                .phases(List.of(
+                    new NormalAnimation.Phase(durationTicks, diff, TimingFunction.easeInOutCubic)
+                ))
+                .build()
+        );
+        
+        entry.scheduledUnwrapTime = currTime + durationTicks;
+        ScaleBoxRecord.get(server).setDirty();
+        
+        int originalGeneration = entry.generation;
+        
+        IPGlobal.serverTaskList.addTask(MyTaskList.withDelay(
+            durationTicks, () -> {
+                // validate again because it may change during animation
+                if (server.getLevel(entranceWorld.dimension()) == null) {
+                    player.sendSystemMessage(Component.literal(
+                        "Unwrapping failed because the scale box entrance world missing"
+                    ));
+                    return true;
+                }
+                
+                if (entry.generation != originalGeneration) {
+                    player.sendSystemMessage(Component.literal(
+                        "Unwrapping failed because the scale box entrance changed"
+                    ));
+                    return true;
+                }
+                
+                if (entry.currentEntranceDim != entranceWorld.dimension()
+                    || entry.currentEntrancePos == null
+                ) {
+                    player.sendSystemMessage(Component.literal(
+                        "Unwrapping failed because the scale box entrance is invalid"
+                    ));
+                    return true;
+                }
+                
+                if (!validateUnwrappingRegion(unwrappedBox, entry)) {
+                    player.sendSystemMessage(Component.literal(
+                        "Unwrapping failed because the scale box entrance is invalid"
+                    ));
+                    return true;
+                }
+                
+                if (!validateUnwrappingRegionBlocks(unwrappedBox, entry, entranceWorld)) {
+                    player.sendSystemMessage(Component.literal(
+                        "Unwrapping failed because the unwrapped region is not clear"
+                    ));
+                    return true;
+                }
+                
+                doUnwrap(
+                    player,
+                    entranceWorld,
+                    entry,
+                    unwrappedBox,
+                    rotationFromInnerToOuter
+                );
+                return true;
+            }
+        ));
+    }
+    
+    public static void doUnwrap(
+        ServerPlayer player, ServerLevel entranceWorld,
         ScaleBoxRecord.Entry entry,
         IntBox expandedBox,
         AARotation rotationFromInnerToOuter
     ) {
-        MinecraftServer server = world.getServer();
-        ServerLevel voidDim = VoidDimension.getVoidServerWorld(server);
+        MinecraftServer server = entranceWorld.getServer();
         
         ScaleBoxRecord scaleBoxRecord = ScaleBoxRecord.get(server);
+        if (scaleBoxRecord.getEntryById(entry.id) != entry) {
+            player.sendSystemMessage(Component.literal(
+                "Unwrapping failed because box entry invalid"
+            ));
+            return;
+        }
+        
+        if (entry.currentEntranceDim == null || entry.currentEntrancePos == null) {
+            player.sendSystemMessage(Component.literal(
+                "Unwrapping failed because the scale box entrance is missing"
+            ));
+            return;
+        }
+        
+        ServerLevel voidDim = VoidDimension.getVoidServerWorld(server);
         
         IntBox innerAreaBox = entry.getInnerAreaBox();
         
@@ -145,7 +313,7 @@ public class ScaleBoxOperations {
         transferRegion(
             voidDim,
             innerAreaBox.l,
-            world,
+            entranceWorld,
             outerBoxBasePos,
             innerAreaBox.getSize(),
             rotationFromInnerToOuter
@@ -328,10 +496,24 @@ public class ScaleBoxOperations {
     }
     
     public static boolean canMoveEntity(Entity entity) {
+        // portal is not movable
+        if (entity instanceof Portal) {
+            // when a region adjacent to a scale box is wrapped,
+            // the scale box portal bounding box has thickness,
+            // so it will test that portal even though the area does not overlap
+            // testing the placeholder block will be more accurate
+            return entity instanceof MiniScaledPortal;
+        }
+        
         return entity.canChangeDimensions();
     }
     
     public static boolean canMoveBlock(ServerLevel world, BlockPos p, BlockState blockState) {
+        if (blockState.getBlock() == ScaleBoxPlaceholderBlock.INSTANCE) {
+            // not allowing wrapping scale box
+            return false;
+        }
+        
         float destroySpeed = blockState.getDestroySpeed(world, p);
         // bedrock is -1, obsidian is 50
         return destroySpeed >= 0 && destroySpeed < 50;
@@ -352,19 +534,38 @@ public class ScaleBoxOperations {
             return;
         }
         
+        MinecraftServer server = world.getServer();
+        
         entry.currentEntranceDim = world.dimension();
         entry.currentEntrancePos = outerBoxBasePos;
         entry.entranceRotation = rotation;
         entry.generation++;
         
-        MinecraftServer server = world.getServer();
         ScaleBoxRecord.get(server).setDirty(true);
+        
+        doPutScaleBoxEntranceIntoWorld(server, entry, fromWrappedBox);
+    }
+    
+    public static void doPutScaleBoxEntranceIntoWorld(
+        MinecraftServer server, ScaleBoxRecord.Entry entry, @Nullable IntBox fromWrappedBox
+    ) {
+        if (entry.currentEntranceDim == null) {
+            LOGGER.error("entrance dim is null {}", entry);
+            return;
+        }
+        
+        ServerLevel world = server.getLevel(entry.currentEntranceDim);
+        
+        if (world == null) {
+            LOGGER.error("cannot find world {} to place scale box", entry.currentEntranceDim.location());
+            return;
+        }
         
         ServerLevel voidWorld = VoidDimension.getVoidServerWorld(server);
         ScaleBoxGeneration.createScaleBoxPortals(voidWorld, world, entry, fromWrappedBox);
         
         entry.getOuterAreaBox().stream().forEach(outerPos -> {
-            world.setBlockAndUpdate(outerPos, ScaleBoxPlaceholderBlock.instance.defaultBlockState());
+            world.setBlockAndUpdate(outerPos, ScaleBoxPlaceholderBlock.INSTANCE.defaultBlockState());
             
             BlockEntity blockEntity = world.getBlockEntity(outerPos);
             if (blockEntity == null) {
@@ -401,5 +602,23 @@ public class ScaleBoxOperations {
         }
         
         return null;
+    }
+    
+    public static boolean validateUnwrappingRegionBlocks(
+        IntBox unwrappingArea, ScaleBoxRecord.Entry entry, ServerLevel world
+    ) {
+        IntBox entranceBox = entry.getOuterAreaBox();
+        return unwrappingArea.fastStream().allMatch(
+            p -> entranceBox.contains(p) || world.getBlockState(p).isAir()
+        );
+    }
+    
+    public static boolean validateUnwrappingRegion(
+        IntBox unwrappingArea, ScaleBoxRecord.Entry entry
+    ) {
+        IntBox entryOuterAreaBox = entry.getOuterAreaBox();
+        return unwrappingArea.contains(entryOuterAreaBox.l)
+            && unwrappingArea.contains(entryOuterAreaBox.h)
+            && entryOuterAreaBox.getSize().multiply(entry.scale).equals(unwrappingArea.getSize());
     }
 }

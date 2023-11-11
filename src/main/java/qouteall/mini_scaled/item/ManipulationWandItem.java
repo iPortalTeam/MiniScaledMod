@@ -22,7 +22,6 @@ import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import qouteall.mini_scaled.ClientUnwrappingInteraction;
 import qouteall.mini_scaled.GlassFrameMatching;
 import qouteall.mini_scaled.ScaleBoxManipulation;
 import qouteall.mini_scaled.ScaleBoxRecord;
@@ -141,7 +140,7 @@ public class ManipulationWandItem extends Item {
         
         ScaleBoxInteractionManager scaleBoxInteractionManager = ScaleBoxInteractionManager.get(player.getServer());
         
-        if (block == ScaleBoxPlaceholderBlock.instance) {
+        if (block == ScaleBoxPlaceholderBlock.INSTANCE) {
             BlockEntity blockEntity = world.getBlockEntity(clickedPos);
             
             if (!(blockEntity instanceof ScaleBoxPlaceholderBlockEntity placeholderBlockEntity)) {

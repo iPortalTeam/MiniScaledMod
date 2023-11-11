@@ -75,7 +75,7 @@ public class ScaleBoxManipulation {
             return InteractionResult.FAIL;
         }
         
-        if (world.getBlockState(pointedBlockPos).getBlock() == ScaleBoxPlaceholderBlock.instance) {
+        if (world.getBlockState(pointedBlockPos).getBlock() == ScaleBoxPlaceholderBlock.INSTANCE) {
             return InteractionResult.PASS;
         }
         
@@ -361,7 +361,7 @@ public class ScaleBoxManipulation {
         boolean areaClear = IntBox.getBoxByPosAndSignedSize(entry.currentEntrancePos, transformedNewEntranceSize)
             .fastStream().allMatch(blockPos -> {
                 BlockState blockState = world.getBlockState(blockPos);
-                return blockState.isAir() || blockState.getBlock() == ScaleBoxPlaceholderBlock.instance;
+                return blockState.isAir() || blockState.getBlock() == ScaleBoxPlaceholderBlock.INSTANCE;
             });
         
         if (!areaClear) {

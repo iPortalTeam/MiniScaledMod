@@ -20,6 +20,7 @@ import net.minecraft.world.entity.MobCategory;
 import net.minecraft.world.entity.Pose;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 import org.apache.commons.lang3.Validate;
 import org.jetbrains.annotations.Nullable;
@@ -31,16 +32,19 @@ import qouteall.imm_ptl.core.portal.shape.BoxPortalShape;
 import qouteall.imm_ptl.core.portal.shape.PortalShape;
 import qouteall.mini_scaled.block.ScaleBoxPlaceholderBlock;
 import qouteall.mini_scaled.util.MSUtil;
-import qouteall.q_misc_util.my_util.RayTraceResult;
 
 import java.util.Objects;
-import java.util.function.Consumer;
-import java.util.function.Supplier;
 
 public class MiniScaledPortal extends Portal {
     private static final Logger LOGGER = LogUtils.getLogger();
     
-    public static EntityType<MiniScaledPortal> entityType;
+    public static final EntityType<MiniScaledPortal> ENTITY_TYPE = FabricEntityTypeBuilder
+        .create(MobCategory.MISC, MiniScaledPortal::new)
+        .dimensions(new EntityDimensions(1, 1, true))
+        .fireImmune()
+        .trackRangeBlocks(96)
+        .trackedUpdateRate(20)
+        .build();
     
     public int boxId = 0;
     
@@ -71,55 +75,106 @@ public class MiniScaledPortal extends Portal {
             tickClient();
         }
         else {
-            ScaleBoxRecord scaleBoxRecord = ScaleBoxRecord.get(getServer());
+            tickServer();
+        }
+    }
+    
+    private void tickServer() {
+        MinecraftServer server = getServer();
+        assert server != null;
+        ScaleBoxRecord scaleBoxRecord = ScaleBoxRecord.get(server);
+        if (recordEntry == null) {
+            recordEntry = scaleBoxRecord.getEntryById(boxId);
             if (recordEntry == null) {
-                recordEntry = scaleBoxRecord.getEntryById(boxId);
-                if (recordEntry == null) {
-                    LOGGER.error("Missing record for boxId {}. Deleting {}", boxId, this);
+                LOGGER.info("Missing record for boxId {}. Deleting {}", boxId, this);
+                kill();
+                return;
+            }
+        }
+        
+        if (level().getGameTime() % 2 == 0) {
+            level().getProfiler().push("scale_box_portal_update");
+            
+            try {
+                ScaleBoxRecord.Entry entry = scaleBoxRecord.getEntryById(boxId);
+                if (entry == null) {
+                    LOGGER.info("no scale box record {} {}", boxId, this);
                     kill();
                     return;
                 }
+                
+                this.recordEntry = entry;
+                
+                if (generation != entry.generation) {
+                    kill();
+                    return;
+                }
+                
+                boolean statusValid = checkStatus(entry);
+                if (!statusValid) {
+                    return;
+                }
+                
+                checkUnwrapping(entry);
             }
-            
-            if (level().getGameTime() % 2 == 0) {
-                level().getProfiler().push("scale_box_portal_update");
-                ScaleBoxRecord.Entry entry = scaleBoxRecord.getEntryById(boxId);
-                if (entry == null) {
-                    LOGGER.error("no scale box record {} {}", boxId, this);
-                    kill();
-                }
-                else if (generation != entry.generation) {
-                    kill();
-                }
-                else {
-                    checkStatus(entry);
-                }
+            finally {
                 level().getProfiler().pop();
             }
         }
     }
     
-    private void checkStatus(ScaleBoxRecord.Entry entry) {
+    private boolean checkStatus(ScaleBoxRecord.Entry entry) {
         Validate.isTrue(!level().isClientSide());
-        if (isOuterPortal()) {
-            if (entry.currentEntranceDim == null || entry.currentEntrancePos == null) {
-                LOGGER.error("Invalid record entry {}. Removing portal {}", entry, this);
-                kill();
-            }
-            else {
+        if (!isOuterPortal()) {
+            return true;
+        }
+        
+        if (entry.currentEntranceDim == null || entry.currentEntrancePos == null) {
+            LOGGER.error("Invalid record entry {}. Removing portal {}", entry, this);
+            kill();
+            return false;
+        }
+        
+        MinecraftServer server = getServer();
+        assert server != null;
+        ServerLevel entranceDim = server.getLevel(entry.currentEntranceDim);
+        if (entranceDim == null) {
+            LOGGER.error(
+                "Cannot find entrance dim {}. Removing portal {}.",
+                entry.currentEntranceDim, this
+            );
+            kill();
+            return false;
+        }
+        
+        BlockState entranceBlockState = entranceDim.getBlockState(entry.currentEntrancePos);
+        if (entranceBlockState.getBlock() != ScaleBoxPlaceholderBlock.INSTANCE) {
+            LOGGER.error("Entrance block invalid. {}. Removing portal {}", entry, this);
+            kill();
+            return false;
+        }
+        
+        return true;
+    }
+    
+    private void checkUnwrapping(ScaleBoxRecord.Entry entry) {
+        if (entry.scheduledUnwrapTime != null) {
+            if (level().getGameTime() >= entry.scheduledUnwrapTime + 20) {
+                LOGGER.error(
+                    "Portal not deleted after unwrapping time. Re-placing scale box. {} {}",
+                    entry, this
+                );
+                
+                entry.scheduledUnwrapTime = null;
+                entry.generation++;
+                
                 MinecraftServer server = getServer();
                 assert server != null;
-                ServerLevel entranceDim = server.getLevel(entry.currentEntranceDim);
-                if (entranceDim == null) {
-                    LOGGER.error("Cannot find entrance dim {}. Removing portal {}.", entry.currentEntranceDim, this);
-                    kill();
-                }
-                else {
-                    if (entranceDim.getBlockState(entry.currentEntrancePos).getBlock() != ScaleBoxPlaceholderBlock.instance) {
-                        LOGGER.error("Entrance block invalid. {}. Removing portal {}", entry, this);
-                        kill();
-                    }
-                }
+                ScaleBoxRecord.get(server).setDirty();
+                
+                ScaleBoxOperations.doPutScaleBoxEntranceIntoWorld(
+                    server, entry, null
+                );
             }
         }
     }
@@ -161,34 +216,11 @@ public class MiniScaledPortal extends Portal {
         }
     }
     
-    private static <T extends Entity> void registerEntity(
-        Consumer<EntityType<T>> setEntityType,
-        Supplier<EntityType<T>> getEntityType,
-        String id,
-        EntityType.EntityFactory<T> constructor,
-        Registry<EntityType<?>> registry
-    ) {
-        EntityType<T> entityType = FabricEntityTypeBuilder.create(
-            MobCategory.MISC,
-            constructor
-        ).dimensions(
-            new EntityDimensions(1, 1, true)
-        ).fireImmune().trackable(96, 20).build();
-        setEntityType.accept(entityType);
+    public static void init() {
         Registry.register(
             BuiltInRegistries.ENTITY_TYPE,
-            new ResourceLocation(id),
-            entityType
-        );
-    }
-    
-    public static void init() {
-        registerEntity(
-            t -> {entityType = t;},
-            () -> entityType,
-            "mini_scaled:portal",
-            MiniScaledPortal::new,
-            BuiltInRegistries.ENTITY_TYPE
+            new ResourceLocation("mini_scaled:portal"),
+            ENTITY_TYPE
         );
     }
     
@@ -202,7 +234,7 @@ public class MiniScaledPortal extends Portal {
     }
     
     @Override
-    public boolean allowOverlappedTeleport() {
+    public boolean respectParallelOrientedPortal() {
         return true;
     }
     

@@ -184,6 +184,9 @@ public class ScaleBoxRecord extends SavedData {
         public boolean teleportChangesGravity = false;
         public boolean accessControl = false;
         
+        // this is used for deleting invalid portal when server restarts during unwrapping animation
+        public @Nullable Long scheduledUnwrapTime;
+        
         public Entry() {
         
         }
@@ -330,6 +333,13 @@ public class ScaleBoxRecord extends SavedData {
                 accessControl = false;
             }
             
+            if (tag.contains("scheduledUnwrapTime")) {
+                scheduledUnwrapTime = tag.getLong("scheduledUnwrapTime");
+            }
+            else {
+                scheduledUnwrapTime = null;
+            }
+            
             if (regionId > 100000) {
                 LOGGER.error("Region id too large {}. Something may be wrong.", this);
             }
@@ -355,6 +365,9 @@ public class ScaleBoxRecord extends SavedData {
             tag.putBoolean("teleportChangesScale", teleportChangesScale);
             tag.putBoolean("teleportChangesGravity", teleportChangesGravity);
             tag.putBoolean("accessControl", accessControl);
+            if (scheduledUnwrapTime != null) {
+                tag.putLong("scheduledUnwrapTime", scheduledUnwrapTime);
+            }
         }
         
         public static Entry fromTag(CompoundTag tag) {

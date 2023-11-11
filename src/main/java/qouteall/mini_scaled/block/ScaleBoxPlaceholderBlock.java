@@ -25,7 +25,7 @@ import qouteall.mini_scaled.ClientScaleBoxInteractionControl;
 import qouteall.q_misc_util.my_util.MyTaskList;
 
 public class ScaleBoxPlaceholderBlock extends BaseEntityBlock {
-    public static final ScaleBoxPlaceholderBlock instance = new ScaleBoxPlaceholderBlock(
+    public static final ScaleBoxPlaceholderBlock INSTANCE = new ScaleBoxPlaceholderBlock(
         BlockBehaviour.Properties.of()
             .strength(0.3F)
             .noLootTable().noOcclusion()
@@ -36,7 +36,7 @@ public class ScaleBoxPlaceholderBlock extends BaseEntityBlock {
         Registry.register(
             BuiltInRegistries.BLOCK,
             new ResourceLocation("mini_scaled", "scale_box_placeholder"),
-            ScaleBoxPlaceholderBlock.instance
+            ScaleBoxPlaceholderBlock.INSTANCE
         );
     }
     

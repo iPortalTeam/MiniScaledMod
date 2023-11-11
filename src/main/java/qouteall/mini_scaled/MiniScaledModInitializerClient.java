@@ -8,7 +8,7 @@ import qouteall.mini_scaled.gui.ScaleBoxManagementScreen;
 public class MiniScaledModInitializerClient implements ClientModInitializer {
     private static void initClient() {
         EntityRendererRegistry.register(
-            MiniScaledPortal.entityType,
+            MiniScaledPortal.ENTITY_TYPE,
             (context) -> new PortalEntityRenderer(context)
         );
         

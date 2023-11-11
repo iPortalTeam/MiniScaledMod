@@ -32,12 +32,12 @@ import qouteall.imm_ptl.core.portal.animation.TimingFunction;
 import qouteall.imm_ptl.core.portal.animation.UnilateralPortalState;
 import qouteall.imm_ptl.core.portal.shape.BoxPortalShape;
 import qouteall.mini_scaled.block.BoxBarrierBlock;
+import qouteall.mini_scaled.config.MiniScaledConfig;
 import qouteall.q_misc_util.Helper;
 import qouteall.q_misc_util.my_util.AARotation;
 import qouteall.q_misc_util.my_util.DQuaternion;
 import qouteall.q_misc_util.my_util.IntBox;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -46,6 +46,7 @@ import java.util.stream.Collectors;
 public class ScaleBoxGeneration {
     private static final Logger LOGGER = LoggerFactory.getLogger(ScaleBoxGeneration.class);
     
+    @Deprecated
     public static final int[] supportedScales = {4, 8, 16, 32};
     
     public static void createScaleBoxPortals(
@@ -64,10 +65,8 @@ public class ScaleBoxGeneration {
         int boxId = entry.id;
         int generation = entry.generation;
         
-        MiniScaledPortal portal = MiniScaledPortal.entityType.create(outerWorld);
+        MiniScaledPortal portal = MiniScaledPortal.ENTITY_TYPE.create(outerWorld);
         assert portal != null;
-        
-        
         
         portal.setPortalShape(BoxPortalShape.FACING_OUTWARDS);
         
@@ -96,6 +95,7 @@ public class ScaleBoxGeneration {
             
             UnilateralPortalState currState = portal.getThisSideState();
             UnilateralPortalState destState = new UnilateralPortalState.Builder()
+                .dimension(currState.dimension())
                 .position(outerAreaBox.getCenter())
                 .orientation(currState.orientation())
                 .width(outerAreaBoxSize.getX())
@@ -105,11 +105,12 @@ public class ScaleBoxGeneration {
             DeltaUnilateralPortalState delta =
                 DeltaUnilateralPortalState.fromDiff(currState, destState);
             
+            int durationTicks = MSGlobal.config.getConfig().wrappingAnimationTicks;
             portal.addThisSideAnimationDriver(new NormalAnimation.Builder()
                 .startingGameTime(portal.level().getGameTime())
                 .phases(List.of(
                     new NormalAnimation.Phase.Builder()
-                        .durationTicks(3 * 20)
+                        .durationTicks(durationTicks)
                         .delta(delta)
                         .timingFunction(TimingFunction.easeInOutCubic)
                         .build()
@@ -131,7 +132,7 @@ public class ScaleBoxGeneration {
         portal.recordEntry = entry;
         
         MiniScaledPortal reversePortal =
-            PortalManipulation.createReversePortal(portal, MiniScaledPortal.entityType);
+            PortalManipulation.createReversePortal(portal, MiniScaledPortal.ENTITY_TYPE);
         
         reversePortal.fuseView = false;
         reversePortal.hasCrossPortalCollision = true;
@@ -353,7 +354,7 @@ public class ScaleBoxGeneration {
         int boxId = entry.id;
         int generation = entry.generation;
         
-        MiniScaledPortal portal = MiniScaledPortal.entityType.create(voidWorld);
+        MiniScaledPortal portal = MiniScaledPortal.ENTITY_TYPE.create(voidWorld);
         assert portal != null;
         
         portal.setPortalShape(BoxPortalShape.FACING_INWARDS);

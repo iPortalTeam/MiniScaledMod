@@ -507,7 +507,7 @@ public class ScaleBoxInteractionManager {
         }
     }
     
-    private void confirmUnwrapping(ServerPlayer player, int boxId, IntBox area) {
+    private void confirmUnwrapping(ServerPlayer player, int boxId, IntBox unwrappingArea) {
         ScaleBoxRecord record = ScaleBoxRecord.get(player.server);
         ScaleBoxRecord.Entry entry = record.getEntryById(boxId);
         
@@ -521,42 +521,14 @@ public class ScaleBoxInteractionManager {
             return;
         }
         
-        if (entry.currentEntranceDim == null || entry.currentEntrancePos == null) {
-            player.sendSystemMessage(Component.literal("The scale box entrance does not exist now"));
-            return;
-        }
-        
         ServerLevel world = ((ServerLevel) player.level());
         if (world.dimension() != entry.currentEntranceDim) {
             player.sendSystemMessage(Component.literal("You are not in the dimension of the entrance"));
             return;
         }
         
-        IntBox entranceBox = entry.getOuterAreaBox();
-        if (player.position().subtract(entranceBox.getCenterVec()).lengthSqr() > 32 * 32) {
+        if (player.position().subtract(entry.getOuterAreaBox().getCenterVec()).lengthSqr() > 32 * 32) {
             player.sendSystemMessage(Component.literal("You are too far away from the entrance"));
-            return;
-        }
-        
-        if (!area.contains(entranceBox.l) || !area.contains(entranceBox.h) ||
-            !entranceBox.getSize().multiply(entry.scale).equals(area.getSize())) {
-            player.sendSystemMessage(Component.literal("Invalid box argument"));
-            return;
-        }
-        
-        boolean areaBlocksClear = area.fastStream().allMatch(
-            p -> entranceBox.contains(p) || world.getBlockState(p).isAir()
-        );
-        if (!areaBlocksClear) {
-            player.sendSystemMessage(Component.translatable("mini_scaled.unwrapping_area_not_empty"));
-            return;
-        }
-        
-        Entity nonWrappableEntity = ScaleBoxOperations.checkNonWrappableEntity(world, area);
-        if (nonWrappableEntity != null) {
-            player.sendSystemMessage(Component.translatable(
-                "mini_scaled.unwrapping_area_has_entity", nonWrappableEntity.getDisplayName()
-            ));
             return;
         }
         
@@ -564,9 +536,8 @@ public class ScaleBoxInteractionManager {
         // because having them is not feasible in non-cheating gameplay
         // and the player should always be able to unwrap any box to free slot
         
-        ScaleBoxOperations.unwrap(
-            world,
-            player, entry, area,
+        ScaleBoxOperations.preUnwrap(
+            player, entry, unwrappingArea,
             entry.getEntranceRotation()
         );
     }

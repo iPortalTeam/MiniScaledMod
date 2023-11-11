@@ -36,6 +36,7 @@ public class ScaleBoxEntranceCreation {
         return creationItem;
     }
     
+    @Deprecated
     private static final List<BoxFrameMatcher> boxFrameMatchers =
         Arrays.stream(ScaleBoxGeneration.supportedScales).mapToObj(
             s -> new BoxFrameMatcher(new BlockPos(s, s, s))
@@ -43,31 +44,32 @@ public class ScaleBoxEntranceCreation {
     
     
     public static void init() {
-        UseBlockCallback.EVENT.register((player, world, hand, hitResult) -> {
-            if (creationItem == null) {
-                return InteractionResult.PASS;
-            }
-            
-            ItemStack stackInHand = player.getItemInHand(hand);
-            
-            if (player instanceof ServerPlayer serverPlayer) {
-                if (stackInHand.getItem() == creationItem) {
-                    boolean succeeded =
-                        onRightClickBoxFrameUsingNetherite(serverPlayer, hitResult.getBlockPos());
-                    if (succeeded) {
-                        stackInHand.shrink(1);
-                        return InteractionResult.CONSUME;
-                    }
-                    else {
-                        return InteractionResult.FAIL;
-                    }
-                }
-            }
-            
-            return InteractionResult.PASS;
-        });
+//        UseBlockCallback.EVENT.register((player, world, hand, hitResult) -> {
+//            if (creationItem == null) {
+//                return InteractionResult.PASS;
+//            }
+//
+//            ItemStack stackInHand = player.getItemInHand(hand);
+//
+//            if (player instanceof ServerPlayer serverPlayer) {
+//                if (stackInHand.getItem() == creationItem) {
+//                    boolean succeeded =
+//                        onRightClickBoxFrameUsingNetherite(serverPlayer, hitResult.getBlockPos());
+//                    if (succeeded) {
+//                        stackInHand.shrink(1);
+//                        return InteractionResult.CONSUME;
+//                    }
+//                    else {
+//                        return InteractionResult.FAIL;
+//                    }
+//                }
+//            }
+//
+//            return InteractionResult.PASS;
+//        });
     }
     
+    @Deprecated
     private static boolean onRightClickBoxFrameUsingNetherite(
         ServerPlayer player,
         BlockPos pos
@@ -132,6 +134,7 @@ public class ScaleBoxEntranceCreation {
         return true;
     }
     
+    @Deprecated
     public static class BoxFrameMatcher {
         private final BlockPos size;
         private final BlockPos[] vertexOffsets;
@@ -161,6 +164,7 @@ public class ScaleBoxEntranceCreation {
         }
     }
     
+    @Deprecated
     @Nullable
     private static IntBox detectBoxFrameOfAllowedSize(
         ServerLevel world,
