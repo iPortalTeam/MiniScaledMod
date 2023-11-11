@@ -432,29 +432,37 @@ public class ScaleBoxOperations {
             }
         }
         
-        for (int dx = 0; dx < regionSize.getX(); dx++) {
-            for (int dy = 0; dy < regionSize.getY(); dy++) {
-                for (int dz = 0; dz < regionSize.getZ(); dz++) {
+        // also update the outer layer of region
+        for (int dx = -1; dx <= regionSize.getX(); dx++) {
+            for (int dy = -1; dy <= regionSize.getY(); dy++) {
+                for (int dz = -1; dz <= regionSize.getZ(); dz++) {
                     BlockPos fromPos = fromOrigin.offset(dx, dy, dz);
-                    BlockState fromBlockState = fromWorld.getBlockState(fromPos);
-                    
-                    fromWorld.blockUpdated(fromPos, fromBlockState.getBlock());
+                    updateBlockStatus(fromWorld, fromPos);
                     
                     BlockPos transformedDelta = rotation.transform(new BlockPos(dx, dy, dz));
                     BlockPos toPos = toOrigin.offset(transformedDelta);
                     
-                    BlockState toBlockState = toWorld.getBlockState(toPos);
-                    BlockState toBlockStateUpdated = Block.updateFromNeighbourShapes(
-                        toBlockState, toWorld, toPos
-                    );
-                    if (toBlockState != toBlockStateUpdated) {
-                        toWorld.setBlock(toPos, toBlockStateUpdated, 2 | 16);
-                    }
-                    
-                    toWorld.blockUpdated(toPos, toBlockStateUpdated.getBlock());
+                    updateBlockStatus(toWorld, toPos);
                 }
             }
         }
+    }
+    
+    public static void updateBlockStatus(ServerLevel world, BlockPos pos) {
+        BlockState blockState = world.getBlockState(pos);
+        BlockState blockStateUpdated = Block.updateFromNeighbourShapes(
+            blockState, world, pos
+        );
+        if (blockState != blockStateUpdated) {
+            if (blockStateUpdated.isAir()) {
+                world.destroyBlock(pos, true);
+            }
+            else {
+                world.setBlock(pos, blockStateUpdated, 1 | 2);
+            }
+        }
+        
+        world.blockUpdated(pos, blockState.getBlock());
     }
     
     private static void transferEntities(

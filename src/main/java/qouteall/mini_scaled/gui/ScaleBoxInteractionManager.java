@@ -376,6 +376,9 @@ public class ScaleBoxInteractionManager {
                     return false;
                 }
                 
+                // clear loading chunk message
+                player.displayClientMessage(Component.empty(), true);
+                
                 // re-check because chunk loading takes time, and it may change during loading
                 
                 if (!checkGlassFrameIntegrityAndInform(player, glassFrame, world, glassBlockState)) {
