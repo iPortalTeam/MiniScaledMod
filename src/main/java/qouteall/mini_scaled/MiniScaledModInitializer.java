@@ -88,8 +88,8 @@ public class MiniScaledModInitializer implements ModInitializer {
         
         ItemGroupEvents.modifyEntriesEvent(CreativeModeTabs.TOOLS_AND_UTILITIES)
             .register(entries -> {
+                // TODO add own tab
                 ManipulationWandItem.registerCreativeInventory(entries::accept);
-                ScaleBoxEntranceItem.registerCreativeInventory(entries::accept);
             });
         
         CommandRegistrationCallback.EVENT.register(

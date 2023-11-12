@@ -157,6 +157,7 @@ public class ScaleBoxGeneration {
     }
     
     
+    @Deprecated
     public static ScaleBoxRecord.Entry getOrCreateEntry(
         MinecraftServer server,
         UUID playerId, String playerName, int scale, DyeColor color, ScaleBoxRecord record

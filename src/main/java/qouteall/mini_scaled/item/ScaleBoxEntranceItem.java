@@ -127,7 +127,7 @@ public class ScaleBoxEntranceItem extends Item {
             );
         }
 
-        // the entrance size is not shown because the size may change, and it's hard to update
+        // TODO show entrance size
 //        if (itemInfo.entranceSizeCache != null) {
 //            String sizeStr = String.format("%d x %d x %d",
 //                itemInfo.entranceSizeCache.getX(), itemInfo.entranceSizeCache.getY(), itemInfo.entranceSizeCache.getZ()

@@ -43,12 +43,15 @@
   "mini_scaled.acquire_entrance_cooldown": "You can only get one entrance item every %s seconds.",
   "mini_scaled.unwrap": "Unwrap",
   "mini_scaled.not_your_scale_box": "This scale box is not yours.",
-  "mini_scaled.select_direction_for_unwrapping": "Select the direction for unwrapping.\nPress %s to confirm. Press %s to cancel.",
+  "mini_scaled.select_direction_for_unwrapping": "Select the direction for unwrapping.\nPress %s to confirm.",
   "mini_scaled.unwrapping_area_not_empty": "The unwrapping area is not empty.",
   "mini_scaled.count_limit": "Each player can have at most %s scale boxes. Try unwrapping your existing scale boxes.",
   "mini_scaled.non_wrappable_block": "The area has a non-wrappable block at (%s, %s, %s).",
   "mini_scaled.non_wrappable_entity": "The area has a non-wrappable entity (%s).",
   "mini_scaled.unwrapping_area_has_entity": "Cannot unwrap because of the entity in region (%s).",
   "mini_scaled.wait_for_chunk_loading": "Waiting for chunk loading...",
-  "mini_scaled.cannot_place_other_players_box": "You cannot place other player's scale box."
+  "mini_scaled.cannot_place_other_players_box": "You cannot place other player's scale box.",
+  "mini_scaled.cannot_find_scale_box_for_item": "Cannot find your scale box with the specified color and scale. Try using the manipulation wand to see what scale boxes you have.",
+  "mini_scaled.box_not_exist": "The scale box corresponding to this item had been unwrapped.",
+  "mini_scaled.unwrapping_cancelled": "Unwrapping cancelled because the main hand is not holding the manipulation wand."
 }

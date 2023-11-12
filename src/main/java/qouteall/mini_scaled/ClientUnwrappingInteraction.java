@@ -74,17 +74,6 @@ public class ClientUnwrappingInteraction {
         
         ClientTickEvents.END_CLIENT_TICK.register(client -> updateDisplay());
         
-        ClientPreAttackCallback.EVENT.register((client, player, clickCount) -> {
-            ItemStack mainHandItem = player.getMainHandItem();
-            if (mainHandItem.getItem() == ManipulationWandItem.INSTANCE) {
-                if (session != null) {
-                    onLeftClick();
-                    return true;
-                }
-            }
-            return false;
-        });
-        
         UseItemCallback.EVENT.register((player, world, hand) -> {
             ItemStack mainHandItem = player.getMainHandItem();
             if (mainHandItem.getItem() == ManipulationWandItem.INSTANCE) {
@@ -167,6 +156,12 @@ public class ClientUnwrappingInteraction {
         }
         
         if (player.getMainHandItem().getItem() != ManipulationWandItem.INSTANCE) {
+            reset();
+            CustomTextOverlay.putText(
+                Component.translatable("mini_scaled.unwrapping_cancelled"),
+                2.0,
+                "mini_scaled"
+            );
             return;
         }
         

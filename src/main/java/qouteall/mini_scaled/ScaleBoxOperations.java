@@ -2,6 +2,7 @@ package qouteall.mini_scaled;
 
 import com.mojang.logging.LogUtils;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
+import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.arguments.blocks.BlockInput;
 import net.minecraft.core.BlockPos;
@@ -16,6 +17,7 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.util.Tuple;
 import net.minecraft.world.Clearable;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.ServerLevelAccessor;
@@ -349,10 +351,13 @@ public class ScaleBoxOperations {
         @Nullable Rotation vanillaRotation = rotation.toVanillaRotation();
         
         transferBlockAndBlockEntities(
-            fromWorld, fromOrigin, toWorld, toOrigin, regionSize, rotation, vanillaRotation
+            fromWorld, fromOrigin, toWorld, toOrigin, regionSize, rotation, vanillaRotation,
+            false
         );
         
         transferEntities(fromWorld, fromOrigin, toWorld, toOrigin, regionSize, rotation);
+        
+        // TODO fix headless piston
     }
     
     /**
@@ -363,8 +368,8 @@ public class ScaleBoxOperations {
      * Including redstone updates.
      * 2 : Cause mob AI pathfinding update and notify ChunkHolder block change for network sync.
      * This is always required if we don't want client block de-sync.
-     * 4 : not relevant on server side
-     * 8 : ?
+     * 4 : Make client to rebuild chunk.
+     * 8 : Make client to rebuild chunk as player-changed {@link LevelRenderer#blockChanged}
      * 16: disable shape update (this is the update that cause torch to drop without wall)
      * 32: drop item when block destroys {@link Block#updateOrDestroy(BlockState, BlockState, LevelAccessor, BlockPos, int, int)}
      * <p>
@@ -382,7 +387,8 @@ public class ScaleBoxOperations {
         ServerLevel toWorld, BlockPos toOrigin,
         BlockPos regionSize,
         AARotation rotation,
-        @Nullable Rotation vanillaRotation
+        @Nullable Rotation vanillaRotation,
+        boolean delayFromSideUpdate
     ) {
         for (int dx = 0; dx < regionSize.getX(); dx++) {
             for (int dy = 0; dy < regionSize.getY(); dy++) {
@@ -405,10 +411,19 @@ public class ScaleBoxOperations {
                         }
                     }
                     
-                    // clear the block without triggering shape update
-                    fromWorld.setBlock(
-                        fromPos, Blocks.AIR.defaultBlockState(), 2 | 16
-                    );
+                    if (delayFromSideUpdate) {
+                        // set the block to barrier,
+                        // without triggering shape update and without update networking
+                        fromWorld.setBlock(
+                            fromPos, Blocks.BARRIER.defaultBlockState(), 16
+                        );
+                    }
+                    else {
+                        // clear the block without triggering shape update
+                        fromWorld.setBlock(
+                            fromPos, Blocks.AIR.defaultBlockState(), 2 | 16
+                        );
+                    }
                     
                     // set the block without triggering shape update
                     toWorld.setBlock(
@@ -446,6 +461,26 @@ public class ScaleBoxOperations {
                 }
             }
         }
+        
+        if (delayFromSideUpdate) {
+            // do from-side networking update one tick later
+            IPGlobal.serverTaskList.addTask(() -> {
+                for (int dx = 0; dx < regionSize.getX(); dx++) {
+                    for (int dy = 0; dy < regionSize.getY(); dy++) {
+                        for (int dz = 0; dz < regionSize.getZ(); dz++) {
+                            BlockPos fromPos = fromOrigin.offset(dx, dy, dz);
+                            BlockState currState = fromWorld.getBlockState(fromPos);
+                            if (currState.getBlock() == Blocks.BARRIER) {
+                                fromWorld.setBlock(
+                                    fromPos, Blocks.AIR.defaultBlockState(), 1 | 2
+                                );
+                            }
+                        }
+                    }
+                }
+                return true;
+            });
+        }
     }
     
     public static void updateBlockStatus(ServerLevel world, BlockPos pos) {
@@ -455,10 +490,13 @@ public class ScaleBoxOperations {
         );
         if (blockState != blockStateUpdated) {
             if (blockStateUpdated.isAir()) {
+                // need to destroy block instead of setting block here
+                // setting block will automatically remove the flag 32
+                // this will cause item loss
                 world.destroyBlock(pos, true);
             }
             else {
-                world.setBlock(pos, blockStateUpdated, 1 | 2);
+                world.setBlockAndUpdate(pos, blockStateUpdated);
             }
         }
         

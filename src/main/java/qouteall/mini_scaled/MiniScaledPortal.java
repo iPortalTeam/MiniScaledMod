@@ -87,7 +87,7 @@ public class MiniScaledPortal extends Portal {
             recordEntry = scaleBoxRecord.getEntryById(boxId);
             if (recordEntry == null) {
                 LOGGER.info("Missing record for boxId {}. Deleting {}", boxId, this);
-                kill();
+                tryRemovingPortal();
                 return;
             }
         }
@@ -99,14 +99,14 @@ public class MiniScaledPortal extends Portal {
                 ScaleBoxRecord.Entry entry = scaleBoxRecord.getEntryById(boxId);
                 if (entry == null) {
                     LOGGER.info("no scale box record {} {}", boxId, this);
-                    kill();
+                    tryRemovingPortal();
                     return;
                 }
                 
                 this.recordEntry = entry;
                 
                 if (generation != entry.generation) {
-                    kill();
+                    tryRemovingPortal();
                     return;
                 }
                 
@@ -123,6 +123,11 @@ public class MiniScaledPortal extends Portal {
         }
     }
     
+    private void tryRemovingPortal() {
+        
+        kill();
+    }
+    
     private boolean checkStatus(ScaleBoxRecord.Entry entry) {
         Validate.isTrue(!level().isClientSide());
         if (!isOuterPortal()) {
@@ -131,7 +136,7 @@ public class MiniScaledPortal extends Portal {
         
         if (entry.currentEntranceDim == null || entry.currentEntrancePos == null) {
             LOGGER.error("Invalid record entry {}. Removing portal {}", entry, this);
-            kill();
+            tryRemovingPortal();
             return false;
         }
         
@@ -143,14 +148,14 @@ public class MiniScaledPortal extends Portal {
                 "Cannot find entrance dim {}. Removing portal {}.",
                 entry.currentEntranceDim, this
             );
-            kill();
+            tryRemovingPortal();
             return false;
         }
         
         BlockState entranceBlockState = entranceDim.getBlockState(entry.currentEntrancePos);
         if (entranceBlockState.getBlock() != ScaleBoxPlaceholderBlock.INSTANCE) {
             LOGGER.error("Entrance block invalid. {}. Removing portal {}", entry, this);
-            kill();
+            tryRemovingPortal();
             return false;
         }
         
