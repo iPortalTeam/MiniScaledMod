@@ -31,6 +31,6 @@ public class ScaleBoxListWidget extends AbstractSelectionList<ScaleBoxEntryWidge
     
     @Override
     protected int getScrollbarPosition() {
-        return (width - rowWidth) / 2 + rowWidth;
+        return rowWidth;
     }
 }

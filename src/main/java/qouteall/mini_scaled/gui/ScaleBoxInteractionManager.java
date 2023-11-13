@@ -40,6 +40,7 @@ import qouteall.q_misc_util.api.McRemoteProcedureCall;
 import qouteall.q_misc_util.my_util.IntBox;
 import qouteall.q_misc_util.my_util.MyTaskList;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.WeakHashMap;
@@ -48,7 +49,7 @@ import java.util.function.Consumer;
 public class ScaleBoxInteractionManager {
     private static final Logger LOGGER = LogUtils.getLogger();
     
-    private static final int ACQUIRE_ENTRANCE_COOLDOWN_SECONDS = 30;
+    private static final int ACQUIRE_ENTRANCE_COOLDOWN_SECONDS = 10;
     
     public static void init() {
         ServerTickEvents.END_SERVER_TICK.register(server -> get(server).tick());
@@ -115,6 +116,31 @@ public class ScaleBoxInteractionManager {
         playerState.clickedBoxId = targetBoxId;
     }
     
+    public void openManagementGuiForAllScaleBoxes(
+        ServerPlayer player, @Nullable Integer targetBoxId
+    ) {
+        if (!player.hasPermissions(2)) {
+            LOGGER.error("The player does not have level 2 permission to view all scale boxes {}", player);
+            return;
+        }
+        
+        ScaleBoxRecord scaleBoxRecord = ScaleBoxRecord.get(player.server);
+        
+        List<ScaleBoxRecord.Entry> entries = new ArrayList<>(scaleBoxRecord.getAllEntries());
+        
+        ManagementGuiData managementGuiData = new ManagementGuiData(entries, targetBoxId);
+        
+        /**{@link RemoteCallables#tellClientToOpenManagementGui(CompoundTag)}*/
+        McRemoteProcedureCall.tellClientToInvoke(
+            player,
+            "qouteall.mini_scaled.gui.ScaleBoxInteractionManager.RemoteCallables.tellClientToOpenManagementGui",
+            managementGuiData.toTag()
+        );
+        
+        StateForPlayer playerState = getPlayerState(player);
+        playerState.clickedBoxId = targetBoxId;
+    }
+    
     public void onRequestChunkLoading(ServerPlayer player, int boxId) {
         ScaleBoxRecord scaleBoxRecord = ScaleBoxRecord.get(player.server);
         
@@ -125,7 +151,7 @@ public class ScaleBoxInteractionManager {
             return;
         }
         
-        if (!Objects.equals(entry.ownerId, player.getUUID())) {
+        if (!Objects.equals(entry.ownerId, player.getUUID()) && !player.hasPermissions(2)) {
             LOGGER.warn("Player {} is not the owner of scale box {}", player, boxId);
             return;
         }

@@ -215,7 +215,7 @@ public class ScaleBoxManagementScreen extends Screen {
         super.init();
         
         int scrollBarWidth = 6;
-        int listWidth = width - (int) (width * VIEW_RATIO) - scrollBarWidth;
+        int listWidth = width - (int) (width * VIEW_RATIO);
         listWidget.updateSize(
             listWidth, // width
             height, // height
@@ -223,7 +223,7 @@ public class ScaleBoxManagementScreen extends Screen {
             height // end y
         );
         listWidget.setLeftPos(0); // left x
-        listWidget.rowWidth = listWidth;
+        listWidget.rowWidth = listWidth - scrollBarWidth;
         
         addRenderableWidget(listWidget);
         addRenderableWidget(optionsButton);

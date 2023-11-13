@@ -26,6 +26,7 @@ import qouteall.q_misc_util.my_util.AARotation;
 import qouteall.q_misc_util.my_util.IntBox;
 
 import java.util.BitSet;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -73,6 +74,10 @@ public class ScaleBoxRecord extends SavedData {
     
     public List<Entry> getEntriesByOwner(UUID uuid) {
         return Collections.unmodifiableList(byOwner.getOrDefault(uuid, Collections.emptyList()));
+    }
+    
+    public Collection<Entry> getAllEntries() {
+        return byId.values();
     }
     
     public void addEntry(Entry entry) {
