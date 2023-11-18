@@ -30,13 +30,7 @@ public class ScaleBoxWrappingScreen extends Screen {
     
     public static final int ITEM_HEIGHT = 30;
     
-    public static record Option(
-        int scale,
-        int ingredientCost
-    ) {}
-    
-    public final List<Option> options;
-    private final Item costItem;
+    public final ScaleBoxInteractionManager.PendingWrappingGuiData data;
     
     private final OptionListWidget optionListWidget;
     
@@ -52,26 +46,28 @@ public class ScaleBoxWrappingScreen extends Screen {
     private final Button cancelButton;
     
     public ScaleBoxWrappingScreen(
-        Component title, List<Option> options, BlockPos boxSize,
-        Item costItem
+        ScaleBoxInteractionManager.PendingWrappingGuiData pendingWrappingGuiData
     ) {
-        super(title);
+        super(Component.literal("pending wrapping screen"));
         
         // in vanilla it's set in init(), but I want to initialize early
         this.minecraft = Minecraft.getInstance();
         this.font = Minecraft.getInstance().font;
         
-        this.options = options;
+        this.data = pendingWrappingGuiData;
+        
         this.optionListWidget = new OptionListWidget(
             minecraft, width, height,
             100, 200,
             ITEM_HEIGHT
         );
         
-        for (Option option : options) {
+        BlockPos boxSize = data.boxSize();
+        
+        for (ScaleBoxInteractionManager.WrappingOption option : data.options()) {
             optionListWidget.children().add(new OptionEntryWidget(
                 option, this::onSelect,
-                costItem, boxSize
+                boxSize
             ));
         }
         
@@ -81,7 +77,8 @@ public class ScaleBoxWrappingScreen extends Screen {
         
         this.titleText2 = new StringWidget(
             Component.translatable(
-                "mini_scaled.wrap_box_size", boxSize.getX(), boxSize.getY(), boxSize.getZ()
+                "mini_scaled.wrap_box_size",
+                boxSize.getX(), boxSize.getY(), boxSize.getZ()
             ), font
         ).alignCenter();
         
@@ -103,8 +100,6 @@ public class ScaleBoxWrappingScreen extends Screen {
         this.confirmButton.active = false;
         
         this.proxyForOptionListWidget = new StringWidget(Component.empty(), font);
-        
-        this.costItem = costItem;
     }
     
     private void onSelect(OptionEntryWidget selected) {
@@ -126,7 +121,7 @@ public class ScaleBoxWrappingScreen extends Screen {
         OptionEntryWidget selected = optionListWidget.getSelected();
         
         if (selected != null) {
-            int scale = selected.option.scale;
+            int scale = selected.option.scale();
             /**{@link ScaleBoxInteractionManager.RemoteCallables#confirmWrapping(ServerPlayer, int)}*/
             McRemoteProcedureCall.tellServerToInvoke(
                 "qouteall.mini_scaled.gui.ScaleBoxInteractionManager.RemoteCallables.confirmWrapping",
@@ -182,7 +177,7 @@ public class ScaleBoxWrappingScreen extends Screen {
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
         super.render(guiGraphics, mouseX, mouseY, partialTick);
-
+        
     }
     
     @Override
@@ -210,21 +205,19 @@ public class ScaleBoxWrappingScreen extends Screen {
     
     public static class OptionEntryWidget extends ContainerObjectSelectionList.Entry<OptionEntryWidget> {
         
-        public final Option option;
+        public final ScaleBoxInteractionManager.WrappingOption option;
         public final Consumer<OptionEntryWidget> selectCallback;
-        public final Item costItem;
         private final BlockPos outerBoxSize;
         
         private MultiLineLabel line1;
         private MultiLineLabel line2;
         
         public OptionEntryWidget(
-            Option option, Consumer<OptionEntryWidget> selectCallback,
-            Item costItem, BlockPos outerBoxSize
+            ScaleBoxInteractionManager.WrappingOption option, Consumer<OptionEntryWidget> selectCallback,
+            BlockPos outerBoxSize
         ) {
             this.option = option;
             this.selectCallback = selectCallback;
-            this.costItem = costItem;
             this.outerBoxSize = outerBoxSize;
         }
         
@@ -277,15 +270,18 @@ public class ScaleBoxWrappingScreen extends Screen {
             // render cost item icon
             int costItemIconOffset = line2.getWidth();
             
-            ItemStack itemStack = new ItemStack(costItem, option.ingredientCost());
-            guiGraphics.renderItem(
-                itemStack,
-                left + costItemIconOffset, top + 15 - 5
-            );
-            guiGraphics.renderItemDecorations(
-                font, itemStack,
-                left + costItemIconOffset, top + 15 - 5
-            );
+            int itemDisplayWidth = 18;
+            for (int i = 0; i < option.ingredients().size(); i++) {
+                ItemStack ingredient = option.ingredients().get(i);
+                guiGraphics.renderItem(
+                    ingredient,
+                    left + costItemIconOffset + itemDisplayWidth * i, top + 15 - 5
+                );
+                guiGraphics.renderItemDecorations(
+                    font, ingredient,
+                    left + costItemIconOffset + itemDisplayWidth * i, top + 15 - 5
+                );
+            }
         }
         
         @Override

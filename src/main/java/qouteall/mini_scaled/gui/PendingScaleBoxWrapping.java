@@ -12,6 +12,6 @@ public record PendingScaleBoxWrapping(
     ResourceKey<Level> dimension,
     IntBox glassFrame,
     DyeColor color,
-    List<ScaleBoxWrappingScreen.Option> options,
+    List<ScaleBoxInteractionManager.WrappingOption> options,
     BlockPos clickingPos
 ) {}

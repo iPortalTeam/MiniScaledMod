@@ -17,6 +17,7 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.util.Tuple;
 import net.minecraft.world.Clearable;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
@@ -76,7 +77,7 @@ public class ScaleBoxOperations {
         return result;
     }
     
-    public static int getCost(
+    public static List<ItemStack> getCost(
         BlockPos boxSize, int scale
     ) {
         int product = boxSize.getX() * boxSize.getY() * boxSize.getZ();
@@ -85,7 +86,18 @@ public class ScaleBoxOperations {
         
         double r2 = scale / 8.0;
         
-        return (int) Math.ceil(r + r2);
+        int itemNum = (int) Math.ceil(r + r2);
+        
+        return List.of(
+            new ItemStack(
+                ScaleBoxEntranceCreation.getCreationItem(),
+                itemNum
+            ),
+            new ItemStack(
+                ScaleBoxEntranceCreation.getCreationItem(),
+                itemNum
+            )
+        );
     }
     
     public static void doWrap(

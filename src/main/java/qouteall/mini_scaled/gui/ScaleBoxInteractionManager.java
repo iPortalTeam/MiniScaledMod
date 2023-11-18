@@ -2,6 +2,8 @@ package qouteall.mini_scaled.gui;
 
 import com.mojang.logging.LogUtils;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
+import it.unimi.dsi.fastutil.objects.Object2IntMap;
+import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
@@ -15,6 +17,7 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.ContainerHelper;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.item.Item;
@@ -42,6 +45,7 @@ import qouteall.q_misc_util.my_util.MyTaskList;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.WeakHashMap;
 import java.util.function.Consumer;
@@ -103,7 +107,7 @@ public class ScaleBoxInteractionManager {
         
         List<ScaleBoxRecord.Entry> entries = scaleBoxRecord.getEntriesByOwner(player.getUUID());
         
-        ManagementGuiData managementGuiData = new ManagementGuiData(entries, targetBoxId);
+        ManagementGuiData managementGuiData = new ManagementGuiData(entries, targetBoxId, false);
         
         /**{@link RemoteCallables#tellClientToOpenManagementGui(CompoundTag)}*/
         McRemoteProcedureCall.tellClientToInvoke(
@@ -128,7 +132,7 @@ public class ScaleBoxInteractionManager {
         
         List<ScaleBoxRecord.Entry> entries = new ArrayList<>(scaleBoxRecord.getAllEntries());
         
-        ManagementGuiData managementGuiData = new ManagementGuiData(entries, targetBoxId);
+        ManagementGuiData managementGuiData = new ManagementGuiData(entries, targetBoxId, true);
         
         /**{@link RemoteCallables#tellClientToOpenManagementGui(CompoundTag)}*/
         McRemoteProcedureCall.tellClientToInvoke(
@@ -233,9 +237,9 @@ public class ScaleBoxInteractionManager {
             return false;
         }
         
-        List<ScaleBoxWrappingScreen.Option> options = commonFactors.intStream()
+        List<WrappingOption> options = commonFactors.intStream()
             .mapToObj(
-                scale -> new ScaleBoxWrappingScreen.Option(
+                scale -> new WrappingOption(
                     scale, ScaleBoxOperations.getCost(areaSize, scale)
                 )
             ).toList();
@@ -244,14 +248,15 @@ public class ScaleBoxInteractionManager {
             dimension, glassFrame, color, options, clickedPos
         );
         
+        PendingWrappingGuiData guiData = new PendingWrappingGuiData(
+            options, areaSize
+        );
+        
         /**{@link ScaleBoxInteractionManager.RemoteCallables#tellClientToOpenPendingWrappingGui}*/
         McRemoteProcedureCall.tellClientToInvoke(
             player,
             "qouteall.mini_scaled.gui.ScaleBoxInteractionManager.RemoteCallables.tellClientToOpenPendingWrappingGui",
-            dimension,
-            options,
-            glassFrame.getSize(),
-            ScaleBoxEntranceCreation.getCreationItem()
+            guiData.toTag()
         );
         
         return true;
@@ -267,7 +272,7 @@ public class ScaleBoxInteractionManager {
             return;
         }
         
-        ScaleBoxWrappingScreen.Option option = pendingScaleBoxWrapping.options().stream()
+        WrappingOption option = pendingScaleBoxWrapping.options().stream()
             .filter(o -> o.scale() == scale)
             .findFirst().orElse(null);
         
@@ -312,13 +317,9 @@ public class ScaleBoxInteractionManager {
             return;
         }
         
-        int ingredientCost = option.ingredientCost();
-        Item costItem = ScaleBoxEntranceCreation.getCreationItem();
-        ItemStack costItemStack = new ItemStack(costItem, ingredientCost);
-        
         // check item
         if (!player.isCreative()) {
-            if (!checkInventory(player, costItemStack, ingredientCost)) {
+            if (!checkInventory(player, option.ingredients())) {
                 return;
             }
             
@@ -421,13 +422,13 @@ public class ScaleBoxInteractionManager {
                 }
                 
                 if (!player.isCreative()) {
-                    if (!checkInventory(player, costItemStack, ingredientCost)) {
+                    if (!checkInventory(player, option.ingredients())) {
                         onFail.run();
                         return true;
                     }
                     
                     // finally remove the item
-                    MSUtil.removeItem(player.getInventory(), s -> s.getItem() == costItem, ingredientCost);
+                    removeItems(player, option.ingredients());
                 }
                 
                 // finally do wrapping
@@ -454,16 +455,52 @@ public class ScaleBoxInteractionManager {
         return true;
     }
     
-    private static boolean checkInventory(ServerPlayer player, ItemStack costItemStack, int ingredientCost) {
-        int playerItemCount = player.getInventory().countItem(costItemStack.getItem());
-        if (playerItemCount < costItemStack.getCount()) {
-            player.sendSystemMessage(Component.translatable(
-                "mini_scaled.not_enough_ingredient",
-                ingredientCost, costItemStack.getDisplayName()
-            ));
-            return false;
+    private static boolean checkInventory(
+        ServerPlayer player, List<ItemStack> costItems
+    ) {
+        // there may be same-typed items in different stacks
+        // so firstly count the items
+        Object2IntOpenHashMap<Item> itemToCount = new Object2IntOpenHashMap<>();
+        itemToCount.defaultReturnValue(0);
+        
+        for (ItemStack costItem : costItems) {
+            itemToCount.addTo(costItem.getItem(), costItem.getCount());
         }
+        
+        for (Object2IntMap.Entry<Item> e : itemToCount.object2IntEntrySet()) {
+            int requiredCount = e.getIntValue();
+            Item item = e.getKey();
+            
+            int takenCount = ContainerHelper.clearOrCountMatchingItems(
+                player.getInventory(),
+                i -> i.getItem() == item,
+                requiredCount,
+                true
+            );
+            
+            if (takenCount < requiredCount) {
+                player.sendSystemMessage(Component.translatable(
+                    "mini_scaled.not_enough_ingredient",
+                    requiredCount, new ItemStack(item, requiredCount).getDisplayName()
+                ));
+                return false;
+            }
+        }
+       
         return true;
+    }
+    
+    private static void removeItems(
+        ServerPlayer player, List<ItemStack> costItems
+    ) {
+        for (ItemStack itemStack : costItems) {
+            ContainerHelper.clearOrCountMatchingItems(
+                player.getInventory(),
+                i -> i.getItem() == itemStack.getItem(),
+                itemStack.getCount(),
+                false
+            );
+        }
     }
     
     private static boolean checkUnbreakableBlock(ServerPlayer player, ServerLevel world, IntBox glassFrame) {
@@ -573,7 +610,8 @@ public class ScaleBoxInteractionManager {
     
     public static record ManagementGuiData(
         List<ScaleBoxRecord.Entry> entriesForPlayer,
-        @Nullable Integer boxId
+        @Nullable Integer boxId,
+        boolean isOP
     ) {
         public CompoundTag toTag() {
             CompoundTag tag = new CompoundTag();
@@ -589,6 +627,8 @@ public class ScaleBoxInteractionManager {
                 tag.putInt("targetBoxId", boxId);
             }
             
+            tag.putBoolean("isOP", isOP);
+            
             return tag;
         }
         
@@ -601,7 +641,9 @@ public class ScaleBoxInteractionManager {
             
             Integer boxId = tag.contains("targetBoxId") ? tag.getInt("targetBoxId") : null;
             
-            return new ManagementGuiData(entries, boxId);
+            boolean isOP = tag.getBoolean("isOP");
+            
+            return new ManagementGuiData(entries, boxId, isOP);
         }
     }
     
@@ -637,14 +679,11 @@ public class ScaleBoxInteractionManager {
         
         @Environment(EnvType.CLIENT)
         public static void tellClientToOpenPendingWrappingGui(
-            ResourceKey<Level> dimension,
-            List<ScaleBoxWrappingScreen.Option> options,
-            BlockPos boxSize,
-            Item creationItem
+            CompoundTag tag
         ) {
+            PendingWrappingGuiData pendingWrappingGuiData = PendingWrappingGuiData.fromTag(tag);
             ScaleBoxWrappingScreen screen = new ScaleBoxWrappingScreen(
-                Component.literal(""),
-                options, boxSize, creationItem
+                pendingWrappingGuiData
             );
             Minecraft.getInstance().setScreen(screen);
         }
@@ -670,4 +709,65 @@ public class ScaleBoxInteractionManager {
         }
     }
     
+    public static record PendingWrappingGuiData(
+        List<WrappingOption> options, BlockPos boxSize
+    ) {
+        public CompoundTag toTag() {
+            CompoundTag tag = new CompoundTag();
+            
+            ListTag listTag = Helper.listTagSerialize(
+                options, WrappingOption::toTag
+            );
+            
+            tag.put("options", listTag);
+            
+            Helper.putVec3i(tag, "boxSize", boxSize);
+            
+            return tag;
+        }
+        
+        public static PendingWrappingGuiData fromTag(CompoundTag tag) {
+            ListTag listTag = tag.getList("options", Tag.TAG_COMPOUND);
+            
+            List<WrappingOption> options = Helper.listTagDeserialize(
+                listTag, WrappingOption::fromTag, CompoundTag.class
+            );
+            
+            BlockPos boxSize = Helper.getVec3i(tag, "boxSize");
+            
+            return new PendingWrappingGuiData(options, boxSize);
+        }
+    }
+    
+    public static record WrappingOption(
+        int scale,
+        // Note: the ingredients must be in different items
+        List<ItemStack> ingredients
+    ) {
+        public CompoundTag toTag() {
+            CompoundTag tag = new CompoundTag();
+            
+            tag.putInt("scale", scale);
+            
+            ListTag listTag = Helper.listTagSerialize(
+                ingredients, itemStack -> itemStack.save(new CompoundTag())
+            );
+            
+            tag.put("ingredients", listTag);
+            
+            return tag;
+        }
+        
+        public static WrappingOption fromTag(CompoundTag tag) {
+            int scale = tag.getInt("scale");
+            
+            ListTag listTag = tag.getList("ingredients", Tag.TAG_COMPOUND);
+            
+            ArrayList<ItemStack> ingredients = Helper.listTagDeserialize(
+                listTag, ItemStack::of, CompoundTag.class
+            );
+            
+            return new WrappingOption(scale, ingredients);
+        }
+    }
 }
