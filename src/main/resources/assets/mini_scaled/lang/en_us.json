@@ -53,5 +53,6 @@
   "mini_scaled.cannot_place_other_players_box": "You cannot place other player's scale box.",
   "mini_scaled.cannot_find_scale_box_for_item": "Cannot find your scale box with the specified color and scale. Try using the manipulation wand to see what scale boxes you have.",
   "mini_scaled.box_not_exist": "The scale box corresponding to this item had been unwrapped.",
-  "mini_scaled.unwrapping_cancelled": "Unwrapping cancelled because the main hand is not holding the manipulation wand."
+  "mini_scaled.unwrapping_cancelled": "Unwrapping cancelled because the main hand is not holding the manipulation wand.",
+  "mini_scaled.placed_other_players_box_with_permission": "You placed other player's scale box because you have the permission. Normal players cannot place other players' box."
 }

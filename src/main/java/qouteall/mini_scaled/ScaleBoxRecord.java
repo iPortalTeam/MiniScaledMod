@@ -120,7 +120,8 @@ public class ScaleBoxRecord extends SavedData {
     }
     
     public int reserveRegionId() {
-        int regionId = regionIdUsage.nextClearBit(0);
+        // region id allocation start from 1
+        int regionId = regionIdUsage.nextClearBit(1);
         regionIdUsage.set(regionId, true);
         return regionId;
     }
@@ -261,7 +262,7 @@ public class ScaleBoxRecord extends SavedData {
                 regionId = tag.getInt("regionId");
             }
             else {
-                regionId = id;
+                regionId = id; // for old data, use id as region id
             }
             
             if (regionId < 0) {

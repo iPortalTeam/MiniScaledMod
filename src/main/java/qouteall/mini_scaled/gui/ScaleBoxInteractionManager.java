@@ -30,8 +30,8 @@ import qouteall.imm_ptl.core.IPGlobal;
 import qouteall.imm_ptl.core.McHelper;
 import qouteall.imm_ptl.core.api.PortalAPI;
 import qouteall.imm_ptl.core.chunk_loading.ChunkLoader;
+import qouteall.imm_ptl.core.render.ForceMainThreadRebuild;
 import qouteall.mini_scaled.MSGlobal;
-import qouteall.mini_scaled.ScaleBoxEntranceCreation;
 import qouteall.mini_scaled.ScaleBoxGeneration;
 import qouteall.mini_scaled.ScaleBoxOperations;
 import qouteall.mini_scaled.ScaleBoxRecord;
@@ -45,7 +45,6 @@ import qouteall.q_misc_util.my_util.MyTaskList;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.WeakHashMap;
 import java.util.function.Consumer;
@@ -73,8 +72,6 @@ public class ScaleBoxInteractionManager {
         public @Nullable PendingScaleBoxWrapping pendingScaleBoxWrapping;
         
         public long lastGetEntranceGameTime = 0;
-        
-        // TODO record player position and remove chunk loader when player moves
         
         public void clearChunkLoader(ServerPlayer player) {
             if (chunkLoader != null) {
@@ -706,6 +703,14 @@ public class ScaleBoxInteractionManager {
             IntBox area
         ) {
             ScaleBoxInteractionManager.get(player.server).confirmUnwrapping(player, boxId, area);
+        }
+        
+        public static void forceClientToRebuildTemporarily() {
+            if (!MSGlobal.config.getConfig().clientBetterAnimation) {
+                return;
+            }
+            
+            ForceMainThreadRebuild.forceMainThreadRebuildFor(3);
         }
     }
     

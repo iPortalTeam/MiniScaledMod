@@ -18,7 +18,6 @@ import net.minecraft.util.Tuple;
 import net.minecraft.world.Clearable;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.ServerLevelAccessor;
@@ -50,6 +49,8 @@ import qouteall.imm_ptl.core.portal.shape.PortalShape;
 import qouteall.mini_scaled.block.BoxBarrierBlock;
 import qouteall.mini_scaled.block.ScaleBoxPlaceholderBlock;
 import qouteall.mini_scaled.block.ScaleBoxPlaceholderBlockEntity;
+import qouteall.mini_scaled.gui.ScaleBoxInteractionManager;
+import qouteall.q_misc_util.api.McRemoteProcedureCall;
 import qouteall.q_misc_util.my_util.AARotation;
 import qouteall.q_misc_util.my_util.DQuaternion;
 import qouteall.q_misc_util.my_util.IntBox;
@@ -113,13 +114,23 @@ public class ScaleBoxOperations {
         
         BlockPos boxSize = wrappedBox.getSize();
         
+        // setup barrier blocks
+        IntBox barrierBox = newEntry.getInnerAreaBox()
+            .getAdjusted(-1, -1, -1, 1, 1, 1);
+        for (Direction direction : Direction.values()) {
+            barrierBox.getSurfaceLayer(direction).fastStream().forEach(blockPos -> {
+                voidDim.setBlockAndUpdate(blockPos, BoxBarrierBlock.INSTANCE.defaultBlockState());
+            });
+        }
+        
         transferRegion(
             world,
             wrappedBox.l,
             voidDim,
             newEntry.innerBoxPos,
             boxSize,
-            AARotation.IDENTITY
+            AARotation.IDENTITY,
+            true, true
         );
         
         putScaleBoxEntranceIntoWorld(
@@ -131,14 +142,15 @@ public class ScaleBoxOperations {
             wrappedBox
         );
         
-        // setup barrier blocks
-        IntBox barrierBox = newEntry.getInnerAreaBox()
-            .getAdjusted(-1, -1, -1, 1, 1, 1);
-        for (Direction direction : Direction.values()) {
-            barrierBox.getSurfaceLayer(direction).fastStream().forEach(blockPos -> {
-                voidDim.setBlockAndUpdate(blockPos, BoxBarrierBlock.INSTANCE.defaultBlockState());
-            });
-        }
+        tellClientToForceMainThreadRebuildTemporarily(player);
+    }
+    
+    private static void tellClientToForceMainThreadRebuildTemporarily(ServerPlayer player) {
+        /**{@link ScaleBoxInteractionManager.RemoteCallables#forceClientToRebuildTemporarily()}*/
+        McRemoteProcedureCall.tellClientToInvoke(
+            player,
+            "qouteall.mini_scaled.gui.ScaleBoxInteractionManager.RemoteCallables.forceClientToRebuildTemporarily"
+        );
     }
     
     public static void preUnwrap(
@@ -281,6 +293,9 @@ public class ScaleBoxOperations {
                     unwrappedBox,
                     rotationFromInnerToOuter
                 );
+                
+                tellClientToForceMainThreadRebuildTemporarily(player);
+                
                 return true;
             }
         ));
@@ -330,7 +345,9 @@ public class ScaleBoxOperations {
             entranceWorld,
             outerBoxBasePos,
             innerAreaBox.getSize(),
-            rotationFromInnerToOuter
+            rotationFromInnerToOuter,
+            true,
+            true
         );
         
         // clear barrier blocks
@@ -343,17 +360,22 @@ public class ScaleBoxOperations {
     }
     
     public static void transferRegion(
-        ServerLevel fromWorld,
-        BlockPos fromOrigin,
-        ServerLevel toWorld,
-        BlockPos toOrigin,
+        ServerLevel srcWorld,
+        BlockPos srcOrigin,
+        ServerLevel dstWorld,
+        BlockPos dstOrigin,
         BlockPos regionSize,
-        AARotation rotation
+        AARotation rotation,
+        boolean syncSrcSideBlockUpdateToClientImmediately,
+        boolean syncDstSideBlockUpdateToClientImmediately
     ) {
-        if (fromWorld == toWorld) {
-            IntBox fromBox = IntBox.fromBasePointAndSize(fromOrigin, regionSize);
-            BlockPos diagOffset = regionSize.offset(-1, -1, -1);
-            IntBox toBox = IntBox.fromPosAndOffset(toOrigin, rotation.transform(diagOffset));
+        IntBox fromBox = IntBox.fromBasePointAndSize(srcOrigin, regionSize);
+        BlockPos diagOffset = regionSize.offset(-1, -1, -1);
+        IntBox toBox = IntBox.fromPosAndOffset(dstOrigin, rotation.transform(diagOffset));
+        
+        // TODO check height limit
+        
+        if (srcWorld == dstWorld) {
             Validate.isTrue(
                 IntBox.getIntersect(fromBox, toBox) == null,
                 "the source region and destination region should not intersect"
@@ -363,13 +385,21 @@ public class ScaleBoxOperations {
         @Nullable Rotation vanillaRotation = rotation.toVanillaRotation();
         
         transferBlockAndBlockEntities(
-            fromWorld, fromOrigin, toWorld, toOrigin, regionSize, rotation, vanillaRotation,
+            srcWorld, srcOrigin, dstWorld, dstOrigin, regionSize, rotation, vanillaRotation,
             false
         );
         
-        transferEntities(fromWorld, fromOrigin, toWorld, toOrigin, regionSize, rotation);
+        transferEntities(srcWorld, srcOrigin, dstWorld, dstOrigin, regionSize, rotation);
         
         // TODO fix headless piston
+        
+        if (syncSrcSideBlockUpdateToClientImmediately) {
+            PortalAPI.syncBlockUpdateToClientImmediately(srcWorld, fromBox);
+        }
+        
+        if (syncDstSideBlockUpdateToClientImmediately) {
+            PortalAPI.syncBlockUpdateToClientImmediately(dstWorld, toBox);
+        }
     }
     
     /**
@@ -584,12 +614,20 @@ public class ScaleBoxOperations {
         ServerPlayer player,
         @Nullable IntBox fromWrappedBox
     ) {
-        if (!Objects.equals(entry.ownerId, player.getUUID()) && !player.hasPermissions(2)) {
-            player.displayClientMessage(
-                Component.translatable("mini_scaled.cannot_place_other_players_box"),
-                true
-            );
-            return;
+        if (!Objects.equals(entry.ownerId, player.getUUID())) {
+            if (player.hasPermissions(2)) {
+                player.displayClientMessage(
+                    Component.translatable("mini_scaled.placed_other_players_box_with_permission"),
+                    false
+                );
+            }
+            else {
+                player.displayClientMessage(
+                    Component.translatable("mini_scaled.cannot_place_other_players_box"),
+                    true
+                );
+                return;
+            }
         }
         
         MinecraftServer server = world.getServer();

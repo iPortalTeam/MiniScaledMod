@@ -139,18 +139,6 @@ public class ScaleBoxEntranceItem extends Item {
 //        }
     }
     
-    public static void registerCreativeInventory(Consumer<ItemStack> func) {
-        for (int scale : ScaleBoxGeneration.supportedScales) {
-            for (DyeColor dyeColor : DyeColor.values()) {
-                ItemStack itemStack = new ItemStack(instance);
-                
-                ItemInfo itemInfo = new ItemInfo(scale, dyeColor);
-                itemInfo.writeToTag(itemStack.getOrCreateTag());
-                
-                func.accept(itemStack);
-            }
-        }
-    }
     
     private static final Component spaceText = Component.literal(" ");
     

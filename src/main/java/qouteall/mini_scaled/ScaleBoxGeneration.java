@@ -1,7 +1,6 @@
 package qouteall.mini_scaled;
 
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
@@ -10,20 +9,14 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
 import net.minecraft.world.item.DyeColor;
-import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
-import org.apache.commons.lang3.Validate;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import qouteall.imm_ptl.core.McHelper;
-import qouteall.imm_ptl.core.chunk_loading.ChunkLoader;
-import qouteall.imm_ptl.core.chunk_loading.DimensionalChunkPos;
 import qouteall.imm_ptl.core.portal.PortalExtension;
 import qouteall.imm_ptl.core.portal.PortalManipulation;
 import qouteall.imm_ptl.core.portal.animation.DeltaUnilateralPortalState;
@@ -31,23 +24,15 @@ import qouteall.imm_ptl.core.portal.animation.NormalAnimation;
 import qouteall.imm_ptl.core.portal.animation.TimingFunction;
 import qouteall.imm_ptl.core.portal.animation.UnilateralPortalState;
 import qouteall.imm_ptl.core.portal.shape.BoxPortalShape;
-import qouteall.mini_scaled.block.BoxBarrierBlock;
-import qouteall.mini_scaled.config.MiniScaledConfig;
 import qouteall.q_misc_util.Helper;
 import qouteall.q_misc_util.my_util.AARotation;
 import qouteall.q_misc_util.my_util.DQuaternion;
 import qouteall.q_misc_util.my_util.IntBox;
 
 import java.util.List;
-import java.util.Set;
-import java.util.UUID;
-import java.util.stream.Collectors;
 
 public class ScaleBoxGeneration {
     private static final Logger LOGGER = LoggerFactory.getLogger(ScaleBoxGeneration.class);
-    
-    @Deprecated
-    public static final int[] supportedScales = {4, 8, 16, 32};
     
     public static void createScaleBoxPortals(
         ServerLevel innerWorld,
@@ -157,38 +142,6 @@ public class ScaleBoxGeneration {
     }
     
     
-    @Deprecated
-    public static ScaleBoxRecord.Entry getOrCreateEntry(
-        MinecraftServer server,
-        UUID playerId, String playerName, int scale, DyeColor color, ScaleBoxRecord record
-    ) {
-        Validate.notNull(playerId);
-        
-        ScaleBoxRecord.Entry entry = record.getEntriesByOwner(playerId).stream().filter(
-            e -> e.color == color && e.scale == scale
-        ).findFirst().orElse(null);
-        
-        if (entry == null) {
-            int newId = record.allocateId();
-            ScaleBoxRecord.Entry newEntry = new ScaleBoxRecord.Entry();
-            newEntry.id = newId;
-            newEntry.color = color;
-            newEntry.ownerId = playerId;
-            newEntry.ownerNameCache = playerName;
-            newEntry.scale = scale;
-            newEntry.generation = 0;
-            newEntry.innerBoxPos = getInnerBoxPosFromRegionId(newId);
-            newEntry.currentEntranceSize = new BlockPos(1, 1, 1);
-            record.addEntry(newEntry);
-            record.setDirty(true);
-            
-            initializeInnerBoxBlocks(server, null, newEntry);
-            
-            entry = newEntry;
-        }
-        return entry;
-    }
-    
     public static BlockPos getInnerBoxPosFromRegionId(int regionId) {
         int xIndex = regionId % 256;
         int zIndex = Mth.floorDiv(regionId, 256);
@@ -205,118 +158,6 @@ public class ScaleBoxGeneration {
         );
     }
     
-    public static void initializeInnerBoxBlocks(
-        MinecraftServer server,
-        @Nullable BlockPos oldEntranceSize,
-        ScaleBoxRecord.Entry entry
-    ) {
-        IntBox innerAreaBox = entry.getInnerAreaBox();
-        
-        ServerLevel voidWorld = VoidDimension.getVoidServerWorld(server);
-        
-        ChunkLoader chunkLoader = new ChunkLoader(
-            new DimensionalChunkPos(
-                voidWorld.dimension(),
-                new ChunkPos(innerAreaBox.getCenter())
-            ),
-            Math.max(innerAreaBox.getSize().getX(), innerAreaBox.getSize().getZ()) / 16 + 2
-        );
-        
-        Block glassBlock = getGlassBlock(entry.color);
-        BlockState frameBlock = glassBlock.defaultBlockState();
-        
-        // set block after fulling loading the chunk
-        // to avoid lighting problems
-        chunkLoader.loadChunksAndDo(() -> {
-            IntBox newEntranceOffsets = IntBox.fromBasePointAndSize(BlockPos.ZERO, entry.currentEntranceSize);
-            IntBox oldEntranceOffsets = oldEntranceSize != null ?
-                IntBox.fromBasePointAndSize(BlockPos.ZERO, oldEntranceSize) : null;
-            
-            // clear the barrier blocks if the scale box expanded
-            newEntranceOffsets.stream().forEach(offset -> {
-                if (oldEntranceOffsets != null) {
-                    if (oldEntranceOffsets.contains(offset)) {
-                        // if expanded, don't clear the existing regions
-                        return;
-                    }
-                }
-                
-                entry.getInnerUnitBox(offset).fastStream().forEach(blockPos -> {
-                    voidWorld.setBlockAndUpdate(blockPos, Blocks.AIR.defaultBlockState());
-                });
-            });
-            
-            if (oldEntranceOffsets != null) {
-                // clear the shrunk area's blocks
-                oldEntranceOffsets.stream().forEach(offset -> {
-                    if (newEntranceOffsets.contains(offset)) {
-                        return;
-                    }
-                    
-                    IntBox innerUnitBox = entry.getInnerUnitBox(offset);
-                    
-                    innerUnitBox.fastStream().forEach(blockPos -> {
-                        voidWorld.setBlockAndUpdate(blockPos, Blocks.AIR.defaultBlockState());
-                    });
-                });
-            }
-            
-            // put the new barrier blocks
-            IntBox expanded = innerAreaBox.getAdjusted(-1, -1, -1, 1, 1, 1);
-            for (Direction direction : Direction.values()) {
-                expanded.getSurfaceLayer(direction).fastStream().forEach(blockPos -> {
-                    voidWorld.setBlockAndUpdate(blockPos, BoxBarrierBlock.INSTANCE.defaultBlockState());
-                });
-            }
-            
-            // find the untouched unit regions
-            Set<BlockPos> untouchedRegionOffsets = newEntranceOffsets.stream().filter(
-                offset -> isUnitRegionUntouched(entry, offset, voidWorld, frameBlock)
-            ).map(BlockPos::immutable).collect(Collectors.toSet());
-            
-            // clear the untouched unit regions
-            untouchedRegionOffsets.forEach(offset -> {
-                IntBox innerUnitBox = entry.getInnerUnitBox(offset);
-                
-                innerUnitBox.fastStream().forEach(blockPos -> {
-                    voidWorld.setBlockAndUpdate(blockPos, Blocks.AIR.defaultBlockState());
-                });
-            });
-            
-            // regenerate the outer frame in the untouched unit regions
-            for (IntBox edge : entry.getInnerAreaLocalBox().get12Edges()) {
-                edge.fastStream().forEach(blockOffset -> {
-                    BlockPos unitRegionOffset = entry.blockOffsetToUnitRegionOffset(blockOffset);
-                    if (untouchedRegionOffsets.contains(unitRegionOffset)) {
-                        BlockPos blockPos = entry.innerBoxPos.offset(blockOffset);
-                        voidWorld.setBlockAndUpdate(blockPos, frameBlock);
-                    }
-                });
-            }
-            
-        });
-        
-    }
-    
-    // untouched means it's all air, except that on the edge it can have frame blocks
-    private static boolean isUnitRegionUntouched(
-        ScaleBoxRecord.Entry entry,
-        BlockPos regionOffset,
-        ServerLevel voidWorld,
-        BlockState frameBlock
-    ) {
-        IntBox innerUnitBox = entry.getInnerUnitBox(regionOffset);
-        return innerUnitBox.fastStream().allMatch(blockPos -> {
-            BlockState blockState = voidWorld.getBlockState(blockPos);
-            if (innerUnitBox.isOnEdge(blockPos)) {
-                return blockState.isAir() || blockState == frameBlock;
-            }
-            else {
-                return blockState.isAir();
-            }
-        });
-    }
-    
     public static Block getGlassBlock(DyeColor color) {
         return BuiltInRegistries.BLOCK.get(new ResourceLocation("minecraft:" + color.getName() + "_stained_glass"));
     }
@@ -325,7 +166,6 @@ public class ScaleBoxGeneration {
         return scale >= 2 && scale <= 64;
     }
     
-    // will set dirty
     public static void updateScaleBoxPortals(
         ScaleBoxRecord.Entry entry,
         ServerPlayer player
