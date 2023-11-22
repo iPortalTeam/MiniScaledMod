@@ -15,9 +15,11 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.Vec3;
 import org.apache.commons.lang3.Validate;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jetbrains.annotations.Nullable;
 import qouteall.mini_scaled.ScaleBoxGeneration;
 import qouteall.mini_scaled.ScaleBoxRecord;
 import qouteall.mini_scaled.item.ScaleBoxEntranceItem;
@@ -46,6 +48,7 @@ public class ScaleBoxPlaceholderBlockEntity extends BlockEntity {
     
     public int boxId;
     public boolean isBasePos = true;
+    private @Nullable Vec3 itemDropPosition;
     
     @Override
     public void load(CompoundTag tag) {
@@ -68,22 +71,29 @@ public class ScaleBoxPlaceholderBlockEntity extends BlockEntity {
             return;
         }
         
-        if (level.getGameTime() % 7 != 2) {
-            return;
-        }
-        
         checkValidity();
     }
     
-    public static void staticTick(Level world, BlockPos pos, BlockState state, ScaleBoxPlaceholderBlockEntity blockEntity) {
+    public static void staticTick(
+        Level world, BlockPos pos, BlockState state, ScaleBoxPlaceholderBlockEntity blockEntity
+    ) {
         blockEntity.doTick();
     }
     
     public void checkValidity() {
-        ScaleBoxRecord.Entry entry = ScaleBoxRecord.get(level.getServer()).getEntryById(boxId);
+        MinecraftServer server = level.getServer();
+        assert server != null;
+        
+        ScaleBoxRecord.Entry entry = ScaleBoxRecord.get(server).getEntryById(boxId);
         
         if (entry == null) {
             LOGGER.info("invalid box with id {}", boxId);
+            destroyBlockAndBlockEntity();
+            return;
+        }
+        
+        if (entry.currentEntrancePos == null || entry.currentEntranceDim == null) {
+            LOGGER.info("invalid box entrance pos {} {}", boxId, entry.currentEntrancePos);
             destroyBlockAndBlockEntity();
             return;
         }
@@ -103,6 +113,10 @@ public class ScaleBoxPlaceholderBlockEntity extends BlockEntity {
             destroyBlockAndBlockEntity();
             return;
         }
+        
+        if (isBasePos) {
+            itemDropPosition = entry.getOuterAreaBox().getCenterVec();
+        }
     }
     
     private void destroyBlockAndBlockEntity() {
@@ -121,8 +135,13 @@ public class ScaleBoxPlaceholderBlockEntity extends BlockEntity {
             // the up-facing outer portal breaks. drop item
             ItemStack itemToDrop = ScaleBoxEntranceItem.boxIdToItem(level.getServer(), boxId);
             if (itemToDrop != null) {
+                
+                if (itemDropPosition == null) {
+                    itemDropPosition = Vec3.atCenterOf(getBlockPos());
+                }
                 Containers.dropItemStack(
-                    level, getBlockPos().getX() + 0.5, getBlockPos().getY() + 0.5, getBlockPos().getZ() + 0.5, itemToDrop
+                    level, itemDropPosition.x(), itemDropPosition.y(), itemDropPosition.z(),
+                    itemToDrop
                 );
             }
             
@@ -175,7 +194,7 @@ public class ScaleBoxPlaceholderBlockEntity extends BlockEntity {
             return;
         }
         
-        ServerLevel entranceWorld = MiscHelper.getServer().getLevel(currentEntranceDim);
+        ServerLevel entranceWorld = server.getLevel(currentEntranceDim);
         if (entranceWorld == null) {
             LOGGER.info("invalid entrance dim {}", currentEntranceDim);
             entry.currentEntranceDim = Level.OVERWORLD;

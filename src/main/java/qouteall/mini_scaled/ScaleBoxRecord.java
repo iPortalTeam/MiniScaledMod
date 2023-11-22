@@ -53,7 +53,7 @@ public class ScaleBoxRecord extends SavedData {
         return overworld.getDataStorage().computeIfAbsent(
             new Factory<ScaleBoxRecord>(
                 () -> {
-                    Helper.log("Scale box record initialized ");
+                    LOGGER.info("Scale box record initialized ");
                     return new ScaleBoxRecord();
                 },
                 (nbt) -> {
