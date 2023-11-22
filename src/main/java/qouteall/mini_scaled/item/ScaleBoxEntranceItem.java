@@ -19,26 +19,24 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import qouteall.mini_scaled.ScaleBoxGeneration;
 import qouteall.mini_scaled.ScaleBoxManipulation;
 import qouteall.mini_scaled.ScaleBoxRecord;
 import qouteall.mini_scaled.util.MSUtil;
 
 import java.util.List;
 import java.util.UUID;
-import java.util.function.Consumer;
 
 public class ScaleBoxEntranceItem extends Item {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(ScaleBoxEntranceItem.class);
     
-    public static final ScaleBoxEntranceItem instance = new ScaleBoxEntranceItem(new Item.Properties());
+    public static final ScaleBoxEntranceItem INSTANCE = new ScaleBoxEntranceItem(new Item.Properties());
     
     public static void init() {
         Registry.register(
             BuiltInRegistries.ITEM,
             new ResourceLocation("mini_scaled:scale_box_item"),
-            instance
+            INSTANCE
         );
     }
     
@@ -165,10 +163,19 @@ public class ScaleBoxEntranceItem extends Item {
             return null;
         }
         
-        ItemStack itemStack = new ItemStack(ScaleBoxEntranceItem.instance);
-        new ScaleBoxEntranceItem.ItemInfo(
-            entry.scale, entry.color, entry.ownerId, entry.ownerNameCache, boxId
-        ).writeToTag(itemStack.getOrCreateTag());
+        return createItemStack(entry);
+    }
+    
+    public static ItemStack createItemStack(ScaleBoxRecord.Entry entry) {
+        ItemStack itemStack = new ItemStack(ScaleBoxEntranceItem.INSTANCE);
+        ItemInfo itemInfo = new ItemInfo(
+            entry.scale, entry.color, entry.ownerId, entry.ownerNameCache, entry.id
+        );
+        itemInfo.writeToTag(itemStack.getOrCreateTag());
+        
+        if (entry.customName != null) {
+            itemStack.setHoverName(Component.literal(entry.customName));
+        }
         
         return itemStack;
     }

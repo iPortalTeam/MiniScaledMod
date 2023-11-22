@@ -170,7 +170,8 @@ public class ScaleBoxPlaceholderBlockEntity extends BlockEntity {
         
         ResourceKey<Level> currentEntranceDim = entry.currentEntranceDim;
         if (currentEntranceDim == null) {
-            notifyPortalBreak(server, boxId);
+            // do not notifyPortalBreak() because it will break the new portals when running multiple times
+            // the generation counter is enough to break the old portals
             return;
         }
         

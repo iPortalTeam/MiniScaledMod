@@ -230,7 +230,7 @@ public class ScaleBoxManagementScreen extends Screen {
         addRenderableWidget(getEntranceButton);
         addRenderableWidget(unwrapButton);
         
-        optionsButton.setWidth(100);
+        optionsButton.setWidth(80);
         getEntranceButton.setWidth(120);
         unwrapButton.setWidth(100);
         
@@ -243,14 +243,14 @@ public class ScaleBoxManagementScreen extends Screen {
         gridLayout.addChild(unwrapButton, 0, 2);
         
         gridLayout.arrangeElements();
-        gridLayout.setPosition(listWidth+10, height - 5 - gridLayout.getHeight());
+        gridLayout.setPosition(listWidth + 10, height - 5 - gridLayout.getHeight());
     }
     
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        super.render(guiGraphics, mouseX, mouseY, partialTick);
-        
         if (selected == null) {
+            super.render(guiGraphics, mouseX, mouseY, partialTick);
+            
             MutableComponent text = data.entriesForPlayer().isEmpty() ?
                 Component.translatable("mini_scaled.no_scale_box") :
                 Component.translatable("mini_scaled.select_a_scale_box");
@@ -263,6 +263,18 @@ public class ScaleBoxManagementScreen extends Screen {
             );
             return;
         }
+        
+        // make the non-view area darker
+        guiGraphics.fillGradient(
+            ((int) (width * (1 - VIEW_RATIO))), ((int) (height * VIEW_RATIO)), this.width, this.height,
+            0x88000000, 0x88000000
+        );
+        guiGraphics.fillGradient(
+            0, 0, ((int) (width * (1 - VIEW_RATIO))), this.height,
+            0x88000000, 0x88000000
+        );
+        
+        super.render(guiGraphics, mouseX, mouseY, partialTick);
         
         renderView(selected);
         
@@ -277,12 +289,12 @@ public class ScaleBoxManagementScreen extends Screen {
         labelCache.renderLeftAligned(
             guiGraphics,
             ((int) (width * (1 - VIEW_RATIO))) + 10,
-            ((int) (height * VIEW_RATIO)) + 0,
+            ((int) (height * VIEW_RATIO)) + 3,
             10, 0xFFFFFFFF
         );
     }
     
-    private static Component getLabel(ScaleBoxRecord.Entry entry) {
+    private Component getLabel(ScaleBoxRecord.Entry entry) {
         MutableComponent component = Component.literal("");
         
         component.append(Component.translatable("mini_scaled.color"));
@@ -293,6 +305,13 @@ public class ScaleBoxManagementScreen extends Screen {
         
         component.append(Component.translatable("mini_scaled.scale"));
         component.append(Component.literal(Integer.toString(entry.scale)).withStyle(ChatFormatting.AQUA));
+        
+        if (data.isOP()) {
+            component.append("     ");
+            component.append(Component.translatable("mini_scaled.owner"));
+            component.append(Component.literal(entry.ownerNameCache).withStyle(ChatFormatting.AQUA));
+        }
+        
         component.append("\n");
         
         if (entry.currentEntranceDim != null && entry.currentEntrancePos != null) {

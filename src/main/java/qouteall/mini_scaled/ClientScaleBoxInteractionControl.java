@@ -5,6 +5,7 @@ import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.world.entity.Pose;
 import net.minecraft.world.phys.Vec3;
 import qouteall.imm_ptl.core.commands.PortalCommand;
@@ -57,19 +58,20 @@ public class ClientScaleBoxInteractionControl {
     }
     
     private static void updateOnNormalMode(Minecraft client) {
-        assert client.player != null;
-        Vec3 cameraPos = client.player.getEyePosition();
+        LocalPlayer player = client.player;
+        assert player != null;
+        Vec3 cameraPos = player.getEyePosition();
         Pair<Portal, Vec3> raytraceResult = PortalCommand.raytracePortals(
-            client.player.level(),
+            player.level(),
             cameraPos,
-            cameraPos.add(client.player.getViewVector(1).scale(10)),
+            cameraPos.add(player.getViewVector(1).scale(10)),
             false
         ).orElse(null);
         
         if (raytraceResult != null) {
             Portal portal = raytraceResult.getFirst();
             if (portal instanceof MiniScaledPortal miniScaledPortal) {
-                if (miniScaledPortal.isOuterPortal()) {
+                if (miniScaledPortal.isOuterPortal() && miniScaledPortal.normallyInteractableBy(player)) {
                     double distance = miniScaledPortal.getDistanceToNearestPointInPortal(cameraPos);
                     if (distance < innerInteractionDistance) {
                         canInteractInsideScaleBox = true;

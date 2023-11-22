@@ -28,10 +28,12 @@ import org.slf4j.Logger;
 import qouteall.imm_ptl.core.IPGlobal;
 import qouteall.imm_ptl.core.McHelper;
 import qouteall.imm_ptl.core.portal.Portal;
+import qouteall.imm_ptl.core.portal.animation.UnilateralPortalState;
 import qouteall.imm_ptl.core.portal.shape.BoxPortalShape;
 import qouteall.imm_ptl.core.portal.shape.PortalShape;
 import qouteall.mini_scaled.block.ScaleBoxPlaceholderBlock;
 import qouteall.mini_scaled.util.MSUtil;
+import qouteall.q_misc_util.CustomTextOverlay;
 
 import java.util.Objects;
 
@@ -135,8 +137,10 @@ public class MiniScaledPortal extends Portal {
         }
         
         if (entry.currentEntranceDim == null || entry.currentEntrancePos == null) {
-            LOGGER.error("Invalid record entry {}. Removing portal {}", entry, this);
-            tryRemovingPortal();
+            if (!Objects.equals(portalTag, ScaleBoxGeneration.INNER_WRAPPING_PORTAL_TAG)) {
+                LOGGER.error("Invalid record entry {}. Removing portal {}", entry, this);
+                tryRemovingPortal();
+            }
             return false;
         }
         
@@ -253,6 +257,16 @@ public class MiniScaledPortal extends Portal {
     
     @Environment(EnvType.CLIENT)
     private void onCollidingWithEntityClientOnly(Entity entity) {
+        if (entity instanceof LocalPlayer player) {
+            if (!normallyInteractableBy(player)) {
+                CustomTextOverlay.putText(
+                    Component.translatable("mini_scaled.access_control"),
+                    0.1, "mini_scaled"
+                );
+                return;
+            }
+        }
+        
         if (isOuterPortal() && !teleportChangesScale && entity instanceof LocalPlayer) {
             Vec3 gravityVec = MSUtil.getGravityVec(entity);
             if (allowShiftDescent(entity, gravityVec)) {
@@ -294,18 +308,17 @@ public class MiniScaledPortal extends Portal {
     
     @Override
     public Vec3 transformVelocityRelativeToPortal(Vec3 v, Entity entity) {
-        Vec3 velocity = super.transformVelocityRelativeToPortal(v, entity);
-        
         if (isOuterPortal()) {
             Vec3 gravityVec = MSUtil.getGravityVec(entity);
-            
             Vec3 projectionOnGravityVec = gravityVec.scale(v.dot(gravityVec));
             Vec3 extra = v.subtract(projectionOnGravityVec);
             
-            return projectionOnGravityVec.scale(0.5).add(extra);
+            Vec3 processedVelocity = projectionOnGravityVec.scale(0.5).add(extra);
+            
+            return super.transformVelocityRelativeToPortal(processedVelocity, entity);
         }
         
-        return velocity;
+        return super.transformVelocityRelativeToPortal(v, entity);
     }
     
     @Environment(EnvType.CLIENT)
@@ -336,9 +349,14 @@ public class MiniScaledPortal extends Portal {
     @Override
     public boolean isInteractableBy(Player player) {
         if (level().isClientSide()) {
-            return ClientScaleBoxInteractionControl.canInteractInsideScaleBox();
+            return normallyInteractableBy(player)
+                && ClientScaleBoxInteractionControl.canInteractInsideScaleBox();
         }
         
+        return normallyInteractableBy(player);
+    }
+    
+    public boolean normallyInteractableBy(Player player) {
         if (recordEntry != null) {
             if (recordEntry.accessControl) {
                 boolean idMatches = Objects.equals(recordEntry.ownerId, player.getUUID());

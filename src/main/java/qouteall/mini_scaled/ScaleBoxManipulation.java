@@ -152,6 +152,10 @@ public class ScaleBoxManipulation {
             .findFirst().orElse(null);
         
         if (realPlacementPos != null) {
+            if (stack.hasCustomHoverName()) {
+                entry.customName = stack.getHoverName().getString();
+            }
+            
             ScaleBoxOperations.putScaleBoxEntranceIntoWorld(
                 entry,
                 ((ServerLevel) world),

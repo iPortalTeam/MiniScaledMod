@@ -33,6 +33,7 @@ import java.util.List;
 
 public class ScaleBoxGeneration {
     private static final Logger LOGGER = LoggerFactory.getLogger(ScaleBoxGeneration.class);
+    public static final String INNER_WRAPPING_PORTAL_TAG = "mini_scaled:scaled_box_inner_wrapping";
     
     public static void createScaleBoxPortals(
         ServerLevel innerWorld,
@@ -210,7 +211,7 @@ public class ScaleBoxGeneration {
         portal.setDestination(portal.getOriginPos().add(0, -1000, 0));
         portal.setDestinationDimension(voidWorld.dimension());
         
-        portal.portalTag = "mini_scaled:scaled_box_inner_wrapping";
+        portal.portalTag = INNER_WRAPPING_PORTAL_TAG;
         portal.boxId = boxId;
         portal.generation = generation;
         

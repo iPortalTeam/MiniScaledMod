@@ -24,7 +24,7 @@ public class MiniScaledCommand {
     ) {
         LiteralArgumentBuilder<CommandSourceStack> builder = Commands.literal("miniscaled");
         
-        builder.then(Commands.literal("open_gui")
+        builder.then(Commands.literal("view_my_boxes")
             .requires(context -> context.hasPermission(2))
             .executes(context -> {
                 MinecraftServer server = context.getSource().getServer();
@@ -37,7 +37,7 @@ public class MiniScaledCommand {
             })
         );
         
-        builder.then(Commands.literal("view_box_of_all_players")
+        builder.then(Commands.literal("view_all_boxes")
             .requires(context -> context.hasPermission(2))
             .executes(context -> {
                 MinecraftServer server = context.getSource().getServer();

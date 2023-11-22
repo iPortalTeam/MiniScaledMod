@@ -15,7 +15,7 @@ public class MixinItemColors {
         ItemColors itemColors = cir.getReturnValue();
         itemColors.register(
             (stack, tintIndex) -> ScaleBoxEntranceItem.getRenderingColor(stack),
-            ScaleBoxEntranceItem.instance
+            ScaleBoxEntranceItem.INSTANCE
         );
     }
 }

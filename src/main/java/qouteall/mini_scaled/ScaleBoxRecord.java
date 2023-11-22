@@ -193,6 +193,8 @@ public class ScaleBoxRecord extends SavedData {
         // this is used for deleting invalid portal when server restarts during unwrapping animation
         public @Nullable Long scheduledUnwrapTime;
         
+        public @Nullable String customName;
+        
         public Entry() {
         
         }
@@ -346,6 +348,16 @@ public class ScaleBoxRecord extends SavedData {
                 scheduledUnwrapTime = null;
             }
             
+            if (tag.contains("customName")) {
+                customName = tag.getString("customName");
+                if (customName.isEmpty()) {
+                    customName = null;
+                }
+            }
+            else {
+                customName = null;
+            }
+            
             if (regionId > 100000) {
                 LOGGER.error("Region id too large {}. Something may be wrong.", this);
             }
@@ -373,6 +385,9 @@ public class ScaleBoxRecord extends SavedData {
             tag.putBoolean("accessControl", accessControl);
             if (scheduledUnwrapTime != null) {
                 tag.putLong("scheduledUnwrapTime", scheduledUnwrapTime);
+            }
+            if (customName != null) {
+                tag.putString("customName", customName);
             }
         }
         

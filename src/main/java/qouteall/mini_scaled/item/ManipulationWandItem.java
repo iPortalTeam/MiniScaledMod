@@ -5,6 +5,7 @@ import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
@@ -45,42 +46,7 @@ public class ManipulationWandItem extends Item {
             INSTANCE
         );
     }
-//
-//    public static enum Mode {
-//        none, expand, shrink, toggleScaleChange, toggleGravityChange, toggleAccessControl;
-//
-//        public Mode next() {
-//            Mode[] values = values();
-//            return values[(ordinal() + 1) % values.length];
-//        }
-//
-//        public MutableComponent getText() {
-//            return Component.translatable("mini_scaled.manipulation_wand.mode." + name());
-//        }
-//
-//        public String toStr() {
-//            return switch (this) {
-//                case expand -> "expand";
-//                case shrink -> "shrink";
-//                case toggleScaleChange -> "toggleScaleChange";
-//                case toggleGravityChange -> "toggleGravityChange";
-//                case toggleAccessControl -> "toggleAccessControl";
-//                default -> "none";
-//            };
-//        }
-//
-//        public static Mode fromStr(String str) {
-//            return switch (str) {
-//                case "expand" -> expand;
-//                case "shrink" -> shrink;
-//                case "toggleScaleChange" -> toggleScaleChange;
-//                case "toggleGravityChange" -> toggleGravityChange;
-//                case "toggleAccessControl" -> toggleAccessControl;
-//                default -> none;
-//            };
-//        }
-//    }
-    
+
     public ManipulationWandItem(Properties properties) {
         super(properties);
     }
@@ -90,21 +56,6 @@ public class ManipulationWandItem extends Item {
         func.accept(itemStack);
     }
 
-//    public static Mode getModeFromNbt(@Nullable CompoundTag tag) {
-//        if (tag == null) {
-//            return Mode.none;
-//        }
-//        else {
-//            return Mode.fromStr(tag.getString("mode"));
-//        }
-//    }
-//
-//    public static CompoundTag modeToNbt(Mode mode) {
-//        CompoundTag tag = new CompoundTag();
-//        tag.putString("mode", mode.toStr());
-//        return tag;
-//    }
-    
     @Override
     public @NotNull InteractionResultHolder<ItemStack> use(
         Level level, Player player, InteractionHand usedHand
@@ -116,7 +67,9 @@ public class ManipulationWandItem extends Item {
         }
         
         // directly open the gui
-        ScaleBoxInteractionManager.get(player.getServer()).openManagementGui(((ServerPlayer) player), null);
+        ScaleBoxInteractionManager.get(player.getServer()).openManagementGui(
+            ((ServerPlayer) player), null
+        );
         
         return new InteractionResultHolder<>(InteractionResult.SUCCESS, itemStack);
     }
@@ -134,11 +87,16 @@ public class ManipulationWandItem extends Item {
             return InteractionResult.FAIL;
         }
         
+        ServerPlayer serverPlayer = (ServerPlayer) player;
+        MinecraftServer server = world.getServer();
+        assert server != null;
+        
         BlockPos clickedPos = context.getClickedPos();
         BlockState blockState = world.getBlockState(clickedPos);
         Block block = blockState.getBlock();
         
-        ScaleBoxInteractionManager scaleBoxInteractionManager = ScaleBoxInteractionManager.get(player.getServer());
+        ScaleBoxInteractionManager scaleBoxInteractionManager =
+            ScaleBoxInteractionManager.get(player.getServer());
         
         if (block == ScaleBoxPlaceholderBlock.INSTANCE) {
             BlockEntity blockEntity = world.getBlockEntity(clickedPos);
@@ -149,7 +107,7 @@ public class ManipulationWandItem extends Item {
             }
             
             int boxId = placeholderBlockEntity.boxId;
-            ScaleBoxRecord scaleBoxRecord = ScaleBoxRecord.get(world.getServer());
+            ScaleBoxRecord scaleBoxRecord = ScaleBoxRecord.get(server);
             ScaleBoxRecord.Entry theEntry = scaleBoxRecord.getEntryById(boxId);
             
             if (theEntry == null) {
@@ -158,13 +116,24 @@ public class ManipulationWandItem extends Item {
             
             if (Objects.equals(theEntry.ownerId, player.getUUID())) {
                 scaleBoxInteractionManager.openManagementGui(
-                    ((ServerPlayer) player), theEntry.id
+                    serverPlayer, theEntry.id
                 );
             }
             else {
-                player.sendSystemMessage(
-                    Component.translatable("mini_scaled.not_your_scale_box")
-                );
+                if (player.hasPermissions(2)) {
+                    // the OP can manipulate other player's scale box
+                    player.sendSystemMessage(Component.translatable(
+                        "mini_scaled.manipulate_other_players_box_with_permission"
+                    ));
+                    scaleBoxInteractionManager.openManagementGuiForAllScaleBoxes(
+                        serverPlayer, theEntry.id
+                    );
+                }
+                else {
+                    player.sendSystemMessage(
+                        Component.translatable("mini_scaled.not_your_scale_box")
+                    );
+                }
             }
             
             return InteractionResult.SUCCESS;
@@ -181,7 +150,7 @@ public class ManipulationWandItem extends Item {
             
             if (glassFrame != null) {
                 scaleBoxInteractionManager.tryStartingPendingWrapping(
-                    ((ServerPlayer) player), world.dimension(),
+                    serverPlayer, world.dimension(),
                     glassFrame, color, clickedPos
                 );
             }
@@ -190,7 +159,7 @@ public class ManipulationWandItem extends Item {
         }
         
         scaleBoxInteractionManager.openManagementGui(
-            ((ServerPlayer) player), null
+            serverPlayer, null
         );
         
         return InteractionResult.FAIL;

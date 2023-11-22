@@ -8,6 +8,7 @@ import net.minecraft.client.gui.components.MultiLineLabel;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.narration.NarratableEntry;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.Style;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -63,12 +64,8 @@ public class ScaleBoxEntryWidget extends ContainerObjectSelectionList.Entry<Scal
         if (multiLineLabel == null) {
             multiLineLabel = MultiLineLabel.create(
                 client.font,
-                Component.literal(String.valueOf(entry.scale))
-                    .append(" ")
-                    .append(MSUtil.getColorText(entry.color)
-                        .withStyle(Style.EMPTY.withColor(entry.color.getTextColor()))
-                    ),
-                rowWidth
+                getText(),
+                rowWidth - 5
             );
         }
         
@@ -76,6 +73,19 @@ public class ScaleBoxEntryWidget extends ContainerObjectSelectionList.Entry<Scal
             guiGraphics,
             x + 3, y + 3, 10, 0xFFFFFFFF
         );
+    }
+    
+    @NotNull
+    private MutableComponent getText() {
+        if (entry.customName != null) {
+            return Component.literal(entry.customName).withStyle(ChatFormatting.ITALIC);
+        }
+        
+        return Component.literal(String.valueOf(entry.scale))
+            .append(" ")
+            .append(MSUtil.getColorText(entry.color)
+                .withStyle(Style.EMPTY.withColor(entry.color.getTextColor()))
+            );
     }
     
     @Override

@@ -152,7 +152,7 @@ public class ScaleBoxInteractionManager {
             return;
         }
         
-        if (!Objects.equals(entry.ownerId, player.getUUID()) && !player.hasPermissions(2)) {
+        if (!checkPermission(player, entry, false)) {
             LOGGER.warn("Player {} is not the owner of scale box {}", player, boxId);
             return;
         }
@@ -171,7 +171,7 @@ public class ScaleBoxInteractionManager {
         state.clickedBoxId = null;
     }
     
-    public static void handleScaleBoxPropertyChange(
+    public void handleScaleBoxPropertyChange(
         ServerPlayer player, int boxId, Consumer<ScaleBoxRecord.Entry> func
     ) {
         ScaleBoxRecord rec = ScaleBoxRecord.get(player.server);
@@ -183,7 +183,7 @@ public class ScaleBoxInteractionManager {
             return;
         }
         
-        if (!Objects.equals(entry.ownerId, player.getUUID())) {
+        if (!checkPermission(player, entry, true)) {
             LOGGER.warn("Player {} is not the owner of scale box {}", player, boxId);
             return;
         }
@@ -550,14 +550,12 @@ public class ScaleBoxInteractionManager {
                 return;
             }
             
-            ItemStack itemStack = new ItemStack(
-                ScaleBoxEntranceItem.instance, 1
-            );
-            itemStack.setTag(
-                new ScaleBoxEntranceItem.ItemInfo(
-                    entry.scale, entry.color, entry.ownerId, entry.ownerNameCache, boxId
-                ).toTag()
-            );
+            if (!checkPermission(player, entry, true)) {
+                player.sendSystemMessage(Component.literal("You are not the owner of this box"));
+                return;
+            }
+            
+            ItemStack itemStack = ScaleBoxEntranceItem.createItemStack(entry);
             
             player.getInventory().add(itemStack);
             // no need to care about the case when inventory is full, because entrance item is free now
@@ -579,7 +577,7 @@ public class ScaleBoxInteractionManager {
             return;
         }
         
-        if (!Objects.equals(player.getUUID(), entry.ownerId)) {
+        if (!checkPermission(player, entry, true)) {
             player.sendSystemMessage(Component.literal("You are not the owner of this box"));
             return;
         }
@@ -603,6 +601,25 @@ public class ScaleBoxInteractionManager {
             player, entry, unwrappingArea,
             entry.getEntranceRotation()
         );
+    }
+    
+    public boolean checkPermission(
+        ServerPlayer player, ScaleBoxRecord.Entry entry, boolean informPermission
+    ) {
+        if (Objects.equals(player.getUUID(), entry.ownerId)) {
+            return true;
+        }
+        
+        if (player.hasPermissions(2)) {
+            if (informPermission) {
+                player.sendSystemMessage(Component.translatable(
+                    "mini_scaled.manipulate_other_players_box_with_permission"
+                ));
+            }
+            return true;
+        }
+        
+        return false;
     }
     
     public static record ManagementGuiData(
@@ -664,7 +681,7 @@ public class ScaleBoxInteractionManager {
             ServerPlayer player, int boxId,
             boolean scaleTransform, boolean gravityTransform, boolean accessControl
         ) {
-            ScaleBoxInteractionManager.handleScaleBoxPropertyChange(
+            ScaleBoxInteractionManager.get(player.server).handleScaleBoxPropertyChange(
                 player, boxId,
                 entry -> {
                     entry.teleportChangesScale = scaleTransform;
