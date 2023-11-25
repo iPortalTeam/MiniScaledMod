@@ -23,6 +23,7 @@ import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.ServerLevelAccessor;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.LiquidBlock;
 import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.piston.PistonBaseBlock;
@@ -92,10 +93,6 @@ public class ScaleBoxOperations {
         int itemNum = (int) Math.ceil(r + r2);
         
         return List.of(
-            new ItemStack(
-                ScaleBoxEntranceCreation.getCreationItem(),
-                itemNum
-            ),
             new ItemStack(
                 ScaleBoxEntranceCreation.getCreationItem(),
                 itemNum
@@ -589,8 +586,14 @@ public class ScaleBoxOperations {
             ScaleBoxOperations::canMoveEntity
         );
         
+        BlockPos transformedRegionSize = rotation.transform(regionSize);
+        
         Vec3 fromOriginPos = Vec3.atLowerCornerOf(fromOrigin);
-        Vec3 toOriginPos = Vec3.atLowerCornerOf(toOrigin);
+        Vec3 toOriginPos = new Vec3(
+            transformedRegionSize.getX() > 0 ? toOrigin.getX() : toOrigin.getX() + 1,
+            transformedRegionSize.getY() > 0 ? toOrigin.getY() : toOrigin.getY() + 1,
+            transformedRegionSize.getZ() > 0 ? toOrigin.getZ() : toOrigin.getZ() + 1
+        );
         for (Entity entity : entities) {
             Vec3 position = entity.position();
             Vec3 newPosition = rotation.quaternion.rotate(position.subtract(fromOriginPos)).add(toOriginPos);
@@ -630,6 +633,10 @@ public class ScaleBoxOperations {
         if (blockState.getBlock() == ScaleBoxPlaceholderBlock.INSTANCE) {
             // not allowing wrapping scale box for now
             return false;
+        }
+        
+        if (blockState.getBlock() instanceof LiquidBlock) {
+            return true;
         }
         
         float destroySpeed = blockState.getDestroySpeed(world, p);

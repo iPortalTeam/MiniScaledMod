@@ -14,6 +14,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
@@ -528,8 +529,10 @@ public class ScaleBoxInteractionManager {
     private static boolean checkUnwrappableBlock(ServerPlayer player, ServerLevel world, IntBox glassFrame) {
         BlockPos nonWrappableBlockPos = ScaleBoxOperations.checkNonWrappableBlock(world, glassFrame);
         if (nonWrappableBlockPos != null) {
+            MutableComponent blockName = world.getBlockState(nonWrappableBlockPos).getBlock().getName();
             player.sendSystemMessage(Component.translatable(
                 "mini_scaled.non_wrappable_block",
+                blockName,
                 nonWrappableBlockPos.getX(), nonWrappableBlockPos.getY(), nonWrappableBlockPos.getZ()
             ));
             return false;
