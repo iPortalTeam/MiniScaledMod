@@ -25,6 +25,8 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.piston.PistonBaseBlock;
+import net.minecraft.world.level.block.piston.PistonHeadBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.entity.EntityTypeTest;
 import net.minecraft.world.level.levelgen.structure.BoundingBox;
@@ -359,6 +361,36 @@ public class ScaleBoxOperations {
         }
     }
     
+    /**
+     * @param box the region to check. must be 1-layer
+     * @param direction the direction to check
+     * @return not null if there is one block in box that expands along direction out of the box
+     */
+    public static @Nullable BlockPos checkCrossBoundaryMultiBlockStructure(
+        ServerLevel world, IntBox box, Direction direction
+    ) {
+        return box.fastStream().filter(pos -> {
+            // currently only consider piston
+            
+            BlockState blockState = world.getBlockState(pos);
+            if (blockState.getBlock() instanceof PistonBaseBlock pistonBaseBlock) {
+                Direction facing = blockState.getValue(PistonBaseBlock.FACING);
+                if (facing == direction) {
+                    return true;
+                }
+            }
+            
+            if(blockState.getBlock() instanceof PistonHeadBlock pistonHeadBlock) {
+                Direction facing = blockState.getValue(PistonHeadBlock.FACING);
+                if (facing == direction.getOpposite()) {
+                    return true;
+                }
+            }
+            
+            return false;
+        }).findFirst().orElse(null);
+    }
+    
     public static void transferRegion(
         ServerLevel srcWorld,
         BlockPos srcOrigin,
@@ -390,8 +422,6 @@ public class ScaleBoxOperations {
         );
         
         transferEntities(srcWorld, srcOrigin, dstWorld, dstOrigin, regionSize, rotation);
-        
-        // TODO fix headless piston
         
         if (syncSrcSideBlockUpdateToClientImmediately) {
             PortalAPI.syncBlockUpdateToClientImmediately(srcWorld, fromBox);
@@ -598,7 +628,7 @@ public class ScaleBoxOperations {
     
     public static boolean canMoveBlock(ServerLevel world, BlockPos p, BlockState blockState) {
         if (blockState.getBlock() == ScaleBoxPlaceholderBlock.INSTANCE) {
-            // not allowing wrapping scale box
+            // not allowing wrapping scale box for now
             return false;
         }
         

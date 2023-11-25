@@ -56,5 +56,6 @@
   "mini_scaled.unwrapping_cancelled": "Unwrapping cancelled because the main hand is not holding the manipulation wand.",
   "mini_scaled.placed_other_players_box_with_permission": "You placed other players' scale box using the permission.",
   "mini_scaled.manipulate_other_players_box_with_permission": "You manipulated other players' scale box using the permission.",
-  "mini_scaled.access_control": "You cannot access this box due to access control."
+  "mini_scaled.access_control": "You cannot access this box due to access control.",
+  "mini_scaled.cross_boundary_multi_block_structure": "Cannot wrap the scale box because there exists multi-block structure that cross the boundary: %s at (%s, %s, %s)"
 }

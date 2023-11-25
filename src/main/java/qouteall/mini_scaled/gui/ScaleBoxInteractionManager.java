@@ -9,6 +9,7 @@ import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
@@ -306,7 +307,7 @@ public class ScaleBoxInteractionManager {
             return;
         }
         
-        if (!checkUnbreakableBlock(player, world, glassFrame)) {
+        if (!checkUnwrappableBlock(player, world, glassFrame)) {
             return;
         }
         
@@ -409,11 +410,15 @@ public class ScaleBoxInteractionManager {
                     onFail.run();
                     return true;
                 }
-                if (!checkUnbreakableBlock(player, world, glassFrame)) {
+                if (!checkUnwrappableBlock(player, world, glassFrame)) {
                     onFail.run();
                     return true;
                 }
                 if (!checkEntityInRegion(player, world, glassFrame)) {
+                    onFail.run();
+                    return true;
+                }
+                if (!checkCrossBoundaryMultiBlockStructure(player,world, glassFrame)) {
                     onFail.run();
                     return true;
                 }
@@ -438,6 +443,26 @@ public class ScaleBoxInteractionManager {
                 return true;
             }
         ));
+    }
+    
+    private boolean checkCrossBoundaryMultiBlockStructure(
+        ServerPlayer player, ServerLevel world, IntBox glassFrame
+    ) {
+        for (Direction direction : Direction.values()) {
+            IntBox surfaceLayer = glassFrame.getSurfaceLayer(direction);
+            BlockPos r =
+                ScaleBoxOperations.checkCrossBoundaryMultiBlockStructure(world, surfaceLayer, direction);
+            if (r != null) {
+                BlockState blockState = world.getBlockState(r);
+                player.sendSystemMessage(Component.translatable(
+                    "mini_scaled.cross_boundary_multi_block_structure",
+                    blockState.getBlock().getName(),
+                    r.getX(), r.getY(), r.getZ()
+                ));
+                return false;
+            }
+        }
+        return true;
     }
     
     private static boolean checkEntityInRegion(ServerPlayer player, ServerLevel world, IntBox glassFrame) {
@@ -483,7 +508,7 @@ public class ScaleBoxInteractionManager {
                 return false;
             }
         }
-       
+        
         return true;
     }
     
@@ -500,7 +525,7 @@ public class ScaleBoxInteractionManager {
         }
     }
     
-    private static boolean checkUnbreakableBlock(ServerPlayer player, ServerLevel world, IntBox glassFrame) {
+    private static boolean checkUnwrappableBlock(ServerPlayer player, ServerLevel world, IntBox glassFrame) {
         BlockPos nonWrappableBlockPos = ScaleBoxOperations.checkNonWrappableBlock(world, glassFrame);
         if (nonWrappableBlockPos != null) {
             player.sendSystemMessage(Component.translatable(
