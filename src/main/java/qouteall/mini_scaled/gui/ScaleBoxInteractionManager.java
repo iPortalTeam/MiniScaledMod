@@ -325,10 +325,9 @@ public class ScaleBoxInteractionManager {
             // don't remove the item for now. remove when the chunk is loaded
         }
         
-        IntBox wrappedBox = pendingScaleBoxWrapping.glassFrame();
-        BlockPos boxSize = wrappedBox.getSize();
+        BlockPos boxSize = glassFrame.getSize();
         BlockPos entranceSize = Helper.divide(boxSize, scale);
-        IntBox entranceBox = wrappedBox.confineInnerBox(
+        IntBox entranceBox = glassFrame.confineInnerBox(
             IntBox.fromBasePointAndSize(pendingScaleBoxWrapping.clickingPos(), entranceSize)
         );
         
@@ -359,7 +358,7 @@ public class ScaleBoxInteractionManager {
             scaleBoxRecord.clearRegionId(regionId);
         };
         
-        IPGlobal.serverTaskList.addTask(MyTaskList.withMacroLifecycle(
+        MyTaskList.MyTask task = MyTaskList.withMacroLifecycle(
             // begin action
             () -> {},
             
@@ -402,48 +401,58 @@ public class ScaleBoxInteractionManager {
                     return false;
                 }
                 
-                // clear loading chunk message
-                player.displayClientMessage(Component.empty(), true);
-                
-                // re-check because chunk loading takes time, and it may change during loading
-                
-                if (!checkGlassFrameIntegrityAndInform(player, glassFrame, world, glassBlockState)) {
+                boolean succ = invokeDoWrap(
+                    player, glassFrame, world, glassBlockState, option, newEntry, entranceBox
+                );
+                if (!succ) {
                     onFail.run();
-                    return true;
                 }
-                if (!checkUnwrappableBlock(player, world, glassFrame)) {
-                    onFail.run();
-                    return true;
-                }
-                if (!checkEntityInRegion(player, world, glassFrame)) {
-                    onFail.run();
-                    return true;
-                }
-                if (!checkCrossBoundaryMultiBlockStructure(player,world, glassFrame)) {
-                    onFail.run();
-                    return true;
-                }
-                
-                if (!player.isCreative()) {
-                    if (!checkInventory(player, option.ingredients())) {
-                        onFail.run();
-                        return true;
-                    }
-                    
-                    // finally remove the item
-                    removeItems(player, option.ingredients());
-                }
-                
-                // finally do wrapping
-                newEntry.id = scaleBoxRecord.allocateId();
-                scaleBoxRecord.addEntry(newEntry);
-                scaleBoxRecord.setDirty();
-                
-                ScaleBoxOperations.doWrap(world, player, newEntry, wrappedBox, entranceBox);
                 
                 return true;
             }
-        ));
+        );
+        IPGlobal.serverTaskList.addTask(task);
+    }
+    
+    private boolean invokeDoWrap(
+        ServerPlayer player, IntBox glassFrame,
+        ServerLevel world, BlockState glassBlockState,
+        WrappingOption option,
+        ScaleBoxRecord.Entry newEntry,
+        IntBox entranceBox
+    ) {
+        ScaleBoxRecord scaleBoxRecord = ScaleBoxRecord.get(player.server);
+        
+        // clear loading chunk message
+        player.displayClientMessage(Component.empty(), true);
+        
+        // re-check because chunk loading takes time, and it may change during loading
+        
+        if (!checkGlassFrameIntegrityAndInform(player, glassFrame, world, glassBlockState)) {
+            return false;
+        }
+        if (!checkUnwrappableBlock(player, world, glassFrame)) {
+            return false;
+        }
+        if (!checkEntityInRegion(player, world, glassFrame)) {
+            return false;
+        }
+        if (!checkCrossBoundaryMultiBlockStructure(player, world, glassFrame)) {
+            return false;
+        }
+        
+        if (!player.isCreative()) {
+            if (!checkInventory(player, option.ingredients())) {
+                return false;
+            }
+            
+            // finally remove the item
+            removeItems(player, option.ingredients());
+        }
+        
+        // finally do wrapping
+        ScaleBoxOperations.doWrap(world, player, newEntry, glassFrame, entranceBox);
+        return true;
     }
     
     private boolean checkCrossBoundaryMultiBlockStructure(

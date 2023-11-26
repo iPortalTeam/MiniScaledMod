@@ -103,7 +103,7 @@ public class ScaleBoxOperations {
     public static void doWrap(
         ServerLevel world,
         ServerPlayer player,
-        ScaleBoxRecord.Entry newEntry,
+        ScaleBoxRecord.Entry entry,
         IntBox wrappedBox,
         IntBox entranceBox
     ) {
@@ -113,33 +113,46 @@ public class ScaleBoxOperations {
         
         BlockPos boxSize = wrappedBox.getSize();
         
+        ScaleBoxRecord scaleBoxRecord = ScaleBoxRecord.get(server);
+        
+        entry.id = scaleBoxRecord.allocateId();
+        entry.currentEntranceDim = world.dimension();
+        entry.currentEntrancePos = entranceBox.l;
+        entry.entranceRotation = null;
+        entry.generation++;
+        
+        Validate.isTrue(entry.regionId != 0);
+        Validate.isTrue(entry.innerBoxPos != null);
+        Validate.isTrue(entry.currentEntranceSize != null);
+        Validate.isTrue(entry.ownerId != null);
+        
+        scaleBoxRecord.addEntry(entry);
+        scaleBoxRecord.setDirty(true);
+        
+        ServerLevel voidWorld = VoidDimension.getVoidServerWorld(server);
+        
+        ScaleBoxGeneration.createScaleBoxPortals(voidWorld, world, entry, wrappedBox);
+        
+        transferRegion(
+            world,
+            wrappedBox.l,
+            voidDim,
+            entry.innerBoxPos,
+            boxSize,
+            AARotation.IDENTITY,
+            true, true
+        );
+        
+        putScaleBoxEntranceBlocks(world, entry);
+        
         // setup barrier blocks
-        IntBox barrierBox = newEntry.getInnerAreaBox()
+        IntBox barrierBox = entry.getInnerAreaBox()
             .getAdjusted(-1, -1, -1, 1, 1, 1);
         for (Direction direction : Direction.values()) {
             barrierBox.getSurfaceLayer(direction).fastStream().forEach(blockPos -> {
                 voidDim.setBlockAndUpdate(blockPos, BoxBarrierBlock.INSTANCE.defaultBlockState());
             });
         }
-        
-        transferRegion(
-            world,
-            wrappedBox.l,
-            voidDim,
-            newEntry.innerBoxPos,
-            boxSize,
-            AARotation.IDENTITY,
-            true, true
-        );
-        
-        putScaleBoxEntranceIntoWorld(
-            newEntry,
-            world,
-            entranceBox.l,
-            AARotation.IDENTITY,
-            player,
-            wrappedBox
-        );
         
         tellClientToForceMainThreadRebuildTemporarily(player);
     }
@@ -697,6 +710,10 @@ public class ScaleBoxOperations {
         ServerLevel voidWorld = VoidDimension.getVoidServerWorld(server);
         ScaleBoxGeneration.createScaleBoxPortals(voidWorld, world, entry, fromWrappedBox);
         
+        putScaleBoxEntranceBlocks(world, entry);
+    }
+    
+    private static void putScaleBoxEntranceBlocks(ServerLevel world, ScaleBoxRecord.Entry entry) {
         entry.getOuterAreaBox().stream().forEach(outerPos -> {
             world.setBlockAndUpdate(outerPos, ScaleBoxPlaceholderBlock.INSTANCE.defaultBlockState());
             

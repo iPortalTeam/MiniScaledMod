@@ -13,6 +13,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+import org.apache.commons.lang3.Validate;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,6 +31,7 @@ import qouteall.q_misc_util.my_util.DQuaternion;
 import qouteall.q_misc_util.my_util.IntBox;
 
 import java.util.List;
+import java.util.Objects;
 
 public class ScaleBoxGeneration {
     private static final Logger LOGGER = LoggerFactory.getLogger(ScaleBoxGeneration.class);
@@ -140,6 +142,9 @@ public class ScaleBoxGeneration {
         
         McHelper.spawnServerEntity(portal);
         McHelper.spawnServerEntity(reversePortal);
+        
+        Validate.isTrue(portal.getId() != reversePortal.getId());
+        Validate.isTrue(!Objects.equals(portal.getUUID(), reversePortal.getUUID()));
     }
     
     

@@ -141,6 +141,11 @@ public class ScaleBoxRecord extends SavedData {
         for (Tag tag : list) {
             if (tag instanceof CompoundTag c) {
                 Entry entry = Entry.fromTag(c);
+                
+                if (regionIdUsage.get(entry.regionId)) {
+                    LOGGER.error("Conflicting region id {} {}", entry.regionId, entry);
+                }
+                
                 addEntry(entry);
             }
         }
@@ -267,9 +272,9 @@ public class ScaleBoxRecord extends SavedData {
                 regionId = id; // for old data, use id as region id
             }
             
-            if (regionId < 0) {
+            if (regionId <= 0) {
                 LOGGER.error("Invalid region id {}", regionId);
-                regionId = 0;
+                regionId = id;
             }
             
             innerBoxPos = Helper.getVec3i(tag, "innerBoxPos");
