@@ -12,7 +12,7 @@ public class ScaleBoxListWidget extends AbstractSelectionList<ScaleBoxEntryWidge
     public ScaleBoxListWidget(
         ScaleBoxManagementScreen parent, int width, int height, int top, int bottom, int itemHeight
     ) {
-        super(Minecraft.getInstance(), width, height, top, bottom, itemHeight);
+        super(Minecraft.getInstance(), width, height, top, itemHeight);
         
         this.parent = parent;
         
@@ -20,7 +20,7 @@ public class ScaleBoxListWidget extends AbstractSelectionList<ScaleBoxEntryWidge
     }
     
     @Override
-    public void updateNarration(NarrationElementOutput narrationElementOutput) {
+    protected void updateWidgetNarration(NarrationElementOutput narrationElementOutput) {
     
     }
     

@@ -131,7 +131,7 @@ public class ScaleBoxOperations {
         
         ServerLevel voidWorld = VoidDimension.getVoidServerWorld(server);
         
-        ScaleBoxGeneration.createScaleBoxPortals(voidWorld, world, entry, wrappedBox);
+        ScaleBoxGeneration.createScaleBoxPortals(voidWorld, world, entry, null);
         
         transferRegion(
             world,
@@ -608,6 +608,11 @@ public class ScaleBoxOperations {
             transformedRegionSize.getZ() > 0 ? toOrigin.getZ() : toOrigin.getZ() + 1
         );
         for (Entity entity : entities) {
+            if (!canMoveEntity(entity)) {
+                LOGGER.warn("Skipping non-transferable entity {}", entity);
+                continue;
+            }
+            
             Vec3 position = entity.position();
             Vec3 newPosition = rotation.quaternion.rotate(position.subtract(fromOriginPos)).add(toOriginPos);
             
@@ -636,7 +641,7 @@ public class ScaleBoxOperations {
             // the scale box portal bounding box has thickness,
             // so it will test that portal even though the area does not overlap
             // testing the placeholder block will be more accurate
-            return entity instanceof MiniScaledPortal;
+            return false;
         }
         
         return entity.canChangeDimensions();
@@ -746,7 +751,7 @@ public class ScaleBoxOperations {
         );
         
         for (Entity entity : entities) {
-            if (!entity.canChangeDimensions()) {
+            if (!canMoveEntity(entity)) {
                 return entity;
             }
         }

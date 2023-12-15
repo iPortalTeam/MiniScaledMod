@@ -1,5 +1,6 @@
 package qouteall.mini_scaled.block;
 
+import com.mojang.serialization.MapCodec;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.core.BlockPos;
@@ -9,6 +10,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.BarrierBlock;
 import net.minecraft.world.level.block.BaseEntityBlock;
 import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -19,12 +21,17 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import qouteall.imm_ptl.core.IPGlobal;
 import qouteall.mini_scaled.ClientScaleBoxInteractionControl;
 import qouteall.q_misc_util.my_util.MyTaskList;
 
+@SuppressWarnings("deprecation")
 public class ScaleBoxPlaceholderBlock extends BaseEntityBlock {
+    public static final MapCodec<ScaleBoxPlaceholderBlock> CODEC =
+        simpleCodec(ScaleBoxPlaceholderBlock::new);
+    
     public static final ScaleBoxPlaceholderBlock INSTANCE = new ScaleBoxPlaceholderBlock(
         BlockBehaviour.Properties.of()
             .strength(0.3F)
@@ -42,6 +49,11 @@ public class ScaleBoxPlaceholderBlock extends BaseEntityBlock {
     
     private ScaleBoxPlaceholderBlock(Properties settings) {
         super(settings);
+    }
+    
+    @Override
+    protected @NotNull MapCodec<? extends BaseEntityBlock> codec() {
+        return CODEC;
     }
     
     public boolean propagatesSkylightDown(BlockState state, BlockGetter world, BlockPos pos) {
@@ -92,7 +104,9 @@ public class ScaleBoxPlaceholderBlock extends BaseEntityBlock {
     }
     
     @Override
-    public VoxelShape getShape(BlockState state, BlockGetter world, BlockPos pos, CollisionContext context) {
+    public @NotNull VoxelShape getShape(
+        BlockState state, BlockGetter world, BlockPos pos, CollisionContext context
+    ) {
         if (world instanceof Level world1) {
             if (world1.isClientSide()) {
                 if (ClientScaleBoxInteractionControl.canInteractInsideScaleBox()) {

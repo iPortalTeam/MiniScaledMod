@@ -69,13 +69,14 @@ public class BoxBarrierBlock extends Block {
     
     // cannot be broken by creative mode player
     @Override
-    public void playerWillDestroy(Level world, BlockPos pos, BlockState state, Player player){
-        super.playerWillDestroy(world, pos, state, player);
+    public BlockState playerWillDestroy(Level world, BlockPos pos, BlockState state, Player player){
+        BlockState result = super.playerWillDestroy(world, pos, state, player);
         if (!player.level().isClientSide()) {
             IPGlobal.serverTaskList.addTask(MyTaskList.oneShotTask(() -> {
                 world.setBlockAndUpdate(pos, state);
                 player.displayClientMessage(Component.translatable("mini_scaled.cannot_break_barrier"), true);
             }));
         }
+        return result;
     }
 }

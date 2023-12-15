@@ -34,11 +34,6 @@ public class ScaleBoxWrappingScreen extends Screen {
     
     private final OptionListWidget optionListWidget;
     
-    // AbstractSelectionList is not LayoutElement
-    // that's weird
-    // use this for workaround
-    private final StringWidget proxyForOptionListWidget;
-    
     private final StringWidget titleText;
     private final StringWidget titleText2;
     
@@ -57,8 +52,7 @@ public class ScaleBoxWrappingScreen extends Screen {
         this.data = pendingWrappingGuiData;
         
         this.optionListWidget = new OptionListWidget(
-            minecraft, width, height,
-            100, 200,
+            minecraft, width, height, 0,
             ITEM_HEIGHT
         );
         
@@ -98,8 +92,6 @@ public class ScaleBoxWrappingScreen extends Screen {
         ).build();
         
         this.confirmButton.active = false;
-        
-        this.proxyForOptionListWidget = new StringWidget(Component.empty(), font);
     }
     
     private void onSelect(OptionEntryWidget selected) {
@@ -147,15 +139,15 @@ public class ScaleBoxWrappingScreen extends Screen {
         titleText.setWidth(width);
         titleText2.setWidth(width);
         
-        proxyForOptionListWidget.setHeight(height - 80);
-        proxyForOptionListWidget.setWidth(width - 80);
+        optionListWidget.setHeight(height - 80);
+        optionListWidget.setWidth(width - 80);
         
         GridLayout gridLayout = new GridLayout(0, 0).spacing(10);
         LayoutSettings layoutSettings = gridLayout.defaultCellSetting()
             .alignVerticallyMiddle().alignHorizontallyCenter();
         gridLayout.addChild(titleText, 0, 0, 1, 2, layoutSettings);
         gridLayout.addChild(titleText2, 1, 0, 1, 2, layoutSettings);
-        gridLayout.addChild(proxyForOptionListWidget, 2, 0, 1, 2, layoutSettings);
+        gridLayout.addChild(optionListWidget, 2, 0, 1, 2, layoutSettings);
         gridLayout.addChild(confirmButton, 3, 0, layoutSettings);
         gridLayout.addChild(cancelButton, 3, 1, layoutSettings);
         
@@ -164,13 +156,6 @@ public class ScaleBoxWrappingScreen extends Screen {
         gridLayout.setPosition(
             (width - gridLayout.getWidth()) / 2,
             (height - gridLayout.getHeight()) / 2
-        );
-        
-        optionListWidget.updateSize(
-            width,
-            proxyForOptionListWidget.getHeight(),
-            proxyForOptionListWidget.getY(), // start Y
-            proxyForOptionListWidget.getY() + proxyForOptionListWidget.getHeight() // end Y
         );
     }
     
@@ -189,16 +174,16 @@ public class ScaleBoxWrappingScreen extends Screen {
     public static class OptionListWidget extends AbstractSelectionList<OptionEntryWidget> {
         
         public OptionListWidget(
-            Minecraft minecraft, int width, int height, int y0, int y1, int itemHeight
+            Minecraft minecraft, int width, int height, int y0, int itemHeight
         ) {
-            super(minecraft, width, height, y0, y1, itemHeight);
+            super(minecraft, width, height, y0, itemHeight);
             Validate.notNull(minecraft, "minecraft is null");
             
             setRenderBackground(false);
         }
         
         @Override
-        public void updateNarration(NarrationElementOutput narrationElementOutput) {
+        protected void updateWidgetNarration(NarrationElementOutput narrationElementOutput) {
         
         }
     }

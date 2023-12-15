@@ -24,8 +24,8 @@ import net.minecraft.world.level.levelgen.flat.FlatLayerInfo;
 import net.minecraft.world.level.levelgen.flat.FlatLevelGeneratorSettings;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
+import qouteall.dimlib.api.DimensionAPI;
 import qouteall.imm_ptl.core.McHelper;
-import qouteall.q_misc_util.api.DimensionAPI;
 
 import java.util.ArrayList;
 import java.util.Optional;

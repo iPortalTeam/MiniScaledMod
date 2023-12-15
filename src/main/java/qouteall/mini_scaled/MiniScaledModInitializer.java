@@ -21,6 +21,7 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.phys.BlockHitResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import qouteall.dimlib.api.DimensionAPI;
 import qouteall.imm_ptl.core.IPGlobal;
 import qouteall.mini_scaled.block.BoxBarrierBlock;
 import qouteall.mini_scaled.block.ScaleBoxPlaceholderBlock;
@@ -29,7 +30,6 @@ import qouteall.mini_scaled.config.MiniScaledConfig;
 import qouteall.mini_scaled.gui.ScaleBoxInteractionManager;
 import qouteall.mini_scaled.item.ManipulationWandItem;
 import qouteall.mini_scaled.item.ScaleBoxEntranceItem;
-import qouteall.q_misc_util.LifecycleHack;
 import qouteall.q_misc_util.MiscHelper;
 import qouteall.q_misc_util.my_util.LimitedLogger;
 
@@ -41,7 +41,7 @@ public class MiniScaledModInitializer implements ModInitializer {
     public void onInitialize() {
         VoidDimension.init();
         
-        LifecycleHack.markNamespaceStable("mini_scaled");
+        DimensionAPI.suppressExperimentalWarningForNamespace("mini_scaled");
         
         ScaleBoxPlaceholderBlock.init();
         
@@ -62,15 +62,6 @@ public class MiniScaledModInitializer implements ModInitializer {
         IPGlobal.enableDepthClampForPortalRendering = true;
         
         ServerTickEvents.END_SERVER_TICK.register(FallenEntityTeleportaion::teleportFallenEntities);
-        
-//        UseBlockCallback.EVENT.register((Player player, Level world, InteractionHand hand, BlockHitResult hitResult) -> {
-//            Block block = world.getBlockState(hitResult.getBlockPos()).getBlock();
-//            if (block == ScaleBoxPlaceholderBlock.instance) {
-//                return ScaleBoxManipulation.onHandRightClickEntrance(player, world, hand, hitResult);
-//            }
-//
-//            return InteractionResult.PASS;
-//        });
         
         // config
         MSGlobal.config = AutoConfig.register(MiniScaledConfig.class, GsonConfigSerializer::new);
