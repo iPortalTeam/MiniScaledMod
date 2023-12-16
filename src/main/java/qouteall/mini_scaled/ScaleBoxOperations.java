@@ -7,6 +7,7 @@ import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.arguments.blocks.BlockInput;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.SectionPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
@@ -18,6 +19,7 @@ import net.minecraft.util.Tuple;
 import net.minecraft.world.Clearable;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.ServerLevelAccessor;
@@ -29,6 +31,8 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.piston.PistonBaseBlock;
 import net.minecraft.world.level.block.piston.PistonHeadBlock;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.chunk.LevelChunk;
+import net.minecraft.world.level.chunk.LevelChunkSection;
 import net.minecraft.world.level.entity.EntityTypeTest;
 import net.minecraft.world.level.levelgen.structure.BoundingBox;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructurePlaceSettings;
@@ -42,7 +46,10 @@ import org.slf4j.Logger;
 import qouteall.imm_ptl.core.IPGlobal;
 import qouteall.imm_ptl.core.McHelper;
 import qouteall.imm_ptl.core.api.PortalAPI;
+import qouteall.imm_ptl.core.compat.GravityChangerInterface;
+import qouteall.imm_ptl.core.network.PacketRedirection;
 import qouteall.imm_ptl.core.portal.Portal;
+import qouteall.imm_ptl.core.portal.PortalExtension;
 import qouteall.imm_ptl.core.portal.animation.DeltaUnilateralPortalState;
 import qouteall.imm_ptl.core.portal.animation.NormalAnimation;
 import qouteall.imm_ptl.core.portal.animation.TimingFunction;
@@ -59,9 +66,13 @@ import qouteall.q_misc_util.my_util.DQuaternion;
 import qouteall.q_misc_util.my_util.IntBox;
 import qouteall.q_misc_util.my_util.MyTaskList;
 
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 
 public class ScaleBoxOperations {
     private static final Logger LOGGER = LogUtils.getLogger();
@@ -131,30 +142,38 @@ public class ScaleBoxOperations {
         
         ServerLevel voidWorld = VoidDimension.getVoidServerWorld(server);
         
-        ScaleBoxGeneration.createScaleBoxPortals(voidWorld, world, entry, null);
-        
-        transferRegion(
-            world,
-            wrappedBox.l,
-            voidDim,
-            entry.innerBoxPos,
-            boxSize,
-            AARotation.IDENTITY,
-            true, true
-        );
-        
-        putScaleBoxEntranceBlocks(world, entry);
-        
-        // setup barrier blocks
-        IntBox barrierBox = entry.getInnerAreaBox()
-            .getAdjusted(-1, -1, -1, 1, 1, 1);
-        for (Direction direction : Direction.values()) {
-            barrierBox.getSurfaceLayer(direction).fastStream().forEach(blockPos -> {
-                voidDim.setBlockAndUpdate(blockPos, BoxBarrierBlock.INSTANCE.defaultBlockState());
-            });
-        }
-        
-        tellClientToForceMainThreadRebuildTemporarily(player);
+        forceBundleConditionally(() -> {
+            transferRegion(
+                world,
+                wrappedBox.l,
+                voidDim,
+                entry.innerBoxPos,
+                boxSize,
+                AARotation.IDENTITY,
+                MSGlobal.config.getConfig().serverBetterAnimation,
+                MSGlobal.config.getConfig().serverBetterAnimation,
+                entry.teleportChangesGravity
+            );
+            
+            // should create portal after transferring region
+            // otherwise these portals may be transferred
+            ScaleBoxGeneration.createScaleBoxPortals(voidWorld, world, entry, wrappedBox);
+            
+            putScaleBoxEntranceBlocks(world, entry);
+            
+            // setup barrier blocks
+            IntBox barrierBox = entry.getInnerAreaBox()
+                .getAdjusted(-1, -1, -1, 1, 1, 1);
+            for (Direction direction : Direction.values()) {
+                barrierBox.getSurfaceLayer(direction).fastStream().forEach(blockPos -> {
+                    voidDim.setBlockAndUpdate(blockPos, BoxBarrierBlock.INSTANCE.defaultBlockState());
+                });
+            }
+            
+            tellClientToForceMainThreadRebuildTemporarily(player);
+            
+            return null;
+        });
     }
     
     private static void tellClientToForceMainThreadRebuildTemporarily(ServerPlayer player) {
@@ -196,6 +215,15 @@ public class ScaleBoxOperations {
             return;
         }
         
+        if (unwrappedBox.h.getY() >= entranceWorld.getMaxBuildHeight() ||
+            unwrappedBox.l.getY() < entranceWorld.getMinBuildHeight()
+        ) {
+            player.sendSystemMessage(
+                Component.translatable("mini_scaled.unwrapping_exceed_height_limit")
+            );
+            return;
+        }
+        
         // find the portal and start animation
         List<MiniScaledPortal> portals = entranceWorld.getEntities(
             EntityTypeTest.forClass(MiniScaledPortal.class),
@@ -218,10 +246,11 @@ public class ScaleBoxOperations {
         
         portals = portals.stream().filter(p -> {
             PortalShape portalShape = p.getPortalShape();
-            if (portalShape instanceof BoxPortalShape boxPortalShape) {
-                return boxPortalShape.facingOutwards;
+            if (!(portalShape instanceof BoxPortalShape boxPortalShape)) {
+                return false;
             }
-            return false;
+            
+            return boxPortalShape.facingOutwards;
         }).toList();
         
         if (portals.isEmpty()) {
@@ -303,7 +332,8 @@ public class ScaleBoxOperations {
                     entranceWorld,
                     entry,
                     unwrappedBox,
-                    rotationFromInnerToOuter
+                    rotationFromInnerToOuter,
+                    portal
                 );
                 
                 tellClientToForceMainThreadRebuildTemporarily(player);
@@ -317,7 +347,8 @@ public class ScaleBoxOperations {
         ServerPlayer player, ServerLevel entranceWorld,
         ScaleBoxRecord.Entry entry,
         IntBox expandedBox,
-        AARotation rotationFromInnerToOuter
+        AARotation rotationFromInnerToOuter,
+        MiniScaledPortal portal
     ) {
         MinecraftServer server = entranceWorld.getServer();
         
@@ -351,16 +382,28 @@ public class ScaleBoxOperations {
             outerDiagVec.getZ() > 0 ? expandedBox.l.getZ() : expandedBox.h.getZ()
         );
         
-        transferRegion(
-            voidDim,
-            innerAreaBox.l,
-            entranceWorld,
-            outerBoxBasePos,
-            innerAreaBox.getSize(),
-            rotationFromInnerToOuter,
-            true,
-            true
-        );
+        forceBundleConditionally(() -> {
+            transferRegion(
+                voidDim,
+                innerAreaBox.l,
+                entranceWorld,
+                outerBoxBasePos,
+                innerAreaBox.getSize(),
+                rotationFromInnerToOuter,
+                MSGlobal.config.getConfig().serverBetterAnimation,
+                MSGlobal.config.getConfig().serverBetterAnimation,
+                entry.teleportChangesGravity
+            );
+            
+            portal.remove(Entity.RemovalReason.KILLED);
+            
+            Portal reversePortal = PortalExtension.get(portal).reversePortal;
+            if (reversePortal != null) {
+                reversePortal.remove(Entity.RemovalReason.KILLED);
+            }
+            
+            return null;
+        });
         
         // clear barrier blocks
         IntBox barrierBox = innerAreaBox.getAdjusted(-1, -1, -1, 1, 1, 1);
@@ -372,7 +415,7 @@ public class ScaleBoxOperations {
     }
     
     /**
-     * @param box the region to check. must be 1-layer
+     * @param box       the region to check. must be 1-layer
      * @param direction the direction to check
      * @return not null if there is one block in box that expands along direction out of the box
      */
@@ -390,7 +433,7 @@ public class ScaleBoxOperations {
                 }
             }
             
-            if(blockState.getBlock() instanceof PistonHeadBlock pistonHeadBlock) {
+            if (blockState.getBlock() instanceof PistonHeadBlock pistonHeadBlock) {
                 Direction facing = blockState.getValue(PistonHeadBlock.FACING);
                 if (facing == direction.getOpposite()) {
                     return true;
@@ -409,17 +452,25 @@ public class ScaleBoxOperations {
         BlockPos regionSize,
         AARotation rotation,
         boolean syncSrcSideBlockUpdateToClientImmediately,
-        boolean syncDstSideBlockUpdateToClientImmediately
+        boolean syncDstSideBlockUpdateToClientImmediately,
+        boolean transformGravity
     ) {
-        IntBox fromBox = IntBox.fromBasePointAndSize(srcOrigin, regionSize);
+        IntBox srcBox = IntBox.fromBasePointAndSize(srcOrigin, regionSize);
         BlockPos diagOffset = regionSize.offset(-1, -1, -1);
-        IntBox toBox = IntBox.fromPosAndOffset(dstOrigin, rotation.transform(diagOffset));
+        IntBox dstBox = IntBox.fromPosAndOffset(dstOrigin, rotation.transform(diagOffset));
         
-        // TODO check height limit
+        Validate.isTrue(
+            dstBox.h.getY() < dstWorld.getMaxBuildHeight(),
+            "the destination region should not exceed world height limit"
+        );
+        Validate.isTrue(
+            dstBox.l.getY() >= dstWorld.getMinBuildHeight(),
+            "the destination region should not be below world height limit"
+        );
         
         if (srcWorld == dstWorld) {
             Validate.isTrue(
-                IntBox.getIntersect(fromBox, toBox) == null,
+                IntBox.getIntersect(srcBox, dstBox) == null,
                 "the source region and destination region should not intersect"
             );
         }
@@ -427,18 +478,17 @@ public class ScaleBoxOperations {
         @Nullable Rotation vanillaRotation = rotation.toVanillaRotation();
         
         transferBlockAndBlockEntities(
-            srcWorld, srcOrigin, dstWorld, dstOrigin, regionSize, rotation, vanillaRotation,
-            false
+            srcWorld, srcOrigin, dstWorld, dstOrigin, regionSize, rotation, vanillaRotation
         );
         
-        transferEntities(srcWorld, srcOrigin, dstWorld, dstOrigin, regionSize, rotation);
+        transferEntities(srcWorld, srcOrigin, dstWorld, dstOrigin, regionSize, rotation, transformGravity);
         
         if (syncSrcSideBlockUpdateToClientImmediately) {
-            PortalAPI.syncBlockUpdateToClientImmediately(srcWorld, fromBox);
+            PortalAPI.syncBlockUpdateToClientImmediately(srcWorld, srcBox);
         }
         
         if (syncDstSideBlockUpdateToClientImmediately) {
-            PortalAPI.syncBlockUpdateToClientImmediately(dstWorld, toBox);
+            PortalAPI.syncBlockUpdateToClientImmediately(dstWorld, dstBox);
         }
     }
     
@@ -463,65 +513,66 @@ public class ScaleBoxOperations {
      * <p>
      * {@link FillCommand#fillBlocks(CommandSourceStack, BoundingBox, BlockInput, FillCommand.Mode, Predicate)}
      * uses flag 2
+     *
+     * Note: changing the flag cannot fully disable block update.
+     * In {@link LevelChunk#setBlockState}, it calls {@link BlockState#onRemove}, regardless of the flag.
+     * In vanilla, using /fill command to break extended piston in some direction will cause it to drop.
      */
     private static void transferBlockAndBlockEntities(
-        ServerLevel fromWorld, BlockPos fromOrigin,
-        ServerLevel toWorld, BlockPos toOrigin,
+        ServerLevel srcWorld, BlockPos srcOrigin,
+        ServerLevel dstWorld, BlockPos dstOrigin,
         BlockPos regionSize,
         AARotation rotation,
-        @Nullable Rotation vanillaRotation,
-        boolean delayFromSideUpdate
+        @Nullable Rotation vanillaRotation
     ) {
+        List<BlockPos> srcDelayClearPos = new ArrayList<>();
+        
         for (int dx = 0; dx < regionSize.getX(); dx++) {
             for (int dy = 0; dy < regionSize.getY(); dy++) {
                 for (int dz = 0; dz < regionSize.getZ(); dz++) {
-                    BlockPos fromPos = fromOrigin.offset(dx, dy, dz);
+                    BlockPos srcPos = srcOrigin.offset(dx, dy, dz);
                     
                     BlockPos transformedDelta = rotation.transform(new BlockPos(dx, dy, dz));
-                    BlockPos toPos = toOrigin.offset(transformedDelta);
+                    BlockPos dstPos = dstOrigin.offset(transformedDelta);
                     
-                    BlockState blockState = fromWorld.getBlockState(fromPos);
-                    BlockState rotatedBlockState = vanillaRotation == null ?
-                        blockState : blockState.rotate(vanillaRotation);
+                    BlockState srcState = srcWorld.getBlockState(srcPos);
+                    BlockState rotatedSrcState = vanillaRotation == null ?
+                        srcState : srcState.rotate(vanillaRotation);
                     
                     @Nullable CompoundTag blockEntityTag = null;
-                    if (blockState.hasBlockEntity()) {
-                        BlockEntity blockEntity = fromWorld.getBlockEntity(fromPos);
+                    if (srcState.hasBlockEntity()) {
+                        BlockEntity blockEntity = srcWorld.getBlockEntity(srcPos);
                         if (blockEntity != null) {
                             blockEntityTag = blockEntity.saveWithoutMetadata();
                             Clearable.tryClear(blockEntity);
                         }
                     }
                     
-                    if (delayFromSideUpdate) {
-                        // set the block to barrier,
-                        // without triggering shape update and without update networking
-                        fromWorld.setBlock(
-                            fromPos, Blocks.BARRIER.defaultBlockState(), 16
-                        );
+                    // clear the block without triggering shape update
+                    if (shouldDelayClear(srcState)) {
+                        srcDelayClearPos.add(srcPos);
                     }
                     else {
-                        // clear the block without triggering shape update
-                        fromWorld.setBlock(
-                            fromPos, Blocks.AIR.defaultBlockState(), 2 | 16
+                        srcWorld.setBlock(
+                            srcPos, Blocks.AIR.defaultBlockState(), 2 | 16
                         );
                     }
                     
                     // set the block without triggering shape update
-                    toWorld.setBlock(
-                        toPos, rotatedBlockState, 2 | 16
+                    dstWorld.setBlock(
+                        dstPos, rotatedSrcState, 2 | 16
                     );
                     
                     if (blockEntityTag != null) {
-                        BlockEntity newBlockEntity = toWorld.getBlockEntity(toPos);
+                        BlockEntity newBlockEntity = dstWorld.getBlockEntity(dstPos);
                         if (newBlockEntity != null) {
                             newBlockEntity.load(blockEntityTag);
                             newBlockEntity.setChanged();
                         }
                         else {
-                            LOGGER.warn(
+                            LOGGER.error(
                                 "cannot find block entity after transfer. from {} {} to {} {} block {} tag {}",
-                                fromWorld, fromPos, toWorld, toPos, blockState, blockEntityTag
+                                srcWorld, srcPos, dstWorld, dstPos, srcState, blockEntityTag
                             );
                         }
                     }
@@ -529,40 +580,55 @@ public class ScaleBoxOperations {
             }
         }
         
+        for (BlockPos pos : srcDelayClearPos) {
+            srcWorld.setBlock(
+                pos, Blocks.AIR.defaultBlockState(), 2 | 16
+            );
+        }
+        
         // also update the outer layer of region
         for (int dx = -1; dx <= regionSize.getX(); dx++) {
             for (int dy = -1; dy <= regionSize.getY(); dy++) {
                 for (int dz = -1; dz <= regionSize.getZ(); dz++) {
-                    BlockPos fromPos = fromOrigin.offset(dx, dy, dz);
-                    updateBlockStatus(fromWorld, fromPos);
+                    BlockPos fromPos = srcOrigin.offset(dx, dy, dz);
+                    updateBlockStatus(srcWorld, fromPos);
                     
                     BlockPos transformedDelta = rotation.transform(new BlockPos(dx, dy, dz));
-                    BlockPos toPos = toOrigin.offset(transformedDelta);
+                    BlockPos toPos = dstOrigin.offset(transformedDelta);
                     
-                    updateBlockStatus(toWorld, toPos);
+                    updateBlockStatus(dstWorld, toPos);
                 }
             }
         }
-        
-        if (delayFromSideUpdate) {
-            // do from-side networking update one tick later
-            IPGlobal.serverTaskList.addTask(() -> {
-                for (int dx = 0; dx < regionSize.getX(); dx++) {
-                    for (int dy = 0; dy < regionSize.getY(); dy++) {
-                        for (int dz = 0; dz < regionSize.getZ(); dz++) {
-                            BlockPos fromPos = fromOrigin.offset(dx, dy, dz);
-                            BlockState currState = fromWorld.getBlockState(fromPos);
-                            if (currState.getBlock() == Blocks.BARRIER) {
-                                fromWorld.setBlock(
-                                    fromPos, Blocks.AIR.defaultBlockState(), 1 | 2
-                                );
-                            }
-                        }
-                    }
-                }
-                return true;
-            });
+    }
+    
+    // Piston head block is special. If we break piston head before breaking base,
+    // piston base will break and drop item.
+    // Vanilla code does not allow suppressing this by the flag.
+    private static boolean shouldDelayClear(BlockState blockState) {
+        return blockState.getBlock() instanceof PistonHeadBlock;
+    }
+    
+    /**
+     * Only sets block. Will not cause any block update.
+     */
+    public static BlockState rawSetBlock(ServerLevel world, BlockPos blockPos, BlockState blockState) {
+        LevelChunk chunk = world.getChunk(
+            SectionPos.blockToSectionCoord(blockPos.getX()),
+            SectionPos.blockToSectionCoord(blockPos.getZ())
+        );
+        int sectionIndex = world.getSectionIndex(blockPos.getY());
+        LevelChunkSection[] sections = chunk.getSections();
+        if (sectionIndex < 0 || sectionIndex >= sections.length) {
+            return null;
         }
+        LevelChunkSection section = sections[sectionIndex];
+        return section.setBlockState(
+            blockPos.getX() & 15,
+            blockPos.getY() & 15,
+            blockPos.getZ() & 15,
+            blockState
+        );
     }
     
     public static void updateBlockStatus(ServerLevel world, BlockPos pos) {
@@ -588,7 +654,8 @@ public class ScaleBoxOperations {
     private static void transferEntities(
         ServerLevel fromWorld, BlockPos fromOrigin,
         ServerLevel toWorld, BlockPos toOrigin,
-        BlockPos regionSize, AARotation rotation
+        BlockPos regionSize, AARotation rotation,
+        boolean transformGravity
     ) {
         AABB box = IntBox.fromBasePointAndSize(fromOrigin, regionSize).toRealNumberBox();
         List<Entity> entities = McHelper.findEntitiesByBox(
@@ -596,7 +663,7 @@ public class ScaleBoxOperations {
             fromWorld,
             box,
             16,
-            ScaleBoxOperations::canMoveEntity
+            ScaleBoxOperations::isEntityMovable
         );
         
         BlockPos transformedRegionSize = rotation.transform(regionSize);
@@ -608,46 +675,62 @@ public class ScaleBoxOperations {
             transformedRegionSize.getZ() > 0 ? toOrigin.getZ() : toOrigin.getZ() + 1
         );
         for (Entity entity : entities) {
-            if (!canMoveEntity(entity)) {
-                LOGGER.warn("Skipping non-transferable entity {}", entity);
+            if (!canReallyMoveEntity(entity)) {
+                LOGGER.info("Skipping non-transferable entity {}", entity);
                 continue;
             }
             
             Vec3 position = entity.position();
             Vec3 newPosition = rotation.quaternion.rotate(position.subtract(fromOriginPos)).add(toOriginPos);
+            float oldXRot = entity.getXRot();
+            float oldYRot = entity.getYRot();
+            Direction oldGrav = GravityChangerInterface.invoker.getBaseGravityDirection(entity);
+            
+            Entity newEntity = PortalAPI.teleportEntity(
+                entity, toWorld, newPosition
+            );
+            
+            if (transformGravity) {
+                Direction newGrav = rotation.transformDirection(oldGrav);
+                GravityChangerInterface.invoker.setBaseGravityDirectionServer(entity, newGrav);
+            }
             
             DQuaternion oldCameraRot = DQuaternion.getCameraRotation(
-                entity.getXRot(), entity.getYRot()
+                oldXRot, oldYRot
             ).getConjugated();
             DQuaternion newCameraRot = oldCameraRot.hamiltonProduct(rotation.quaternion).getConjugated();
             Tuple<Double, Double> newPitchYaw = DQuaternion.getPitchYawFromRotation(newCameraRot);
             double newXRot = newPitchYaw.getA();
             double newYRot = newPitchYaw.getB();
+            newEntity.setXRot((float) newXRot);
+            newEntity.setYRot((float) newYRot);
             
-            // TODO transform entity gravity
-            
-            PortalAPI.teleportEntity(
-                entity, toWorld, newPosition
-            );
-            entity.setXRot((float) newXRot);
-            entity.setYRot((float) newYRot);
+            LOGGER.info("Transferred entity {}", entity);
         }
     }
     
-    public static boolean canMoveEntity(Entity entity) {
+    public static boolean isEntityMovable(Entity entity) {
+        // when a region adjacent to a scale box is wrapped,
+        // the scale box portal bounding box has thickness,
+        // so it will test that portal even though the area does not overlap
+        // testing the placeholder block will be more accurate
+        if (entity instanceof MiniScaledPortal) {
+            return true;
+        }
+        
+        return canReallyMoveEntity(entity);
+    }
+    
+    public static boolean canReallyMoveEntity(Entity entity) {
         // portal is not movable
         if (entity instanceof Portal) {
-            // when a region adjacent to a scale box is wrapped,
-            // the scale box portal bounding box has thickness,
-            // so it will test that portal even though the area does not overlap
-            // testing the placeholder block will be more accurate
             return false;
         }
         
         return entity.canChangeDimensions();
     }
     
-    public static boolean canMoveBlock(ServerLevel world, BlockPos p, BlockState blockState) {
+    public static boolean isBlockMovable(ServerLevel world, BlockPos p, BlockState blockState) {
         if (blockState.getBlock() == ScaleBoxPlaceholderBlock.INSTANCE) {
             // not allowing wrapping scale box for now
             return false;
@@ -738,7 +821,7 @@ public class ScaleBoxOperations {
         ServerLevel world, IntBox area
     ) {
         return area.fastStream().filter(
-            p -> !canMoveBlock(world, p, world.getBlockState(p))
+            p -> !isBlockMovable(world, p, world.getBlockState(p))
         ).findFirst().map(BlockPos::immutable).orElse(null);
     }
     
@@ -751,7 +834,7 @@ public class ScaleBoxOperations {
         );
         
         for (Entity entity : entities) {
-            if (!canMoveEntity(entity)) {
+            if (!isEntityMovable(entity)) {
                 return entity;
             }
         }
@@ -775,5 +858,14 @@ public class ScaleBoxOperations {
         return unwrappingArea.contains(entryOuterAreaBox.l)
             && unwrappingArea.contains(entryOuterAreaBox.h)
             && entryOuterAreaBox.getSize().multiply(entry.scale).equals(unwrappingArea.getSize());
+    }
+    
+    private static <R> R forceBundleConditionally(Supplier<R> func) {
+        if (MSGlobal.config.getConfig().serverBetterAnimation) {
+            return PacketRedirection.withForceBundle(func);
+        }
+        else {
+            return func.get();
+        }
     }
 }

@@ -10,14 +10,14 @@ import qouteall.mini_scaled.VoidDimension;
 
 @Mixin(DimensionSpecialEffects.class)
 public class MixinSkyProperties {
-    @Shadow
-    @Final
-    private static Object2ObjectMap<ResourceLocation, DimensionSpecialEffects> EFFECTS;
-    
-    static {
-        EFFECTS.put(
-            new ResourceLocation("mini_scaled:cloudless"),
-            new VoidDimension.VoidSkyProperties()
-        );
-    }
+//    @Shadow
+//    @Final
+//    private static Object2ObjectMap<ResourceLocation, DimensionSpecialEffects> EFFECTS;
+//
+//    static {
+//        EFFECTS.put(
+//            new ResourceLocation("mini_scaled:cloudless"),
+//            new VoidDimension.VoidSkyProperties()
+//        );
+//    }
 }

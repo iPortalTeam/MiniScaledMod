@@ -60,5 +60,7 @@
   "mini_scaled.placed_other_players_box_with_permission": "You placed other players' scale box using the permission.",
   "mini_scaled.manipulate_other_players_box_with_permission": "You manipulated other players' scale box using the permission.",
   "mini_scaled.access_control": "You cannot access this box due to access control.",
-  "mini_scaled.cross_boundary_multi_block_structure": "Cannot wrap the scale box because there exists multi-block structure that cross the boundary: %s at (%s, %s, %s)"
+  "mini_scaled.cross_boundary_multi_block_structure": "Cannot wrap the scale box because there exists multi-block structure that cross the boundary: %s at (%s, %s, %s)",
+  "entity.mini_scaled.portal": "MiniScaled Portal",
+  "mini_scaled.unwrapping_exceed_height_limit": "Cannot unwrap because the unwrapped region exceeds the height limit."
 }

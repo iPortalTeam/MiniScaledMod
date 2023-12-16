@@ -10,12 +10,12 @@ import qouteall.mini_scaled.item.ScaleBoxEntranceItem;
 
 @Mixin(ItemColors.class)
 public class MixinItemColors {
-    @Inject(method = "createDefault", at = @At("RETURN"))
-    private static void onCreate(BlockColors blockColors, CallbackInfoReturnable<ItemColors> cir) {
-        ItemColors itemColors = cir.getReturnValue();
-        itemColors.register(
-            (stack, tintIndex) -> ScaleBoxEntranceItem.getRenderingColor(stack),
-            ScaleBoxEntranceItem.INSTANCE
-        );
-    }
+//    @Inject(method = "createDefault", at = @At("RETURN"))
+//    private static void onCreate(BlockColors blockColors, CallbackInfoReturnable<ItemColors> cir) {
+//        ItemColors itemColors = cir.getReturnValue();
+//        itemColors.register(
+//            (stack, tintIndex) -> ScaleBoxEntranceItem.getRenderingColor(stack),
+//            ScaleBoxEntranceItem.INSTANCE
+//        );
+//    }
 }

@@ -17,4 +17,5 @@ public class MiniScaledConfig implements ConfigData {
     public int unwrappingAnimationTicks = 60;
     
     public boolean clientBetterAnimation = true;
+    public boolean serverBetterAnimation = true;
 }

@@ -154,6 +154,11 @@ public class ManipulationWandItem extends Item {
                     glassFrame, color, clickedPos
                 );
             }
+            else {
+                player.sendSystemMessage(Component.translatable(
+                    "mini_scaled.cannot_wrap_invalid_frame"
+                ));
+            }
             
             return InteractionResult.SUCCESS;
         }
