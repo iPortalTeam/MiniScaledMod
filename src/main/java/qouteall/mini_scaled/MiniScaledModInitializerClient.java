@@ -4,7 +4,6 @@ import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.rendering.v1.ColorProviderRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.DimensionRenderingRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry;
-import net.fabricmc.fabric.impl.client.rendering.DimensionRenderingRegistryImpl;
 import net.minecraft.resources.ResourceLocation;
 import qouteall.imm_ptl.core.render.PortalEntityRenderer;
 import qouteall.mini_scaled.gui.ScaleBoxManagementScreen;

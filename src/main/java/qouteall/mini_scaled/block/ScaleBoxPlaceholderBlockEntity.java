@@ -23,7 +23,6 @@ import org.jetbrains.annotations.Nullable;
 import qouteall.mini_scaled.ScaleBoxGeneration;
 import qouteall.mini_scaled.ScaleBoxRecord;
 import qouteall.mini_scaled.item.ScaleBoxEntranceItem;
-import qouteall.q_misc_util.MiscHelper;
 import qouteall.q_misc_util.my_util.IntBox;
 
 public class ScaleBoxPlaceholderBlockEntity extends BlockEntity {
