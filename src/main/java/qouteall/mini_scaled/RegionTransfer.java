@@ -20,8 +20,10 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.piston.PistonBaseBlock;
 import net.minecraft.world.level.block.piston.PistonHeadBlock;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.levelgen.structure.BoundingBox;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructurePlaceSettings;
@@ -119,7 +121,7 @@ public class RegionTransfer {
      * <p>
      * {@link FillCommand#fillBlocks(CommandSourceStack, BoundingBox, BlockInput, FillCommand.Mode, Predicate)}
      * uses flag 2
-     *
+     * <p>
      * Note: changing the flag cannot fully disable block update.
      * In {@link LevelChunk#setBlockState}, it calls {@link BlockState#onRemove}, regardless of the flag.
      * In vanilla, using /fill command to break extended piston in some direction will cause it to drop.
@@ -131,6 +133,9 @@ public class RegionTransfer {
         AARotation rotation,
         @Nullable Rotation vanillaRotation
     ) {
+        BlockPos diagOffset = regionSize.offset(-1, -1, -1);
+        IntBox dstBox = IntBox.fromPosAndOffset(dstOrigin, rotation.transform(diagOffset));
+        
         List<BlockPos> srcDelayClearPos = new ArrayList<>();
         
         for (int dx = 0; dx < regionSize.getX(); dx++) {
@@ -206,6 +211,8 @@ public class RegionTransfer {
                 }
             }
         }
+        
+        cleanupInvalidStructures(dstWorld, dstBox);
     }
     
     // Piston head block is special. If we break piston head before breaking base,
@@ -305,5 +312,39 @@ public class RegionTransfer {
             
             LOGGER.info("Transferred entity {}", entity);
         }
+    }
+    
+    // break headless piston, because headless piston can be used to break bedrock
+    public static void cleanupInvalidStructures(
+        ServerLevel world, IntBox box
+    ) {
+        box.fastStream().filter(pos -> {
+            BlockState blockState = world.getBlockState(pos);
+            if (blockState.getBlock() instanceof PistonBaseBlock pistonBaseBlock) {
+                boolean extended = blockState.getValue(PistonBaseBlock.EXTENDED);
+                if (!extended) {
+                    return false;
+                }
+                
+                Direction facing = blockState.getValue(BlockStateProperties.FACING);
+                BlockPos headPos = pos.relative(facing);
+                BlockState headState = world.getBlockState(headPos);
+                
+                if (!(headState.getBlock() instanceof PistonHeadBlock)) {
+                    return true;
+                }
+                
+                if (headState.getValue(PistonHeadBlock.FACING) != facing) {
+                    return true;
+                }
+                
+                return false;
+            }
+            
+            return false;
+        }).forEach(pos -> {
+            LOGGER.info("Breaking invalid structure {} {}", world.dimension().location(), pos);
+            world.destroyBlock(pos, true);
+        });
     }
 }

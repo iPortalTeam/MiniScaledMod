@@ -306,8 +306,6 @@ public class ScaleBoxOperations {
                     portal
                 );
                 
-                tellClientToForceMainThreadRebuildTemporarily(player);
-                
                 return true;
             }
         ));
@@ -372,6 +370,8 @@ public class ScaleBoxOperations {
             if (reversePortal != null) {
                 reversePortal.remove(Entity.RemovalReason.KILLED);
             }
+            
+            tellClientToForceMainThreadRebuildTemporarily(player);
             
             return null;
         });
@@ -566,6 +566,11 @@ public class ScaleBoxOperations {
             && entryOuterAreaBox.getSize().multiply(entry.scale).equals(unwrappingArea.getSize());
     }
     
+    /**
+     * On client side, packets are handled in gaps of frames.
+     * To make the wrapping/unwrapping seamless, we need to bundle the packets to make them handled in one frame-gap.
+     * We also tell client to do immediate section mesh rebuild.
+     */
     private static <R> R forceBundleConditionally(Supplier<R> func) {
         if (MSGlobal.config.getConfig().serverBetterAnimation) {
             return PacketRedirection.withForceBundle(func);
