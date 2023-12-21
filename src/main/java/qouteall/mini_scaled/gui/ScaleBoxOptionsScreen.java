@@ -3,6 +3,7 @@ package qouteall.mini_scaled.gui;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.StringWidget;
+import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.layouts.GridLayout;
 import net.minecraft.client.gui.layouts.LayoutSettings;
 import net.minecraft.client.gui.screens.Screen;
@@ -38,6 +39,9 @@ public class ScaleBoxOptionsScreen extends Screen {
         this.scaleTransformText = new StringWidget(
             Component.translatable("mini_scaled.enable_scale_transform"), font
         );
+        scaleTransformText.setTooltip(Tooltip.create(
+            Component.translatable("mini_scaled.tooltip.scale_transform")
+        ));
         
         this.scaleTransformButton = Button.builder(
             getEnablementText(entry.teleportChangesScale),
@@ -46,10 +50,16 @@ public class ScaleBoxOptionsScreen extends Screen {
                 button.setMessage(getEnablementText(entry.teleportChangesScale));
             }
         ).build();
+        scaleTransformButton.setTooltip(Tooltip.create(
+            Component.translatable("mini_scaled.tooltip.scale_transform")
+        ));
         
         this.gravityTransformText = new StringWidget(
             Component.translatable("mini_scaled.enable_gravity_transform"), font
         );
+        gravityTransformText.setTooltip(Tooltip.create(
+            Component.translatable("mini_scaled.tooltip.gravity_transform")
+        ));
         
         this.gravityTransformButton = Button.builder(
             getEnablementText(entry.teleportChangesGravity),
@@ -58,10 +68,16 @@ public class ScaleBoxOptionsScreen extends Screen {
                 button.setMessage(getEnablementText(entry.teleportChangesGravity));
             }
         ).build();
+        gravityTransformButton.setTooltip(Tooltip.create(
+            Component.translatable("mini_scaled.tooltip.gravity_transform")
+        ));
         
         this.accessControlText = new StringWidget(
             Component.translatable("mini_scaled.enable_access_control"), font
         );
+        accessControlText.setTooltip(Tooltip.create(
+            Component.translatable("mini_scaled.tooltip.access_control")
+        ));
         
         this.accessControlButton = Button.builder(
             getEnablementText(entry.accessControl),
@@ -70,6 +86,9 @@ public class ScaleBoxOptionsScreen extends Screen {
                 button.setMessage(getEnablementText(entry.accessControl));
             }
         ).build();
+        accessControlButton.setTooltip(Tooltip.create(
+            Component.translatable("mini_scaled.tooltip.access_control")
+        ));
         
         this.finishButton = Button.builder(
             Component.translatable("imm_ptl.finish"),

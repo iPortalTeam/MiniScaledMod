@@ -93,12 +93,14 @@ public class ScaleBoxManagementScreen extends Screen {
     public static void init_() {
         // don't render MiniScaled portal when rendering the view in scale box gui
         PortalRenderer.PORTAL_RENDERING_PREDICATE.register(portal -> {
-            if (portal instanceof MiniScaledPortal) {
-                List<UUID> renderingDescription = WorldRenderInfo.getRenderingDescription();
-                if (!renderingDescription.isEmpty() &&
-                    Objects.equals(renderingDescription.get(0), RENDERING_DESC)
-                ) {
-                    return false;
+            if (portal instanceof MiniScaledPortal miniScaledPortal) {
+                if (miniScaledPortal.isOuterPortal()) {
+                    List<UUID> renderingDescription = WorldRenderInfo.getRenderingDescription();
+                    if (!renderingDescription.isEmpty() &&
+                        Objects.equals(renderingDescription.get(0), RENDERING_DESC)
+                    ) {
+                        return false;
+                    }
                 }
             }
             

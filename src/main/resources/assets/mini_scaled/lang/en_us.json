@@ -19,10 +19,11 @@
   "mini_scaled.cannot_break_barrier": "Cannot break the scale box barrier block. You can use commands to remove the block.",
   "text.autoconfig.mini_scaled.option.creationItem": "Entrance Creation Item",
   "text.autoconfig.mini_scaled.option.interactionMode": "Interaction Mode",
-  "text.autoconfig.mini_scaled.maxScaleBoxPerPlayer": "Max Scale Box Num Per Player",
-  "text.autoconfig.mini_scaled.wrappingAnimationTicks": "Wrapping Animation Ticks",
-  "text.autoconfig.mini_scaled.unwrappingAnimationTicks": "Unwrapping Animation Ticks",
-  "text.autoconfig.mini_scaled.clientBetterAnimation": "Client side better animation",
+  "text.autoconfig.mini_scaled.option.maxScaleBoxPerPlayer": "Max Scale Box Num Per Player",
+  "text.autoconfig.mini_scaled.option.wrappingAnimationTicks": "Wrapping Animation Ticks",
+  "text.autoconfig.mini_scaled.option.unwrappingAnimationTicks": "Unwrapping Animation Ticks",
+  "text.autoconfig.mini_scaled.option.clientBetterAnimation": "Better animation (Client Side)",
+  "text.autoconfig.mini_scaled.option.serverBetterAnimation": "Better animation (Server Side)",
   "mini_scaled.manipulation_wand.mode": "Mode: ",
   "mini_scaled.return_to_spawn": "You fell off the scale box. Teleporting to the spawnpoint.",
   "mini_scaled.access_denied": "Scale box access control disallows this operation.",
@@ -62,5 +63,9 @@
   "mini_scaled.access_control": "You cannot access this box due to access control.",
   "mini_scaled.cross_boundary_multi_block_structure": "Cannot wrap the scale box because there exists multi-block structure that cross the boundary: %s at (%s, %s, %s)",
   "entity.mini_scaled.portal": "MiniScaled Portal",
-  "mini_scaled.unwrapping_exceed_height_limit": "Cannot unwrap because the unwrapped region exceeds the height limit."
+  "mini_scaled.unwrapping_exceed_height_limit": "Cannot unwrap because the unwrapped region exceeds the height limit.",
+  "mini_scaled.tooltip.scale_transform": "Transform scale when entering or going out from the scale box. Requires Pehkui mod to take effect.",
+  "mini_scaled.tooltip.gravity_transform": "Transform gravity direction when entering or going out from the scale box. Requires Gravity changer mod to take effect."
+
+
 }

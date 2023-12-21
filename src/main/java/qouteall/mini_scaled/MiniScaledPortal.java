@@ -257,7 +257,7 @@ public class MiniScaledPortal extends Portal {
     @Environment(EnvType.CLIENT)
     private void onCollidingWithEntityClientOnly(Entity entity) {
         if (entity instanceof LocalPlayer player) {
-            if (!normallyInteractableBy(player)) {
+            if (!normallyInteractableBy(player) && isOuterPortal()) {
                 CustomTextOverlay.putText(
                     Component.translatable("mini_scaled.access_control"),
                     0.1, "mini_scaled"
@@ -377,11 +377,13 @@ public class MiniScaledPortal extends Portal {
     
     @Override
     public boolean canTeleportEntity(Entity entity) {
-        if (recordEntry != null) {
-            if (recordEntry.accessControl) {
-                boolean idMatches = Objects.equals(recordEntry.ownerId, entity.getUUID());
-                if (!idMatches) {
-                    return false;
+        if (isOuterPortal()) { // access control does not disallow from going out
+            if (recordEntry != null) {
+                if (recordEntry.accessControl) {
+                    boolean idMatches = Objects.equals(recordEntry.ownerId, entity.getUUID());
+                    if (!idMatches) {
+                        return false;
+                    }
                 }
             }
         }
