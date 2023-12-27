@@ -58,8 +58,8 @@ public class ScaleBoxGeneration {
         
         portal.setPortalShape(BoxPortalShape.FACING_OUTWARDS);
         
-        portal.axisW = new Vec3(1, 0, 0);
-        portal.axisH = new Vec3(0, 1, 0);
+        portal.setAxisW(new Vec3(1, 0, 0));
+        portal.setAxisH(new Vec3(0, 1, 0));
         
         portal.setDestinationDimension(innerWorld.dimension());
         
@@ -67,19 +67,19 @@ public class ScaleBoxGeneration {
         
         if (fromWrappedBox == null) {
             portal.setOriginPos(outerAreaBox.getCenter());
-            portal.width = outerAreaBoxSize.getX();
-            portal.height = outerAreaBoxSize.getY();
-            portal.thickness = outerAreaBoxSize.getZ();
+            portal.setWidth(outerAreaBoxSize.getX());
+            portal.setHeight(outerAreaBoxSize.getY());
+            portal.setThickness(outerAreaBoxSize.getZ());
             portal.setDestination(innerAreaBox.getCenter());
-            portal.scaling = scale;
+            portal.setScaling(scale);
         }
         else {
             portal.setOriginPos(fromWrappedBox.getCenterVec());
-            portal.width = fromWrappedBox.getSize().getX();
-            portal.height = fromWrappedBox.getSize().getY();
-            portal.thickness = fromWrappedBox.getSize().getZ();
+            portal.setWidth(fromWrappedBox.getSize().getX());
+            portal.setHeight(fromWrappedBox.getSize().getY());
+            portal.setThickness(fromWrappedBox.getSize().getZ());
             portal.setDestination(innerAreaBox.getCenter());
-            portal.scaling = 1;
+            portal.setScaling(1);
             
             UnilateralPortalState currState = portal.getThisSideState();
             UnilateralPortalState destState = new UnilateralPortalState.Builder()
@@ -108,10 +108,10 @@ public class ScaleBoxGeneration {
             );
         }
         
-        portal.teleportChangesScale = entry.teleportChangesScale;
+        portal.setTeleportChangesScale(entry.teleportChangesScale);
         portal.setTeleportChangesGravity(entry.teleportChangesGravity);
-        portal.fuseView = true;
-        portal.hasCrossPortalCollision = true;
+        portal.setFuseView(true);
+        portal.setCrossPortalCollisionEnabled(true);
         portal.portalTag = "mini_scaled:scaled_box";
         PortalExtension.get(portal).adjustPositionAfterTeleport = true;
         portal.setInteractable(true);
@@ -122,8 +122,8 @@ public class ScaleBoxGeneration {
         MiniScaledPortal reversePortal =
             PortalManipulation.createReversePortal(portal, MiniScaledPortal.ENTITY_TYPE);
         
-        reversePortal.fuseView = false;
-        reversePortal.hasCrossPortalCollision = true;
+        reversePortal.setFuseView(false);
+        reversePortal.setCrossPortalCollisionEnabled(true);
         reversePortal.setInteractable(true);
         reversePortal.boxId = boxId;
         reversePortal.generation = generation;
@@ -132,7 +132,7 @@ public class ScaleBoxGeneration {
         // When used with Iris, it renders normal portal instead of fuse view,
         // then when the player touches the portal, it wrongly renders the player.
         // It's a workaround to avoid this.
-        reversePortal.doRenderPlayer = false;
+        reversePortal.setDoRenderPlayer(false);
         
         // manually bind
         PortalExtension.get(portal).reversePortalId = reversePortal.getUUID();
@@ -206,11 +206,11 @@ public class ScaleBoxGeneration {
         
         portal.setPortalShape(BoxPortalShape.FACING_INWARDS);
         
-        portal.axisW = new Vec3(1, 0, 0);
-        portal.axisH = new Vec3(0, 1, 0);
-        portal.width = innerAreaBoxSize.x();
-        portal.height = innerAreaBoxSize.y();
-        portal.thickness = innerAreaBoxSize.z();
+        portal.setAxisW(new Vec3(1, 0, 0));
+        portal.setAxisH(new Vec3(0, 1, 0));
+        portal.setWidth(innerAreaBoxSize.x());
+        portal.setHeight(innerAreaBoxSize.y());
+        portal.setThickness(innerAreaBoxSize.z());
         
         portal.setOriginPos(innerAreaBox.getCenter());
         portal.setDestination(portal.getOriginPos().add(0, -1000, 0));

@@ -274,7 +274,7 @@ public class MiniScaledPortal extends Portal {
                 // not ClientPlayerEntity to avoid dedicated server crash as it's captured in lambda
                 Player player = (Player) entity;
                 if (player.getPose() == Pose.CROUCHING) {
-                    IPGlobal.clientTaskList.addTask(() -> {
+                    IPGlobal.CLIENT_TASK_LIST.addTask(() -> {
                         if (player.level() == level()) {
                             Vec3 posDelta = gravityVec.scale(0.01);
                             
@@ -306,7 +306,7 @@ public class MiniScaledPortal extends Portal {
     
     
     @Override
-    public Vec3 transformVelocityRelativeToPortal(Vec3 v, Entity entity) {
+    public Vec3 transformVelocityRelativeToPortal(Vec3 v, Entity entity, Vec3 oldEntityPos) {
         if (isOuterPortal()) {
             Vec3 gravityVec = MSUtil.getGravityVec(entity);
             Vec3 projectionOnGravityVec = gravityVec.scale(v.dot(gravityVec));
@@ -314,10 +314,10 @@ public class MiniScaledPortal extends Portal {
             
             Vec3 processedVelocity = projectionOnGravityVec.scale(0.5).add(extra);
             
-            return super.transformVelocityRelativeToPortal(processedVelocity, entity);
+            return super.transformVelocityRelativeToPortal(processedVelocity, entity, oldEntityPos);
         }
         
-        return super.transformVelocityRelativeToPortal(v, entity);
+        return super.transformVelocityRelativeToPortal(v, entity, oldEntityPos);
     }
     
     @Environment(EnvType.CLIENT)

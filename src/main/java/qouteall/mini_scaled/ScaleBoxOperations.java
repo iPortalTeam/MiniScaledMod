@@ -20,7 +20,7 @@ import net.minecraft.world.level.entity.EntityTypeTest;
 import org.apache.commons.lang3.Validate;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
-import qouteall.imm_ptl.core.IPGlobal;
+import qouteall.imm_ptl.core.mc_utils.ServerTaskList;
 import qouteall.imm_ptl.core.network.PacketRedirection;
 import qouteall.imm_ptl.core.portal.Portal;
 import qouteall.imm_ptl.core.portal.PortalExtension;
@@ -257,7 +257,7 @@ public class ScaleBoxOperations {
         
         int originalGeneration = entry.generation;
         
-        IPGlobal.serverTaskList.addTask(MyTaskList.withDelay(
+        ServerTaskList.of(server).addTask(MyTaskList.withDelay(
             durationTicks, () -> {
                 // validate again because it may change during animation
                 if (server.getLevel(entranceWorld.dimension()) == null) {

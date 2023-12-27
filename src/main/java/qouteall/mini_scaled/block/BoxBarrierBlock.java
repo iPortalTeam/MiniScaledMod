@@ -7,6 +7,7 @@ import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
@@ -17,7 +18,8 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
-import qouteall.imm_ptl.core.IPGlobal;
+import org.jetbrains.annotations.NotNull;
+import qouteall.imm_ptl.core.mc_utils.ServerTaskList;
 import qouteall.mini_scaled.ClientScaleBoxInteractionControl;
 import qouteall.q_misc_util.my_util.MyTaskList;
 
@@ -69,10 +71,12 @@ public class BoxBarrierBlock extends Block {
     
     // cannot be broken by creative mode player
     @Override
-    public BlockState playerWillDestroy(Level world, BlockPos pos, BlockState state, Player player){
+    public @NotNull BlockState playerWillDestroy(Level world, BlockPos pos, BlockState state, Player player){
         BlockState result = super.playerWillDestroy(world, pos, state, player);
         if (!player.level().isClientSide()) {
-            IPGlobal.serverTaskList.addTask(MyTaskList.oneShotTask(() -> {
+            MinecraftServer server = world.getServer();
+            assert server != null;
+            ServerTaskList.of(server).addTask(MyTaskList.oneShotTask(() -> {
                 world.setBlockAndUpdate(pos, state);
                 player.displayClientMessage(Component.translatable("mini_scaled.cannot_break_barrier"), true);
             }));

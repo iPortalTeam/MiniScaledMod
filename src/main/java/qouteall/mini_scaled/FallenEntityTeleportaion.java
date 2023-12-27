@@ -9,8 +9,8 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.phys.Vec3;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import qouteall.imm_ptl.core.IPGlobal;
 import qouteall.imm_ptl.core.McHelper;
+import qouteall.imm_ptl.core.mc_utils.ServerTaskList;
 import qouteall.imm_ptl.core.teleportation.ServerTeleportationManager;
 import qouteall.mini_scaled.util.MSUtil;
 import qouteall.q_misc_util.my_util.LimitedLogger;
@@ -56,7 +56,7 @@ public class FallenEntityTeleportaion {
                 
                 LOGGER.info("Player {} tries to go to another scale box's region directly", player.getName().getString());
                 
-                IPGlobal.serverTaskList.addTask(() -> {
+                ServerTaskList.of(player.server).addTask(() -> {
                     player.displayClientMessage(
                         Component.literal("Going to another scale box's region directly is not allowed."),
                         false
@@ -71,7 +71,7 @@ public class FallenEntityTeleportaion {
                     player, Vec3.atCenterOf(MSUtil.getSpawnPos(overworld)), overworld
                 );
                 
-                IPGlobal.serverTaskList.addTask(() -> {
+                ServerTaskList.of(player.server).addTask(() -> {
                     player.displayClientMessage(
                         Component.translatable("mini_scaled.return_to_spawn"),
                         false

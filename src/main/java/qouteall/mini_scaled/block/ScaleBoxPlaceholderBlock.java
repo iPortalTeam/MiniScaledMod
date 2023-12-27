@@ -7,6 +7,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
@@ -22,7 +23,7 @@ import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import qouteall.imm_ptl.core.IPGlobal;
+import qouteall.imm_ptl.core.mc_utils.ServerTaskList;
 import qouteall.mini_scaled.ClientScaleBoxInteractionControl;
 import qouteall.q_misc_util.my_util.MyTaskList;
 
@@ -71,12 +72,15 @@ public class ScaleBoxPlaceholderBlock extends BaseEntityBlock {
     @Override
     public void onRemove(BlockState state, Level world, BlockPos pos, BlockState newState, boolean moved) {
         if (!world.isClientSide()) {
+            MinecraftServer server = world.getServer();
+            assert server != null;
+            
             if (newState.getBlock() != this) {
                 BlockEntity blockEntity = world.getBlockEntity(pos);
                 if (blockEntity != null) {
                     ScaleBoxPlaceholderBlockEntity be = (ScaleBoxPlaceholderBlockEntity) blockEntity;
                     int boxId = be.boxId;
-                    IPGlobal.serverTaskList.addTask(MyTaskList.oneShotTask(() -> {
+                    ServerTaskList.of(server).addTask(MyTaskList.oneShotTask(() -> {
                         ScaleBoxPlaceholderBlockEntity.checkShouldRemovePortals(boxId, ((ServerLevel) world), pos);
                     }));
                     be.dropItemIfNecessary();

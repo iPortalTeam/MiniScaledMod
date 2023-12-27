@@ -20,7 +20,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
-import qouteall.imm_ptl.core.IPGlobal;
+import qouteall.imm_ptl.core.IPCGlobal;
 import qouteall.imm_ptl.core.render.context_management.PortalRendering;
 import qouteall.mini_scaled.gui.ScaleBoxInteractionManager;
 import qouteall.mini_scaled.item.ManipulationWandItem;
@@ -57,7 +57,7 @@ public class ClientUnwrappingInteraction {
     }
     
     public static void init() {
-        IPGlobal.clientCleanupSignal.connect(ClientUnwrappingInteraction::reset);
+        IPCGlobal.CLIENT_CLEANUP_EVENT.register(ClientUnwrappingInteraction::reset);
         
         ClientTickEvents.END_CLIENT_TICK.register(client -> updateDisplay());
         

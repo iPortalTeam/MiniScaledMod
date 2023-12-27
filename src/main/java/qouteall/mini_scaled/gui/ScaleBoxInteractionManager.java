@@ -28,10 +28,10 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
-import qouteall.imm_ptl.core.IPGlobal;
 import qouteall.imm_ptl.core.McHelper;
 import qouteall.imm_ptl.core.api.PortalAPI;
 import qouteall.imm_ptl.core.chunk_loading.ChunkLoader;
+import qouteall.imm_ptl.core.mc_utils.ServerTaskList;
 import qouteall.imm_ptl.core.render.ForceMainThreadRebuild;
 import qouteall.mini_scaled.MSGlobal;
 import qouteall.mini_scaled.ScaleBoxGeneration;
@@ -366,7 +366,7 @@ public class ScaleBoxInteractionManager {
             () -> {
                 // don't immediately remove the chunk loading
                 // because portal chunk loading has delay
-                IPGlobal.serverTaskList.addTask(MyTaskList.withDelay(
+                ServerTaskList.of(server).addTask(MyTaskList.withDelay(
                     20, MyTaskList.oneShotTask(() -> {
                         LOGGER.info("Cleaning up wrapping {} {}", player, newEntry);
                         
@@ -382,7 +382,7 @@ public class ScaleBoxInteractionManager {
                     return true;
                 }
                 
-                if (server.getLevel(chunkLoader.center.dimension) == null ||
+                if (server.getLevel(chunkLoader.dimension()) == null ||
                     server.getLevel(pendingScaleBoxWrapping.dimension()) == null
                 ) {
                     // dimension dynamically removed
@@ -411,7 +411,7 @@ public class ScaleBoxInteractionManager {
                 return true;
             }
         );
-        IPGlobal.serverTaskList.addTask(task);
+        ServerTaskList.of(server).addTask(task);
     }
     
     private boolean invokeDoWrap(
