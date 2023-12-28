@@ -297,7 +297,7 @@ public class MiniScaledPortal extends Portal {
     private boolean allowShiftDescent(Entity entity, Vec3 gravityVec) {
         PortalShape portalShape = getPortalShape();
         if (portalShape instanceof BoxPortalShape) {
-            return getThinAreaBox().inflate(0.1).contains(entity.position());
+            return getThinBoundingBox().inflate(0.1).contains(entity.position());
         }
         
         // for old flat shaped portal
