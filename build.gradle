@@ -2,7 +2,7 @@ plugins {
 	id 'fabric-loom' version '1.4-SNAPSHOT'
 	id 'maven-publish'
 
-//	id 'io.github.juuxel.loom-vineflower' version '1.11.0' // https://github.com/Juuxel/loom-vineflower
+	id "me.modmuss50.mod-publish-plugin" version "0.3.5"
 }
 
 sourceCompatibility = JavaVersion.VERSION_17
@@ -123,5 +123,31 @@ publishing {
 		// Notice: This block does NOT have the same function as the block in the top level.
 		// The repositories here will be used for publishing your artifact, not for
 		// retrieving dependencies.
+	}
+}
+
+publishMods {
+	file = remapJar.archiveFile
+	changelog = file("changelog.md").text
+	type = ALPHA
+	modLoaders.add("fabric")
+
+	displayName = "v${project.mod_version}-mc${project.minecraft_version}"
+	version = "v${project.mod_version}-mc${project.minecraft_version}"
+
+	curseforge {
+		projectId = "532473"
+		accessToken = providers.environmentVariable("CURSEFORGE_TOKEN")
+		minecraftVersions.add(minecraft_version)
+	}
+	modrinth {
+		projectId = "wrwoMwak"
+		accessToken = providers.environmentVariable("MODRINTH_TOKEN")
+		minecraftVersions.add(minecraft_version)
+	}
+	github {
+		repository = "iPortalTeam/MiniScaledMod"
+		accessToken = providers.environmentVariable("GITHUB_TOKEN")
+		commitish = minecraft_version // the branch name is the same as minecraft version
 	}
 }
