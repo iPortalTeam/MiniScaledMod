@@ -54,7 +54,8 @@ dependencies {
 	modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
 
 	// maven local
-	modImplementation(project.iportal_path)
+	modImplementation("${project.iportal_path}")
+//	include(project.iportal_path)
 
 	modApi ("me.shedaniel.cloth:cloth-config-fabric:${cloth_config_version}")
 	modImplementation "maven.modrinth:modmenu:${modmenu_version}"

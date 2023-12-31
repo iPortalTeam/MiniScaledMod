@@ -14,6 +14,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
@@ -21,6 +22,7 @@ import net.minecraft.world.level.block.StainedGlassBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import qouteall.mini_scaled.GlassFrameMatching;
@@ -31,6 +33,7 @@ import qouteall.mini_scaled.block.ScaleBoxPlaceholderBlockEntity;
 import qouteall.mini_scaled.gui.ScaleBoxInteractionManager;
 import qouteall.q_misc_util.my_util.IntBox;
 
+import java.util.List;
 import java.util.Objects;
 import java.util.function.Consumer;
 
@@ -173,5 +176,16 @@ public class ManipulationWandItem extends Item {
     @Override
     public @NotNull Component getName(ItemStack stack) {
         return Component.translatable("item.mini_scaled.manipulation_wand");
+    }
+    
+    @Override
+    public void appendHoverText(
+        ItemStack stack, @Nullable Level level,
+        List<Component> tooltipComponents, TooltipFlag isAdvanced
+    ) {
+        super.appendHoverText(stack, level, tooltipComponents, isAdvanced);
+        tooltipComponents.add(Component.translatable("mini_scaled.wand.tooltip.1"));
+        tooltipComponents.add(Component.translatable("mini_scaled.wand.tooltip.2"));
+        tooltipComponents.add(Component.translatable("mini_scaled.wand.tooltip.3"));
     }
 }

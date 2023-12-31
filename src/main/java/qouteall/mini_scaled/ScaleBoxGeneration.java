@@ -37,6 +37,9 @@ public class ScaleBoxGeneration {
     private static final Logger LOGGER = LoggerFactory.getLogger(ScaleBoxGeneration.class);
     public static final String INNER_WRAPPING_PORTAL_TAG = "mini_scaled:scaled_box_inner_wrapping";
     
+    public static final int PLACING_Y = 64;
+    public static final int REGION_GRID_LEN = 16 * 32;
+    
     public static void createScaleBoxPortals(
         ServerLevel innerWorld,
         ServerLevel outerWorld,
@@ -152,14 +155,14 @@ public class ScaleBoxGeneration {
         int xIndex = regionId % 256;
         int zIndex = Mth.floorDiv(regionId, 256);
         
-        return new BlockPos(xIndex * 16 * 32, 64, zIndex * 16 * 32);
+        return new BlockPos(xIndex * REGION_GRID_LEN, PLACING_Y, zIndex * REGION_GRID_LEN);
     }
     
     public static BlockPos getNearestPosInScaleBoxToTeleportTo(BlockPos pos) {
-        double gridLen = 16.0 * 32;
+        double gridLen = REGION_GRID_LEN;
         return BlockPos.containing(
             Math.round(pos.getX() / gridLen) * gridLen + 2,
-            ScaleBoxManipulation.MAX_INNER_LEN + 2,
+            PLACING_Y + 2,
             Math.round(pos.getZ() / gridLen) * gridLen + 2
         );
     }

@@ -10,12 +10,6 @@
   "mini_scaled.invalid_box_size": "The glass frame size %1$s is invalid. It should be either 4x4x4 or 8x8x8 or 16x16x16 or 32x32x32",
   "mini_scaled.glass_frame_incomplete": "The glass frame %1$s is incomplete.",
   "mini_scaled.no_enough_space_to_place_scale_box": "There isn't enough space to place the scale box of size %1$s.",
-  "mini_scaled.cannot_expand_direction": "The scale box can only be expanded from the faces of inner up, south and east directions. Try the opposite direction.",
-  "mini_scaled.cannot_expand_mismatch": "Cannot expand the scale box because the owner, scale and color don't match.",
-  "mini_scaled.cannot_expand_not_enough": "Expanding the scale box requires %1$s entrance item(s) with the matching color, scale and owner.",
-  "mini_scaled.cannot_expand_size_limit": "Cannot expand the scale box because the maximum inner length is 64",
-  "mini_scaled.cannot_shrink_direction": "The scale box can only be shrunk the faces of inner up, south and east directions. Try the opposite direction.",
-  "mini_scaled.cannot_shrink_has_blocks": "Cannot shrink the scale box because the shrunk region has blocks remaining.",
   "mini_scaled.cannot_break_barrier": "Cannot break the scale box barrier block. You can use commands to remove the block.",
   "text.autoconfig.mini_scaled.option.creationItem": "Entrance Creation Item",
   "text.autoconfig.mini_scaled.option.interactionMode": "Interaction Mode",
@@ -24,7 +18,6 @@
   "text.autoconfig.mini_scaled.option.unwrappingAnimationTicks": "Unwrapping Animation Ticks",
   "text.autoconfig.mini_scaled.option.clientBetterAnimation": "Better animation (Client Side)",
   "text.autoconfig.mini_scaled.option.serverBetterAnimation": "Better animation (Server Side)",
-  "mini_scaled.manipulation_wand.mode": "Mode: ",
   "mini_scaled.return_to_spawn": "You fell off the scale box. Teleporting to the spawnpoint.",
   "mini_scaled.access_denied": "Scale box access control disallows this operation.",
   "mini_scaled.in": "In: ",
@@ -65,7 +58,10 @@
   "entity.mini_scaled.portal": "MiniScaled Portal",
   "mini_scaled.unwrapping_exceed_height_limit": "Cannot unwrap because the unwrapped region exceeds the height limit.",
   "mini_scaled.tooltip.scale_transform": "Transform scale when entering or going out from the scale box. Requires Pehkui mod to take effect.",
-  "mini_scaled.tooltip.gravity_transform": "Transform gravity direction when entering or going out from the scale box. Requires Gravity changer mod to take effect."
-
+  "mini_scaled.tooltip.gravity_transform": "Transform gravity direction when entering or going out from the scale box. Requires Gravity changer mod to take effect.",
+  "mini_scaled.item_group": "MiniScaled",
+  "mini_scaled.wand.tooltip.1": "Use this item on glass frame to wrap the scale box.",
+  "mini_scaled.wand.tooltip.2": "Use this item on air to view your boxes.",
+  "mini_scaled.wand.tooltip.3": "Use this item on scale box to unwrap it."
 
 }

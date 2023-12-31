@@ -13,11 +13,10 @@ import qouteall.imm_ptl.core.McHelper;
 import qouteall.imm_ptl.core.mc_utils.ServerTaskList;
 import qouteall.imm_ptl.core.teleportation.ServerTeleportationManager;
 import qouteall.mini_scaled.util.MSUtil;
-import qouteall.q_misc_util.my_util.LimitedLogger;
 
+@SuppressWarnings("SpellCheckingInspection")
 public class FallenEntityTeleportaion {
     private static final Logger LOGGER = LoggerFactory.getLogger(FallenEntityTeleportaion.class);
-    private static final LimitedLogger LIMITED_LOGGER = new LimitedLogger(50);
     
     static void teleportFallenEntities(MinecraftServer server) {
         server.getProfiler().push("mini_scaled_tick");

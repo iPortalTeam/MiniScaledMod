@@ -22,10 +22,10 @@ public class MiniScaledCommand {
     public static void register(
         CommandDispatcher<CommandSourceStack> dispatcher, CommandBuildContext ctx
     ) {
-        LiteralArgumentBuilder<CommandSourceStack> builder = Commands.literal("miniscaled");
+        LiteralArgumentBuilder<CommandSourceStack> builder = Commands.literal("miniscaled")
+            .requires(context -> context.hasPermission(2));
         
         builder.then(Commands.literal("view_my_boxes")
-            .requires(context -> context.hasPermission(2))
             .executes(context -> {
                 MinecraftServer server = context.getSource().getServer();
                 ServerPlayer player = context.getSource().getPlayer();
@@ -38,7 +38,6 @@ public class MiniScaledCommand {
         );
         
         builder.then(Commands.literal("view_all_boxes")
-            .requires(context -> context.hasPermission(2))
             .executes(context -> {
                 MinecraftServer server = context.getSource().getServer();
                 ServerPlayer player = context.getSource().getPlayer();
@@ -53,7 +52,6 @@ public class MiniScaledCommand {
         );
         
         builder.then(Commands.literal("make_frame")
-            .requires(context -> context.hasPermission(2))
             .then(Commands.argument("block", BlockStateArgument.block(ctx))
                 .then(Commands.argument("p1", BlockPosArgument.blockPos())
                     .then(Commands.argument("p2", BlockPosArgument.blockPos())
@@ -79,26 +77,6 @@ public class MiniScaledCommand {
                 )
             )
         );
-        
-//        builder.then(Commands.literal("custom_setblock")
-//            .requires(context -> context.hasPermission(2))
-//            .then(Commands.argument("block", BlockStateArgument.block(ctx))
-//                .then(Commands.argument("pos", BlockPosArgument.blockPos())
-//                    .executes(context -> {
-//                        BlockInput blockInput = BlockStateArgument.getBlock(context, "block");
-//                        BlockPos pos = BlockPosArgument.getLoadedBlockPos(context, "pos");
-//
-//                        ServerLevel world = context.getSource().getLevel();
-//
-//                        BlockState blockState = blockInput.getState();
-//
-//                        world.setBlock(pos, blockState, 2);
-//
-//                        return 0;
-//                    })
-//                )
-//            )
-//        );
         
         dispatcher.register(builder);
     }

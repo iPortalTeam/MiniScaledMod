@@ -6,12 +6,15 @@ import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
-import net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents;
+import net.fabricmc.fabric.api.itemgroup.v1.FabricItemGroup;
+import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.InteractionResult;
-import net.minecraft.world.item.CreativeModeTabs;
+import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,15 +27,23 @@ import qouteall.mini_scaled.config.MiniScaledConfig;
 import qouteall.mini_scaled.gui.ScaleBoxInteractionManager;
 import qouteall.mini_scaled.item.ManipulationWandItem;
 import qouteall.mini_scaled.item.ScaleBoxEntranceItem;
-import qouteall.q_misc_util.MiscHelper;
-import qouteall.q_misc_util.my_util.LimitedLogger;
 
 public class MiniScaledModInitializer implements ModInitializer {
     private static final Logger LOGGER = LoggerFactory.getLogger(MiniScaledModInitializer.class);
-    private static final LimitedLogger LIMITED_LOGGER = new LimitedLogger(50);
+    
+    public static final CreativeModeTab TAB =
+        FabricItemGroup.builder()
+            .icon(() -> new ItemStack(ManipulationWandItem.INSTANCE))
+            .title(Component.translatable("mini_scaled.item_group"))
+            .displayItems((enabledFeatures, entries) -> {
+                ManipulationWandItem.registerCreativeInventory(entries::accept);
+            })
+            .build();
     
     @Override
     public void onInitialize() {
+        LOGGER.info("MiniScaled Mod Initializing");
+        
         VoidDimension.init();
         
         DimensionAPI.suppressExperimentalWarningForNamespace("mini_scaled");
@@ -64,24 +75,20 @@ public class MiniScaledModInitializer implements ModInitializer {
             applyConfigServerSide(config);
         });
         AutoConfig.getConfigHolder(MiniScaledConfig.class).registerSaveListener((configHolder, config) -> {
-            if (MiscHelper.getServer() != null) {
-                applyConfigServerSide(config);
-            }
+            applyConfigServerSide(config);
             applyConfigClientSide(config);
             return InteractionResult.PASS;
         });
         
-        ItemGroupEvents.modifyEntriesEvent(CreativeModeTabs.TOOLS_AND_UTILITIES)
-            .register(entries -> {
-                // TODO add own tab
-                ManipulationWandItem.registerCreativeInventory(entries::accept);
-            });
+        Registry.register(
+            BuiltInRegistries.CREATIVE_MODE_TAB,
+            new ResourceLocation("mini_scaled", "mini_scaled"),
+            TAB
+        );
         
         CommandRegistrationCallback.EVENT.register(
             (dispatcher, ctx, environment) -> MiniScaledCommand.register(dispatcher, ctx)
         );
-        
-        LOGGER.info("MiniScaled Mod Initializing");
     }
     
     public static void applyConfigServerSide(MiniScaledConfig miniScaledConfig) {
@@ -99,7 +106,7 @@ public class MiniScaledModInitializer implements ModInitializer {
             }
         }
         catch (Exception e) {
-            e.printStackTrace();
+            LOGGER.error("", e);
         }
     }
     
