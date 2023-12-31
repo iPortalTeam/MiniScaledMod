@@ -4,6 +4,7 @@
   "package": "qouteall.mini_scaled.mixin",
   "compatibilityLevel": "JAVA_8",
   "mixins": [
+    "common.MixinFlowingFluid",
     "common.MixinLivingEntity",
     "common.MixinMinecraftServer"
   ],

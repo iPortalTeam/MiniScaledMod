@@ -59,6 +59,7 @@
   "mini_scaled.unwrapping_exceed_height_limit": "Cannot unwrap because the unwrapped region exceeds the height limit.",
   "mini_scaled.tooltip.scale_transform": "Transform scale when entering or going out from the scale box. Requires Pehkui mod to take effect.",
   "mini_scaled.tooltip.gravity_transform": "Transform gravity direction when entering or going out from the scale box. Requires Gravity changer mod to take effect.",
+  "mini_scaled.tooltip.access_control": "If enabled, only you can enter the scale box.\n(Note: this does not prevent other players from entering the scale box by other ways.)",
   "mini_scaled.item_group": "MiniScaled",
   "mini_scaled.wand.tooltip.1": "Use this item on glass frame to wrap the scale box.",
   "mini_scaled.wand.tooltip.2": "Use this item on air to view your boxes.",
