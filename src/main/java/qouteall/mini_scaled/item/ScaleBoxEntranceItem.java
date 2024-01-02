@@ -85,7 +85,9 @@ public class ScaleBoxEntranceItem extends Item {
             compoundTag.putString("color", color.getName());
             if (ownerId != null) {
                 compoundTag.putUUID("ownerId", ownerId);
-                compoundTag.putString("ownerNameCache", ownerNameCache);
+                if (ownerNameCache != null) {
+                    compoundTag.putString("ownerNameCache", ownerNameCache);
+                }
             }
             if (boxId != null) {
                 compoundTag.putInt("boxId", boxId);

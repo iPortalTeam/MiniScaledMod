@@ -53,7 +53,6 @@ dependencies {
 	// Fabric API. This is technically optional, but you probably want it anyway.
 	modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
 
-	// maven local
 	modImplementation("${project.iportal_path}")
 //	include(project.iportal_path)
 
@@ -144,6 +143,15 @@ publishMods {
 		projectId = "wrwoMwak"
 		accessToken = providers.environmentVariable("MODRINTH_TOKEN")
 		minecraftVersions.add(minecraft_version)
+
+		requires {
+			slug = "fabric-api"
+		}
+
+		requires {
+			slug = "immersiveportals"
+		}
+
 	}
 	github {
 		repository = "iPortalTeam/MiniScaledMod"
