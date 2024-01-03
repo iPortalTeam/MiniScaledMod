@@ -9,7 +9,6 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.LiquidBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -59,25 +58,6 @@ public class ScaleBoxOperations {
         }
         
         return result;
-    }
-    
-    public static List<ItemStack> getCost(
-        BlockPos boxSize, int scale
-    ) {
-        int product = boxSize.getX() * boxSize.getY() * boxSize.getZ();
-        
-        double r = Math.pow((double) product, 1.0 / 3) / 8;
-        
-        double r2 = scale / 8.0;
-        
-        int itemNum = (int) Math.ceil(r + r2);
-        
-        return List.of(
-            new ItemStack(
-                ScaleBoxEntranceCreation.getCreationItem(),
-                itemNum
-            )
-        );
     }
     
     public static void doWrap(

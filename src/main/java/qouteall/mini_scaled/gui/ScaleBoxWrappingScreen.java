@@ -162,6 +162,20 @@ public class ScaleBoxWrappingScreen extends Screen {
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
         super.render(guiGraphics, mouseX, mouseY, partialTick);
         
+        guiGraphics.pose().pushPose();
+        
+        float scale = 0.7f;
+        
+//        guiGraphics.pose().translate(width * 0.1, height * 0.87, 0);
+        guiGraphics.pose().scale(scale, scale, 1);
+        
+        guiGraphics.drawString(
+            minecraft.font,
+            Component.translatable("mini_scaled.item_may_change_in_future"),
+            0, 0, 0xffffffff
+        );
+        
+        guiGraphics.pose().popPose();
     }
     
     @Override

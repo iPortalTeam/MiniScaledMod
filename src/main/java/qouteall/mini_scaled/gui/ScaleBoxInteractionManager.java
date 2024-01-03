@@ -2,8 +2,6 @@ package qouteall.mini_scaled.gui;
 
 import com.mojang.logging.LogUtils;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
-import it.unimi.dsi.fastutil.objects.Object2IntMap;
-import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
@@ -19,10 +17,8 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.ContainerHelper;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.item.DyeColor;
-import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
@@ -33,6 +29,7 @@ import qouteall.imm_ptl.core.api.PortalAPI;
 import qouteall.imm_ptl.core.chunk_loading.ChunkLoader;
 import qouteall.imm_ptl.core.mc_utils.ServerTaskList;
 import qouteall.imm_ptl.core.render.ForceMainThreadRebuild;
+import qouteall.mini_scaled.CreationItem;
 import qouteall.mini_scaled.MSGlobal;
 import qouteall.mini_scaled.ScaleBoxGeneration;
 import qouteall.mini_scaled.ScaleBoxOperations;
@@ -239,7 +236,7 @@ public class ScaleBoxInteractionManager {
         List<WrappingOption> options = commonFactors.intStream()
             .mapToObj(
                 scale -> new WrappingOption(
-                    scale, ScaleBoxOperations.getCost(areaSize, scale)
+                    scale, CreationItem.getCost(areaSize, scale)
                 )
             ).toList();
         
@@ -318,7 +315,7 @@ public class ScaleBoxInteractionManager {
         
         // check item
         if (!player.isCreative()) {
-            if (!checkInventory(player, option.ingredients())) {
+            if (!CreationItem.checkInventory(player, option.ingredients())) {
                 return;
             }
             
@@ -442,12 +439,12 @@ public class ScaleBoxInteractionManager {
         }
         
         if (!player.isCreative()) {
-            if (!checkInventory(player, option.ingredients())) {
+            if (!CreationItem.checkInventory(player, option.ingredients())) {
                 return false;
             }
             
             // finally remove the item
-            removeItems(player, option.ingredients());
+            CreationItem.removeItems(player, option.ingredients());
         }
         
         // finally do wrapping
@@ -485,54 +482,6 @@ public class ScaleBoxInteractionManager {
             return false;
         }
         return true;
-    }
-    
-    private static boolean checkInventory(
-        ServerPlayer player, List<ItemStack> costItems
-    ) {
-        // there may be same-typed items in different stacks
-        // so firstly count the items
-        Object2IntOpenHashMap<Item> itemToCount = new Object2IntOpenHashMap<>();
-        itemToCount.defaultReturnValue(0);
-        
-        for (ItemStack costItem : costItems) {
-            itemToCount.addTo(costItem.getItem(), costItem.getCount());
-        }
-        
-        for (Object2IntMap.Entry<Item> e : itemToCount.object2IntEntrySet()) {
-            int requiredCount = e.getIntValue();
-            Item item = e.getKey();
-            
-            int takenCount = ContainerHelper.clearOrCountMatchingItems(
-                player.getInventory(),
-                i -> i.getItem() == item,
-                requiredCount,
-                true
-            );
-            
-            if (takenCount < requiredCount) {
-                player.sendSystemMessage(Component.translatable(
-                    "mini_scaled.not_enough_ingredient",
-                    requiredCount, new ItemStack(item, requiredCount).getDisplayName()
-                ));
-                return false;
-            }
-        }
-        
-        return true;
-    }
-    
-    private static void removeItems(
-        ServerPlayer player, List<ItemStack> costItems
-    ) {
-        for (ItemStack itemStack : costItems) {
-            ContainerHelper.clearOrCountMatchingItems(
-                player.getInventory(),
-                i -> i.getItem() == itemStack.getItem(),
-                itemStack.getCount(),
-                false
-            );
-        }
     }
     
     private static boolean checkUnwrappableBlock(ServerPlayer player, ServerLevel world, IntBox glassFrame) {

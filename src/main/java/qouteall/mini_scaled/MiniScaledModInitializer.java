@@ -60,7 +60,7 @@ public class MiniScaledModInitializer implements ModInitializer {
         
         ManipulationWandItem.init();
         
-        ScaleBoxEntranceCreation.init();
+        CreationItem.init();
         
         ScaleBoxInteractionManager.init();
         
@@ -93,16 +93,16 @@ public class MiniScaledModInitializer implements ModInitializer {
     
     public static void applyConfigServerSide(MiniScaledConfig miniScaledConfig) {
         try {
-            ResourceLocation identifier = new ResourceLocation(miniScaledConfig.creationItem);
+            ResourceLocation identifier = new ResourceLocation(miniScaledConfig.wrappingIngredient);
             
             Item creationItem = BuiltInRegistries.ITEM.get(identifier);
             
             if (creationItem != Items.AIR) {
-                ScaleBoxEntranceCreation.creationItem = creationItem;
+                CreationItem.setCreationItem(creationItem);
             }
             else {
                 LOGGER.error("Invalid scale box creation item {}", identifier);
-                ScaleBoxEntranceCreation.creationItem = Items.NETHERITE_INGOT;
+                CreationItem.setCreationItem(null);
             }
         }
         catch (Exception e) {
