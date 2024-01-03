@@ -1,1 +1,1 @@
-In 4.0.0, this mod has been greatly overhauled. Added the feature of wrapping, unwrapping and viewing scale boxes. See the wiki for more details.
+Change default wrapping cost item to eye of ender.
