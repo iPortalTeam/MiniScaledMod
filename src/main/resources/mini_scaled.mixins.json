@@ -6,8 +6,10 @@
   "mixins": [
     "common.MixinChunkMap",
     "common.MixinFlowingFluid",
+    "common.MixinLevel",
     "common.MixinLivingEntity",
-    "common.MixinMinecraftServer"
+    "common.MixinMinecraftServer",
+    "common.MixinServerLevel"
   ],
   "client": [
     "client.MixinDebugRenderer"
