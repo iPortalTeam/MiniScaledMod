@@ -18,7 +18,7 @@ public class MixinLivingEntity {
     ) {
         LivingEntity this_ = (LivingEntity) ((Object) this);
         if (this_.level().dimension() == VoidDimension.KEY) {
-            cir.cancel();
+            cir.setReturnValue(false);
         }
     }
 }

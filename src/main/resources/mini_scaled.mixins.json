@@ -10,9 +10,7 @@
     "common.MixinMinecraftServer"
   ],
   "client": [
-    "client.MixinDebugRenderer",
-    "client.MixinItemColors",
-    "client.MixinSkyProperties"
+    "client.MixinDebugRenderer"
   ],
   "injectors": {
     "defaultRequire": 1

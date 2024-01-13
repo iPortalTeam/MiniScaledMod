@@ -13,7 +13,9 @@ import qouteall.mini_scaled.VoidDimension;
 
 @Mixin(ChunkMap.class)
 public class MixinChunkMap {
-    @Shadow @Final private ServerLevel level;
+    @Shadow
+    @Final
+    ServerLevel level;
     
     // that method also controls whether to do chunk tick
     // chunk tick includes block random tick
