@@ -11,10 +11,7 @@ import qouteall.mini_scaled.item.ScaleBoxEntranceItem;
 
 public class MiniScaledModInitializerClient implements ClientModInitializer {
     private static void initClient() {
-        EntityRendererRegistry.register(
-            MiniScaledPortal.ENTITY_TYPE,
-            (context) -> new PortalEntityRenderer(context)
-        );
+        EntityRendererRegistry.register(MiniScaledPortal.ENTITY_TYPE, PortalEntityRenderer::new);
         
         ClientScaleBoxInteractionControl.init();
         

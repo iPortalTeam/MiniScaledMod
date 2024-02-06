@@ -39,13 +39,8 @@ import java.util.Objects;
 public class MiniScaledPortal extends Portal {
     private static final Logger LOGGER = LogUtils.getLogger();
     
-    public static final EntityType<MiniScaledPortal> ENTITY_TYPE = FabricEntityTypeBuilder
-        .create(MobCategory.MISC, MiniScaledPortal::new)
-        .dimensions(new EntityDimensions(1, 1, true))
-        .fireImmune()
-        .trackRangeBlocks(96)
-        .trackedUpdateRate(20)
-        .build();
+    public static final EntityType<MiniScaledPortal> ENTITY_TYPE =
+        Portal.createPortalEntityType(MiniScaledPortal::new);
     
     public int boxId = 0;
     
