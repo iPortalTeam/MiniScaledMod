@@ -56,6 +56,30 @@ public class CreationItem {
         );
     }
     
+    /**
+     * It doesn't consider the nbt of item.
+     */
+    public static boolean costEquals(
+        List<ItemStack> oldCost, List<ItemStack> newCost
+    ) {
+        Object2IntOpenHashMap<Item> oldItemToCount = new Object2IntOpenHashMap<>();
+        oldItemToCount.defaultReturnValue(0);
+        for (ItemStack itemStack : oldCost) {
+            oldItemToCount.addTo(itemStack.getItem(), itemStack.getCount());
+        }
+        
+        Object2IntOpenHashMap<Item> newItemToCount = new Object2IntOpenHashMap<>();
+        newItemToCount.defaultReturnValue(0);
+        for (ItemStack itemStack : newCost) {
+            newItemToCount.addTo(itemStack.getItem(), itemStack.getCount());
+        }
+        
+        return oldItemToCount.equals(newItemToCount);
+    }
+    
+    /**
+     * It doesn't consider the nbt of item.
+     */
     public static boolean checkInventory(
         ServerPlayer player, List<ItemStack> costItems
     ) {
@@ -91,6 +115,9 @@ public class CreationItem {
         return true;
     }
     
+    /**
+     * It doesn't consider the nbt of item.
+     */
     public static void removeItems(
         ServerPlayer player, List<ItemStack> costItems
     ) {
