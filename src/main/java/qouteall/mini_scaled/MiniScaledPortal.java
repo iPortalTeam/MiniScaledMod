@@ -36,6 +36,7 @@ import qouteall.q_misc_util.CustomTextOverlay;
 
 import java.util.Objects;
 
+@SuppressWarnings("resource")
 public class MiniScaledPortal extends Portal {
     private static final Logger LOGGER = LogUtils.getLogger();
     
@@ -47,6 +48,8 @@ public class MiniScaledPortal extends Portal {
     // the generation counter is used for invalidating scale box portal,
     // without loading the chunk of the portal
     public int generation = 0;
+    
+    public boolean unbreakable = false;
     
     /**
      * This field is added in newer versions of MiniScaled.
@@ -120,7 +123,9 @@ public class MiniScaledPortal extends Portal {
     }
     
     private void tryRemovingPortal() {
-        
+        if (unbreakable) {
+            return;
+        }
         kill();
     }
     
@@ -188,6 +193,13 @@ public class MiniScaledPortal extends Portal {
         generation = compoundTag.getInt("generation");
         boxId = compoundTag.getInt("boxId");
         
+        if (compoundTag.contains("unbreakable")) {
+            unbreakable = compoundTag.getBoolean("unbreakable");
+        }
+        else {
+            unbreakable = false;
+        }
+        
         if (compoundTag.contains("recordEntry")) {
             CompoundTag t = compoundTag.getCompound("recordEntry");
             recordEntry = ScaleBoxRecord.Entry.fromTag(t);
@@ -213,6 +225,7 @@ public class MiniScaledPortal extends Portal {
         super.addAdditionalSaveData(compoundTag);
         compoundTag.putInt("generation", generation);
         compoundTag.putInt("boxId", boxId);
+        compoundTag.putBoolean("unbreakable", unbreakable);
         if (recordEntry != null) {
             CompoundTag recordEntryTag = recordEntry.toTag();
             compoundTag.put("recordEntry", recordEntryTag);
